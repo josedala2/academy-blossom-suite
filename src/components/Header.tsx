@@ -39,11 +39,12 @@ const Header = () => {
       <div className="bg-card/95 backdrop-blur-md border-b border-border shadow-md">
         <div className="container flex h-16 items-center justify-between">
           {/* Logo */}
-          <a href="#" className="flex items-center gap-3 group">
+          <a href="#" className="flex items-center justify-center group">
             <img 
               src={logoSGE} 
               alt="SGE - Sistema de Gestão Escolar" 
               className="h-12 w-auto transition-transform group-hover:scale-105"
+              style={{ background: 'transparent' }}
             />
           </a>
 

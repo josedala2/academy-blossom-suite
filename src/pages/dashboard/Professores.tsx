@@ -9,6 +9,8 @@ import {
   Trash2,
   Mail,
   BookOpen,
+  FileSpreadsheet,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +36,10 @@ import EditarProfessorModal from "@/components/modals/EditarProfessorModal";
 import EnviarEmailProfessorModal from "@/components/modals/EnviarEmailProfessorModal";
 import NovoProfessorModal from "@/components/modals/NovoProfessorModal";
 import VerHorarioProfessorModal from "@/components/modals/VerHorarioProfessorModal";
+import { useToast } from "@/hooks/use-toast";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface Teacher {
   id: number;
@@ -103,6 +109,7 @@ const teachersData: Teacher[] = [
 ];
 
 const Professores = () => {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [teachers, setTeachers] = useState<Teacher[]>(teachersData);
@@ -123,6 +130,60 @@ const Professores = () => {
       !selectedSubject || selectedSubject === "all" || teacher.subjects.includes(selectedSubject);
     return matchesSearch && matchesSubject;
   });
+
+  const exportToExcel = () => {
+    const exportData = filteredTeachers.map((t) => ({
+      "Nome": t.name,
+      "Email": t.email,
+      "Telefone": t.phone,
+      "Disciplinas": t.subjects.join(", "),
+      "Turmas": t.classes.join(", "),
+      "Estado": t.status === "active" ? "Activo" : "Inactivo",
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Professores");
+    XLSX.writeFile(wb, `professores_${new Date().toISOString().split("T")[0]}.xlsx`);
+
+    toast({
+      title: "Exportação concluída!",
+      description: `${filteredTeachers.length} professores exportados para Excel.`,
+    });
+  };
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text("Lista de Professores", 14, 22);
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Gerado em: ${new Date().toLocaleDateString("pt-AO")}`, 14, 30);
+    doc.text(`Total: ${filteredTeachers.length} professores`, 14, 36);
+
+    const tableData = filteredTeachers.map((t) => [
+      t.name,
+      t.email,
+      t.phone,
+      t.subjects.join(", "),
+      t.status === "active" ? "Activo" : "Inactivo",
+    ]);
+
+    autoTable(doc, {
+      head: [["Nome", "Email", "Telefone", "Disciplinas", "Estado"]],
+      body: tableData,
+      startY: 42,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [59, 130, 246] },
+    });
+
+    doc.save(`professores_${new Date().toISOString().split("T")[0]}.pdf`);
+
+    toast({
+      title: "Exportação concluída!",
+      description: `${filteredTeachers.length} professores exportados para PDF.`,
+    });
+  };
 
   const handleVerPerfil = (teacher: Teacher) => {
     setSelectedTeacher(teacher);
@@ -180,10 +241,24 @@ const Professores = () => {
             </p>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Exportar
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <Download className="h-4 w-4 mr-2" />
+                  Exportar
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={exportToExcel}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Exportar para Excel
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportToPDF}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Exportar para PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button onClick={() => setIsNovoModalOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Novo Professor

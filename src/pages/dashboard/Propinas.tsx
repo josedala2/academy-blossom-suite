@@ -10,6 +10,8 @@ import {
   TrendingUp,
   Receipt,
   Send,
+  FileSpreadsheet,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +22,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -36,8 +44,24 @@ import RegistarPagamentoModal from "@/components/modals/RegistarPagamentoModal";
 import GerarRecibosModal from "@/components/modals/GerarRecibosModal";
 import EnviarLembretesModal from "@/components/modals/EnviarLembretesModal";
 import RelatorioMensalModal from "@/components/modals/RelatorioMensalModal";
+import { useToast } from "@/hooks/use-toast";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
-const payments = [
+interface Payment {
+  id: number;
+  student: string;
+  class: string;
+  month: string;
+  amount: string;
+  dueDate: string;
+  status: string;
+  paidDate: string | null;
+  method: string | null;
+}
+
+const payments: Payment[] = [
   {
     id: 1,
     student: "João Silva",
@@ -103,20 +127,96 @@ const recentTransactions = [
 ];
 
 const Propinas = () => {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [isPagamentoModalOpen, setIsPagamentoModalOpen] = useState(false);
   const [isRecibosModalOpen, setIsRecibosModalOpen] = useState(false);
   const [isLembretesModalOpen, setIsLembretesModalOpen] = useState(false);
   const [isRelatorioModalOpen, setIsRelatorioModalOpen] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
 
   const filteredPayments = payments.filter((payment) => {
     const matchesSearch = payment.student
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
-    const matchesStatus = !selectedStatus || payment.status === selectedStatus;
+    const matchesStatus = !selectedStatus || selectedStatus === "all" || payment.status === selectedStatus;
     return matchesSearch && matchesStatus;
   });
+
+  const handleViewReceipt = (payment: Payment) => {
+    toast({
+      title: "Recibo Gerado",
+      description: `Recibo de ${payment.student} - ${payment.month} descarregado.`,
+    });
+  };
+
+  const handleRegisterPayment = (payment: Payment) => {
+    setSelectedPayment(payment);
+    setIsPagamentoModalOpen(true);
+  };
+
+  const handleSendReminder = (payment: Payment) => {
+    toast({
+      title: "Lembrete Enviado",
+      description: `Lembrete de pagamento enviado para o encarregado de ${payment.student}.`,
+    });
+  };
+
+  const exportToExcel = () => {
+    const exportData = filteredPayments.map((p) => ({
+      "Estudante": p.student,
+      "Turma": p.class,
+      "Mês": p.month,
+      "Valor": p.amount,
+      "Data Limite": p.dueDate,
+      "Estado": p.status === "paid" ? "Pago" : p.status === "pending" ? "Pendente" : "Em Atraso",
+      "Data Pagamento": p.paidDate || "-",
+      "Método": p.method || "-",
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Propinas");
+    XLSX.writeFile(wb, `propinas_${new Date().toISOString().split("T")[0]}.xlsx`);
+
+    toast({
+      title: "Exportação concluída!",
+      description: `${filteredPayments.length} registos exportados para Excel.`,
+    });
+  };
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text("Relatório de Propinas", 14, 22);
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Gerado em: ${new Date().toLocaleDateString("pt-AO")}`, 14, 30);
+
+    const tableData = filteredPayments.map((p) => [
+      p.student,
+      p.class,
+      p.month,
+      p.amount,
+      p.status === "paid" ? "Pago" : p.status === "pending" ? "Pendente" : "Atraso",
+    ]);
+
+    autoTable(doc, {
+      head: [["Estudante", "Turma", "Mês", "Valor", "Estado"]],
+      body: tableData,
+      startY: 36,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [59, 130, 246] },
+    });
+
+    doc.save(`propinas_${new Date().toISOString().split("T")[0]}.pdf`);
+
+    toast({
+      title: "Exportação concluída!",
+      description: `${filteredPayments.length} registos exportados para PDF.`,
+    });
+  };
 
   return (
     <DashboardLayout>
@@ -132,10 +232,24 @@ const Propinas = () => {
             </p>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Exportar
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <Download className="h-4 w-4 mr-2" />
+                  Exportar
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={exportToExcel}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Exportar para Excel
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportToPDF}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Exportar para PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button onClick={() => setIsPagamentoModalOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Registar Pagamento
@@ -292,15 +406,30 @@ const Propinas = () => {
                             <TableCell>
                               <div className="flex gap-1">
                                 {payment.status === "paid" ? (
-                                  <Button variant="ghost" size="sm">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    title="Ver Recibo"
+                                    onClick={() => handleViewReceipt(payment)}
+                                  >
                                     <Receipt className="h-4 w-4" />
                                   </Button>
                                 ) : (
                                   <>
-                                    <Button variant="ghost" size="sm">
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      title="Registar Pagamento"
+                                      onClick={() => handleRegisterPayment(payment)}
+                                    >
                                       <CreditCard className="h-4 w-4" />
                                     </Button>
-                                    <Button variant="ghost" size="sm">
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      title="Enviar Lembrete"
+                                      onClick={() => handleSendReminder(payment)}
+                                    >
                                       <Send className="h-4 w-4" />
                                     </Button>
                                   </>

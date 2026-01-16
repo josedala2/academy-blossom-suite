@@ -13,6 +13,12 @@ import {
   MessageSquare,
   FileCheck,
   ArrowRight,
+  BarChart3,
+  FolderOpen,
+  GraduationCap,
+  FileBarChart,
+  UserCheck,
+  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +34,86 @@ const stats = [
   { label: "Processos em Andamento", value: 8, icon: ClipboardList, color: "text-primary", bgColor: "bg-primary/10" },
   { label: "Documentos Emitidos Hoje", value: 24, icon: FileCheck, color: "text-secondary", bgColor: "bg-secondary/10" },
   { label: "Atendimentos Realizados", value: 47, icon: Users, color: "text-green-600", bgColor: "bg-green-500/10" },
+];
+
+// Quick navigation modules
+const modulosSecretaria = [
+  {
+    titulo: "Pré-Registos",
+    descricao: "Gestão de inscrições e matrículas pendentes",
+    icon: UserPlus,
+    cor: "text-primary",
+    bgCor: "bg-primary/10",
+    borderCor: "border-primary/20",
+    rota: "/dashboard/secretaria/pre-registos",
+    badge: 12,
+  },
+  {
+    titulo: "Visitantes",
+    descricao: "Registo e acompanhamento de atendimentos",
+    icon: Users,
+    cor: "text-secondary",
+    bgCor: "bg-secondary/10",
+    borderCor: "border-secondary/20",
+    rota: "/dashboard/secretaria/visitantes",
+    badge: 3,
+  },
+  {
+    titulo: "Estudantes",
+    descricao: "Consulta e gestão de fichas de estudantes",
+    icon: GraduationCap,
+    cor: "text-blue-600",
+    bgCor: "bg-blue-500/10",
+    borderCor: "border-blue-500/20",
+    rota: "/dashboard/secretaria/estudantes",
+  },
+  {
+    titulo: "Encarregados",
+    descricao: "Gestão de encarregados de educação",
+    icon: UserCheck,
+    cor: "text-green-600",
+    bgCor: "bg-green-500/10",
+    borderCor: "border-green-500/20",
+    rota: "/dashboard/secretaria/encarregados",
+  },
+  {
+    titulo: "Documentos",
+    descricao: "Emissão de declarações e certificados",
+    icon: FileText,
+    cor: "text-accent",
+    bgCor: "bg-accent/10",
+    borderCor: "border-accent/20",
+    rota: "/dashboard/secretaria/documentos",
+    badge: 5,
+  },
+  {
+    titulo: "Processos",
+    descricao: "Transferências, anulações e reingressos",
+    icon: ClipboardList,
+    cor: "text-orange-600",
+    bgCor: "bg-orange-500/10",
+    borderCor: "border-orange-500/20",
+    rota: "/dashboard/secretaria/processos",
+    badge: 8,
+  },
+  {
+    titulo: "Templates",
+    descricao: "Modelos de documentos personalizáveis",
+    icon: FolderOpen,
+    cor: "text-purple-600",
+    bgCor: "bg-purple-500/10",
+    borderCor: "border-purple-500/20",
+    rota: "/dashboard/secretaria/templates",
+  },
+  {
+    titulo: "Relatórios",
+    descricao: "Estatísticas e exportação de dados",
+    icon: BarChart3,
+    cor: "text-indigo-600",
+    bgCor: "bg-indigo-500/10",
+    borderCor: "border-indigo-500/20",
+    rota: "/dashboard/secretaria/relatorios",
+  },
 ];
 
 // Recent pre-registrations
@@ -93,9 +179,9 @@ const Secretaria = () => {
             </p>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" onClick={() => navigate("/dashboard/secretaria/visitantes")}>
-              <Users className="h-4 w-4 mr-2" />
-              Visitantes
+            <Button variant="outline" onClick={() => navigate("/dashboard/secretaria/relatorios")}>
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Relatórios
             </Button>
             <Button onClick={() => navigate("/dashboard/secretaria/pre-registos")}>
               <UserPlus className="h-4 w-4 mr-2" />
@@ -123,56 +209,33 @@ const Secretaria = () => {
           ))}
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid gap-4 md:grid-cols-6">
-          <Button 
-            variant="outline" 
-            className="h-auto py-4 flex flex-col items-center gap-2"
-            onClick={() => navigate("/dashboard/secretaria/pre-registos")}
-          >
-            <UserPlus className="h-5 w-5 text-primary" />
-            <span className="text-xs">Pré-Registo</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            className="h-auto py-4 flex flex-col items-center gap-2"
-            onClick={() => navigate("/dashboard/secretaria/visitantes")}
-          >
-            <Users className="h-5 w-5 text-secondary" />
-            <span className="text-xs">Visitantes</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            className="h-auto py-4 flex flex-col items-center gap-2"
-            onClick={() => navigate("/dashboard/secretaria/documentos")}
-          >
-            <FileText className="h-5 w-5 text-accent" />
-            <span className="text-xs">Documentos</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            className="h-auto py-4 flex flex-col items-center gap-2"
-            onClick={() => navigate("/dashboard/secretaria/processos")}
-          >
-            <ClipboardList className="h-5 w-5 text-orange-500" />
-            <span className="text-xs">Processos</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            className="h-auto py-4 flex flex-col items-center gap-2"
-            onClick={() => navigate("/dashboard/secretaria/encarregados")}
-          >
-            <Users className="h-5 w-5 text-green-600" />
-            <span className="text-xs">Encarregados</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            className="h-auto py-4 flex flex-col items-center gap-2"
-            onClick={() => navigate("/dashboard/secretaria/comunicados")}
-          >
-            <MessageSquare className="h-5 w-5 text-blue-500" />
-            <span className="text-xs">Comunicados</span>
-          </Button>
+        {/* Navigation Cards - Modules */}
+        <div>
+          <h2 className="text-lg font-semibold text-foreground mb-4">Módulos da Secretaria</h2>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {modulosSecretaria.map((modulo, index) => (
+              <Card 
+                key={index}
+                className={`cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1 border-2 ${modulo.borderCor}`}
+                onClick={() => navigate(modulo.rota)}
+              >
+                <CardContent className="pt-6">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className={`h-12 w-12 rounded-lg ${modulo.bgCor} flex items-center justify-center`}>
+                      <modulo.icon className={`h-6 w-6 ${modulo.cor}`} />
+                    </div>
+                    {modulo.badge && (
+                      <Badge className="bg-primary text-primary-foreground">
+                        {modulo.badge}
+                      </Badge>
+                    )}
+                  </div>
+                  <h3 className="font-semibold text-foreground mb-1">{modulo.titulo}</h3>
+                  <p className="text-sm text-muted-foreground">{modulo.descricao}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">

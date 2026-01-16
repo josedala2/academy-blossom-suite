@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Dialog,
   DialogContent,
@@ -7,7 +10,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -19,8 +21,15 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, Clock, BookOpen, MapPin, User } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 interface ScheduleEntry {
   id: string;
@@ -92,42 +101,61 @@ const rooms = [
   "Biblioteca",
 ];
 
+// Schema principal do formulário
+const horarioFormSchema = z.object({
+  turma: z.string().min(1, { message: "Seleccione a turma" }),
+  semestre: z.string().min(1, { message: "Seleccione o semestre" }),
+});
+
+// Schema para adicionar nova aula
+const aulaFormSchema = z.object({
+  day: z.string().min(1, { message: "Seleccione o dia" }),
+  time: z.string().min(1, { message: "Seleccione a hora" }),
+  subject: z.string().min(1, { message: "Seleccione a disciplina" }),
+  teacher: z.string().min(1, { message: "Seleccione o professor" }),
+  room: z.string().min(1, { message: "Seleccione a sala" }),
+});
+
+type HorarioFormData = z.infer<typeof horarioFormSchema>;
+type AulaFormData = z.infer<typeof aulaFormSchema>;
+
 const CriarHorarioModal = ({
   isOpen,
   onClose,
   onSave,
 }: CriarHorarioModalProps) => {
   const { toast } = useToast();
-  const [turma, setTurma] = useState("");
-  const [semestre, setSemestre] = useState("");
   const [entries, setEntries] = useState<ScheduleEntry[]>([]);
-  
-  // Form state for new entry
-  const [newDay, setNewDay] = useState("");
-  const [newTime, setNewTime] = useState("");
-  const [newSubject, setNewSubject] = useState("");
-  const [newTeacher, setNewTeacher] = useState("");
-  const [newRoom, setNewRoom] = useState("");
 
-  const handleAddEntry = () => {
-    if (!newDay || !newTime || !newSubject || !newTeacher || !newRoom) {
-      toast({
-        title: "Campos obrigatórios",
-        description: "Preencha todos os campos para adicionar uma aula.",
-        variant: "destructive",
-      });
-      return;
-    }
+  const mainForm = useForm<HorarioFormData>({
+    resolver: zodResolver(horarioFormSchema),
+    defaultValues: {
+      turma: "",
+      semestre: "",
+    },
+  });
 
+  const aulaForm = useForm<AulaFormData>({
+    resolver: zodResolver(aulaFormSchema),
+    defaultValues: {
+      day: "",
+      time: "",
+      subject: "",
+      teacher: "",
+      room: "",
+    },
+  });
+
+  const handleAddEntry = (data: AulaFormData) => {
     // Check for conflicts
     const hasConflict = entries.some(
-      (entry) => entry.day === newDay && entry.time === newTime
+      (entry) => entry.day === data.day && entry.time === data.time
     );
 
     if (hasConflict) {
       toast({
         title: "Conflito de horário",
-        description: `Já existe uma aula ${newDay} às ${newTime}.`,
+        description: `Já existe uma aula ${data.day} às ${data.time}.`,
         variant: "destructive",
       });
       return;
@@ -135,25 +163,19 @@ const CriarHorarioModal = ({
 
     const newEntry: ScheduleEntry = {
       id: Date.now().toString(),
-      day: newDay,
-      time: newTime,
-      subject: newSubject,
-      teacher: newTeacher,
-      room: newRoom,
+      day: data.day,
+      time: data.time,
+      subject: data.subject,
+      teacher: data.teacher,
+      room: data.room,
     };
 
     setEntries([...entries, newEntry]);
-
-    // Reset form
-    setNewDay("");
-    setNewTime("");
-    setNewSubject("");
-    setNewTeacher("");
-    setNewRoom("");
+    aulaForm.reset();
 
     toast({
       title: "Aula adicionada",
-      description: `${newSubject} - ${newDay} às ${newTime}`,
+      description: `${data.subject} - ${data.day} às ${data.time}`,
     });
   };
 
@@ -165,16 +187,7 @@ const CriarHorarioModal = ({
     });
   };
 
-  const handleSubmit = () => {
-    if (!turma || !semestre) {
-      toast({
-        title: "Campos obrigatórios",
-        description: "Seleccione a turma e o semestre.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handleSubmit = (data: HorarioFormData) => {
     if (entries.length === 0) {
       toast({
         title: "Horário vazio",
@@ -184,29 +197,24 @@ const CriarHorarioModal = ({
       return;
     }
 
-    onSave({ turma, semestre, entries });
+    onSave({ turma: data.turma, semestre: data.semestre, entries });
 
     toast({
       title: "Horário criado!",
-      description: `Horário da turma ${turma} foi criado com sucesso.`,
+      description: `Horário da turma ${data.turma} foi criado com sucesso.`,
     });
 
     // Reset form
-    setTurma("");
-    setSemestre("");
+    mainForm.reset();
+    aulaForm.reset();
     setEntries([]);
     onClose();
   };
 
   const handleClose = () => {
-    setTurma("");
-    setSemestre("");
+    mainForm.reset();
+    aulaForm.reset();
     setEntries([]);
-    setNewDay("");
-    setNewTime("");
-    setNewSubject("");
-    setNewTeacher("");
-    setNewRoom("");
     onClose();
   };
 
@@ -244,36 +252,56 @@ const CriarHorarioModal = ({
         <ScrollArea className="flex-1 pr-4">
           <div className="space-y-6">
             {/* Basic Info */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="turma">Turma *</Label>
-                <Select value={turma} onValueChange={setTurma}>
-                  <SelectTrigger id="turma">
-                    <SelectValue placeholder="Seleccione a turma" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="10ª A">10ª Classe A</SelectItem>
-                    <SelectItem value="10ª B">10ª Classe B</SelectItem>
-                    <SelectItem value="11ª A">11ª Classe A</SelectItem>
-                    <SelectItem value="11ª B">11ª Classe B</SelectItem>
-                    <SelectItem value="12ª A">12ª Classe A</SelectItem>
-                    <SelectItem value="12ª B">12ª Classe B</SelectItem>
-                  </SelectContent>
-                </Select>
+            <Form {...mainForm}>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={mainForm.control}
+                  name="turma"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Turma *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccione a turma" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="10ª A">10ª Classe A</SelectItem>
+                          <SelectItem value="10ª B">10ª Classe B</SelectItem>
+                          <SelectItem value="11ª A">11ª Classe A</SelectItem>
+                          <SelectItem value="11ª B">11ª Classe B</SelectItem>
+                          <SelectItem value="12ª A">12ª Classe A</SelectItem>
+                          <SelectItem value="12ª B">12ª Classe B</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={mainForm.control}
+                  name="semestre"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Semestre *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccione o semestre" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="1sem">1º Semestre</SelectItem>
+                          <SelectItem value="2sem">2º Semestre</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="semestre">Semestre *</Label>
-                <Select value={semestre} onValueChange={setSemestre}>
-                  <SelectTrigger id="semestre">
-                    <SelectValue placeholder="Seleccione o semestre" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1sem">1º Semestre</SelectItem>
-                    <SelectItem value="2sem">2º Semestre</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            </Form>
 
             {/* Add New Entry Form */}
             <Card className="p-4">
@@ -281,92 +309,140 @@ const CriarHorarioModal = ({
                 <Plus className="h-4 w-4" />
                 Adicionar Aula
               </h3>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="newDay">Dia</Label>
-                  <Select value={newDay} onValueChange={setNewDay}>
-                    <SelectTrigger id="newDay">
-                      <SelectValue placeholder="Dia" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {days.map((day) => (
-                        <SelectItem key={day} value={day}>
-                          {day}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="newTime">Hora</Label>
-                  <Select value={newTime} onValueChange={setNewTime}>
-                    <SelectTrigger id="newTime">
-                      <SelectValue placeholder="Hora" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {timeSlots.map((time) => (
-                        <SelectItem key={time} value={time}>
-                          {time}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="newSubject">Disciplina</Label>
-                  <Select value={newSubject} onValueChange={setNewSubject}>
-                    <SelectTrigger id="newSubject">
-                      <SelectValue placeholder="Disciplina" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {subjects.map((subject) => (
-                        <SelectItem key={subject} value={subject}>
-                          {subject}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="newTeacher">Professor</Label>
-                  <Select value={newTeacher} onValueChange={setNewTeacher}>
-                    <SelectTrigger id="newTeacher">
-                      <SelectValue placeholder="Professor" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {teachers.map((teacher) => (
-                        <SelectItem key={teacher} value={teacher}>
-                          {teacher}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="newRoom">Sala</Label>
-                  <Select value={newRoom} onValueChange={setNewRoom}>
-                    <SelectTrigger id="newRoom">
-                      <SelectValue placeholder="Sala" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {rooms.map((room) => (
-                        <SelectItem key={room} value={room}>
-                          {room}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <Button
-                type="button"
-                className="mt-4 w-full"
-                variant="secondary"
-                onClick={handleAddEntry}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Adicionar Aula
-              </Button>
+              <Form {...aulaForm}>
+                <form onSubmit={aulaForm.handleSubmit(handleAddEntry)}>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    <FormField
+                      control={aulaForm.control}
+                      name="day"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Dia</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Dia" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {days.map((day) => (
+                                <SelectItem key={day} value={day}>
+                                  {day}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={aulaForm.control}
+                      name="time"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Hora</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Hora" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {timeSlots.map((time) => (
+                                <SelectItem key={time} value={time}>
+                                  {time}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={aulaForm.control}
+                      name="subject"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Disciplina</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Disciplina" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {subjects.map((subject) => (
+                                <SelectItem key={subject} value={subject}>
+                                  {subject}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={aulaForm.control}
+                      name="teacher"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Professor</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Professor" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {teachers.map((teacher) => (
+                                <SelectItem key={teacher} value={teacher}>
+                                  {teacher}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={aulaForm.control}
+                      name="room"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Sala</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Sala" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {rooms.map((room) => (
+                                <SelectItem key={room} value={room}>
+                                  {room}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    className="mt-4 w-full"
+                    variant="secondary"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Adicionar Aula
+                  </Button>
+                </form>
+              </Form>
             </Card>
 
             {/* Schedule Preview */}
@@ -430,7 +506,7 @@ const CriarHorarioModal = ({
           <Button variant="outline" onClick={handleClose}>
             Cancelar
           </Button>
-          <Button onClick={handleSubmit}>
+          <Button onClick={mainForm.handleSubmit(handleSubmit)}>
             <Plus className="h-4 w-4 mr-2" />
             Criar Horário
           </Button>

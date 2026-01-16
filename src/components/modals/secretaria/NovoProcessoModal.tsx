@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Dialog,
   DialogContent,
@@ -8,15 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -32,6 +27,15 @@ import {
   FileText,
   X,
 } from "lucide-react";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { longTextSchema, sanitizeString } from "@/lib/validation";
 
 interface Props {
   open: boolean;
@@ -71,16 +75,39 @@ const tiposProcesso = [
   },
 ];
 
+// Schema de validação do processo
+const processoSchema = z.object({
+  tipoProcesso: z.string().min(1, { message: "Seleccione o tipo de processo" }),
+  estudanteId: z.string().min(1, { message: "Seleccione o estudante" }),
+  descricao: longTextSchema.refine((val) => val && val.length >= 10, {
+    message: "Descrição deve ter pelo menos 10 caracteres",
+  }),
+  escolaDestino: z.string().trim().max(200, { message: "Nome da escola deve ter no máximo 200 caracteres" }).optional().or(z.literal("")),
+  periodoAusencia: z.string().trim().max(100, { message: "Período deve ter no máximo 100 caracteres" }).optional().or(z.literal("")),
+});
+
+type ProcessoFormData = z.infer<typeof processoSchema>;
+
 const NovoProcessoModal = ({ open, onOpenChange }: Props) => {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
-  const [tipoProcesso, setTipoProcesso] = useState("");
-  const [estudanteId, setEstudanteId] = useState("");
   const [searchEstudante, setSearchEstudante] = useState("");
-  const [descricao, setDescricao] = useState("");
-  const [camposExtra, setCamposExtra] = useState<Record<string, string>>({});
   const [anexos, setAnexos] = useState<string[]>([]);
 
+  const form = useForm<ProcessoFormData>({
+    resolver: zodResolver(processoSchema),
+    defaultValues: {
+      tipoProcesso: "",
+      estudanteId: "",
+      descricao: "",
+      escolaDestino: "",
+      periodoAusencia: "",
+    },
+  });
+
+  const tipoProcesso = form.watch("tipoProcesso");
+  const estudanteId = form.watch("estudanteId");
+  
   const tipoSelecionado = tiposProcesso.find((t) => t.value === tipoProcesso);
   const estudanteSelecionado = estudantes.find((e) => e.id === estudanteId);
 
@@ -91,7 +118,6 @@ const NovoProcessoModal = ({ open, onOpenChange }: Props) => {
   );
 
   const handleAddAnexo = () => {
-    // Simula adição de anexo
     const novoAnexo = `documento_${anexos.length + 1}.pdf`;
     setAnexos([...anexos, novoAnexo]);
     toast({
@@ -104,16 +130,7 @@ const NovoProcessoModal = ({ open, onOpenChange }: Props) => {
     setAnexos(anexos.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = () => {
-    if (!tipoProcesso || !estudanteId || !descricao) {
-      toast({
-        title: "Campos obrigatórios",
-        description: "Por favor preencha todos os campos obrigatórios.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const onSubmit = (data: ProcessoFormData) => {
     toast({
       title: "Processo criado",
       description: `Processo de ${tipoSelecionado?.label} criado com sucesso.`,
@@ -121,25 +138,22 @@ const NovoProcessoModal = ({ open, onOpenChange }: Props) => {
 
     // Reset form
     setStep(1);
-    setTipoProcesso("");
-    setEstudanteId("");
+    form.reset();
     setSearchEstudante("");
-    setDescricao("");
-    setCamposExtra({});
     setAnexos([]);
     onOpenChange(false);
   };
 
   const handleClose = () => {
     setStep(1);
-    setTipoProcesso("");
-    setEstudanteId("");
+    form.reset();
     setSearchEstudante("");
-    setDescricao("");
-    setCamposExtra({});
     setAnexos([]);
     onOpenChange(false);
   };
+
+  const canProceedStep1 = !!tipoProcesso;
+  const canProceedStep2 = !!estudanteId;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -175,223 +189,241 @@ const NovoProcessoModal = ({ open, onOpenChange }: Props) => {
           ))}
         </div>
 
-        {/* Step 1: Tipo de Processo */}
-        {step === 1 && (
-          <div className="space-y-4">
-            <Label>Seleccione o tipo de processo</Label>
-            <div className="grid gap-3">
-              {tiposProcesso.map((tipo) => {
-                const Icon = tipo.icon;
-                return (
-                  <Card
-                    key={tipo.value}
-                    className={`cursor-pointer transition-colors ${
-                      tipoProcesso === tipo.value
-                        ? "border-primary bg-primary/5"
-                        : "hover:border-muted-foreground/50"
-                    }`}
-                    onClick={() => setTipoProcesso(tipo.value)}
-                  >
-                    <CardContent className="py-4">
-                      <div className="flex items-start gap-3">
-                        <div
-                          className={`p-2 rounded-lg ${
-                            tipoProcesso === tipo.value
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted"
-                          }`}
-                        >
-                          <Icon className="h-5 w-5" />
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            {/* Step 1: Tipo de Processo */}
+            {step === 1 && (
+              <div className="space-y-4">
+                <FormLabel>Seleccione o tipo de processo</FormLabel>
+                <div className="grid gap-3">
+                  {tiposProcesso.map((tipo) => {
+                    const Icon = tipo.icon;
+                    return (
+                      <Card
+                        key={tipo.value}
+                        className={`cursor-pointer transition-colors ${
+                          tipoProcesso === tipo.value
+                            ? "border-primary bg-primary/5"
+                            : "hover:border-muted-foreground/50"
+                        }`}
+                        onClick={() => form.setValue("tipoProcesso", tipo.value)}
+                      >
+                        <CardContent className="py-4">
+                          <div className="flex items-start gap-3">
+                            <div
+                              className={`p-2 rounded-lg ${
+                                tipoProcesso === tipo.value
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-muted"
+                              }`}
+                            >
+                              <Icon className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <p className="font-medium">{tipo.label}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {tipo.descricao}
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Seleccionar Estudante */}
+            {step === 2 && (
+              <div className="space-y-4">
+                <FormLabel>Seleccione o estudante</FormLabel>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Pesquisar por nome ou número..."
+                    value={searchEstudante}
+                    onChange={(e) => setSearchEstudante(sanitizeString(e.target.value))}
+                    className="pl-10"
+                  />
+                </div>
+                <div className="max-h-60 overflow-y-auto space-y-2 border rounded-lg p-2">
+                  {filteredEstudantes.map((est) => (
+                    <div
+                      key={est.id}
+                      className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
+                        estudanteId === est.id
+                          ? "bg-primary/10 border border-primary"
+                          : "hover:bg-muted"
+                      }`}
+                      onClick={() => form.setValue("estudanteId", est.id)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                          <User className="h-5 w-5 text-muted-foreground" />
                         </div>
                         <div>
-                          <p className="font-medium">{tipo.label}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {tipo.descricao}
-                          </p>
+                          <div className="font-medium">{est.nome}</div>
+                          <div className="text-sm text-muted-foreground">
+                            Nº {est.numero}
+                          </div>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Step 2: Seleccionar Estudante */}
-        {step === 2 && (
-          <div className="space-y-4">
-            <Label>Seleccione o estudante</Label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Pesquisar por nome ou número..."
-                value={searchEstudante}
-                onChange={(e) => setSearchEstudante(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="max-h-60 overflow-y-auto space-y-2 border rounded-lg p-2">
-              {filteredEstudantes.map((est) => (
-                <div
-                  key={est.id}
-                  className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
-                    estudanteId === est.id
-                      ? "bg-primary/10 border border-primary"
-                      : "hover:bg-muted"
-                  }`}
-                  onClick={() => setEstudanteId(est.id)}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                      <User className="h-5 w-5 text-muted-foreground" />
+                      <Badge variant="secondary">{est.classe}</Badge>
                     </div>
-                    <div>
-                      <div className="font-medium">{est.nome}</div>
-                      <div className="text-sm text-muted-foreground">
-                        Nº {est.numero}
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Detalhes e Anexos */}
+            {step === 3 && (
+              <div className="space-y-4">
+                {/* Resumo */}
+                <Card className="bg-muted/50">
+                  <CardContent className="py-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Processo</p>
+                        <p className="font-medium">{tipoSelecionado?.label}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Estudante</p>
+                        <p className="font-medium">{estudanteSelecionado?.nome}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {estudanteSelecionado?.classe}
+                        </p>
                       </div>
                     </div>
-                  </div>
-                  <Badge variant="secondary">{est.classe}</Badge>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+                  </CardContent>
+                </Card>
 
-        {/* Step 3: Detalhes e Anexos */}
-        {step === 3 && (
-          <div className="space-y-4">
-            {/* Resumo */}
-            <Card className="bg-muted/50">
-              <CardContent className="py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Processo</p>
-                    <p className="font-medium">{tipoSelecionado?.label}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Estudante</p>
-                    <p className="font-medium">{estudanteSelecionado?.nome}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {estudanteSelecionado?.classe}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Campos Extra por Tipo */}
-            {tipoProcesso === "transferencia" && (
-              <div className="grid gap-4">
-                <div>
-                  <Label htmlFor="escola_destino">Escola de Destino</Label>
-                  <Input
-                    id="escola_destino"
-                    value={camposExtra.escola_destino || ""}
-                    onChange={(e) =>
-                      setCamposExtra({ ...camposExtra, escola_destino: e.target.value })
-                    }
-                    placeholder="Nome da escola de destino"
+                {/* Campos Extra por Tipo */}
+                {tipoProcesso === "transferencia" && (
+                  <FormField
+                    control={form.control}
+                    name="escolaDestino"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Escola de Destino</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="Nome da escola de destino"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
-              </div>
-            )}
+                )}
 
-            {tipoProcesso === "reingresso" && (
-              <div className="grid gap-4">
-                <div>
-                  <Label htmlFor="periodo_ausencia">Período de Ausência</Label>
-                  <Input
-                    id="periodo_ausencia"
-                    value={camposExtra.periodo_ausencia || ""}
-                    onChange={(e) =>
-                      setCamposExtra({ ...camposExtra, periodo_ausencia: e.target.value })
-                    }
-                    placeholder="Ex: Janeiro a Março de 2024"
+                {tipoProcesso === "reingresso" && (
+                  <FormField
+                    control={form.control}
+                    name="periodoAusencia"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Período de Ausência</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="Ex: Janeiro a Março de 2024"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
-              </div>
-            )}
+                )}
 
-            {/* Descrição */}
-            <div>
-              <Label htmlFor="descricao">Descrição / Motivo *</Label>
-              <Textarea
-                id="descricao"
-                value={descricao}
-                onChange={(e) => setDescricao(e.target.value)}
-                placeholder="Descreva o motivo e detalhes do processo..."
-                rows={3}
-              />
-            </div>
+                {/* Descrição */}
+                <FormField
+                  control={form.control}
+                  name="descricao"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Descrição / Motivo *</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          {...field}
+                          placeholder="Descreva o motivo e detalhes do processo..."
+                          rows={3}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <Separator />
+                <Separator />
 
-            {/* Anexos */}
-            <div>
-              <Label className="mb-2 block">Anexos</Label>
-              <div className="space-y-2">
-                {anexos.map((anexo, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-2 bg-muted rounded-lg"
-                  >
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{anexo}</span>
-                    </div>
+                {/* Anexos */}
+                <div>
+                  <FormLabel className="mb-2 block">Anexos</FormLabel>
+                  <div className="space-y-2">
+                    {anexos.map((anexo, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-2 bg-muted rounded-lg"
+                      >
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{anexo}</span>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveAnexo(index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
                     <Button
                       type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveAnexo(index)}
+                      variant="outline"
+                      className="w-full"
+                      onClick={handleAddAnexo}
                     >
-                      <X className="h-4 w-4" />
+                      <Upload className="h-4 w-4 mr-2" />
+                      Adicionar Anexo
                     </Button>
                   </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={handleAddAnexo}
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Adicionar Anexo
-                </Button>
+                </div>
               </div>
-            </div>
-          </div>
-        )}
+            )}
 
-        <DialogFooter className="flex justify-between">
-          <div>
-            {step > 1 && (
-              <Button variant="outline" onClick={() => setStep(step - 1)}>
-                Anterior
-              </Button>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleClose}>
-              Cancelar
-            </Button>
-            {step < 3 ? (
-              <Button
-                onClick={() => setStep(step + 1)}
-                disabled={
-                  (step === 1 && !tipoProcesso) || (step === 2 && !estudanteId)
-                }
-              >
-                Próximo
-              </Button>
-            ) : (
-              <Button onClick={handleSubmit}>Criar Processo</Button>
-            )}
-          </div>
-        </DialogFooter>
+            <DialogFooter className="flex justify-between mt-6">
+              <div>
+                {step > 1 && (
+                  <Button type="button" variant="outline" onClick={() => setStep(step - 1)}>
+                    Anterior
+                  </Button>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={handleClose}>
+                  Cancelar
+                </Button>
+                {step < 3 ? (
+                  <Button
+                    type="button"
+                    onClick={() => setStep(step + 1)}
+                    disabled={
+                      (step === 1 && !canProceedStep1) || (step === 2 && !canProceedStep2)
+                    }
+                  >
+                    Próximo
+                  </Button>
+                ) : (
+                  <Button type="submit">Criar Processo</Button>
+                )}
+              </div>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

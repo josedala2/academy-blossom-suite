@@ -33,6 +33,7 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import VerNotasModal from "@/components/modals/VerNotasModal";
 import NovaAvaliacaoModal from "@/components/modals/NovaAvaliacaoModal";
 import { GerarBoletinsModal } from "@/components/modals/GerarBoletinsModal";
+import VerDetalhesAvaliacaoModal from "@/components/modals/VerDetalhesAvaliacaoModal";
 
 const exams = [
   {
@@ -144,11 +145,17 @@ const Avaliacoes = () => {
   const [isNovaAvaliacaoOpen, setIsNovaAvaliacaoOpen] = useState(false);
   const [isVerNotasOpen, setIsVerNotasOpen] = useState(false);
   const [isGerarBoletinsOpen, setIsGerarBoletinsOpen] = useState(false);
+  const [isVerDetalhesOpen, setIsVerDetalhesOpen] = useState(false);
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
 
   const handleVerNotas = (exam: Exam) => {
     setSelectedExam(exam);
     setIsVerNotasOpen(true);
+  };
+
+  const handleVerDetalhes = (exam: Exam) => {
+    setSelectedExam(exam);
+    setIsVerDetalhesOpen(true);
   };
 
   return (
@@ -325,7 +332,12 @@ const Avaliacoes = () => {
                           Lançar Notas
                         </Button>
                       ) : (
-                        <Button variant="outline" size="sm" className="flex-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => handleVerDetalhes(exam)}
+                        >
                           <Clock className="h-4 w-4 mr-1" />
                           Detalhes
                         </Button>
@@ -455,6 +467,12 @@ const Avaliacoes = () => {
         <GerarBoletinsModal
           open={isGerarBoletinsOpen}
           onOpenChange={setIsGerarBoletinsOpen}
+        />
+
+        <VerDetalhesAvaliacaoModal
+          open={isVerDetalhesOpen}
+          onOpenChange={setIsVerDetalhesOpen}
+          exam={selectedExam}
         />
       </div>
     </DashboardLayout>

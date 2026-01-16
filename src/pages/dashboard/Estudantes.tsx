@@ -41,6 +41,9 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import NovaMatriculaModal from "@/components/modals/NovaMatriculaModal";
+import VerPerfilEstudanteModal from "@/components/modals/VerPerfilEstudanteModal";
+import EditarEstudanteModal from "@/components/modals/EditarEstudanteModal";
+import EnviarEmailEstudanteModal from "@/components/modals/EnviarEmailEstudanteModal";
 import { useToast } from "@/hooks/use-toast";
 
 interface Student {
@@ -118,12 +121,18 @@ const students = [
 ];
 
 const Estudantes = () => {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClass, setSelectedClass] = useState<string>("");
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [isMatriculaModalOpen, setIsMatriculaModalOpen] = useState(false);
+  const [isPerfilModalOpen, setIsPerfilModalOpen] = useState(false);
+  const [isEditarModalOpen, setIsEditarModalOpen] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [studentsList, setStudentsList] = useState<Student[]>(students);
 
-  const filteredStudents = students.filter((student) => {
+  const filteredStudents = studentsList.filter((student) => {
     const matchesSearch =
       student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.number.includes(searchTerm);
@@ -131,6 +140,27 @@ const Estudantes = () => {
     const matchesStatus = !selectedStatus || student.status === selectedStatus;
     return matchesSearch && matchesClass && matchesStatus;
   });
+
+  const handleVerPerfil = (student: Student) => {
+    setSelectedStudent(student);
+    setIsPerfilModalOpen(true);
+  };
+
+  const handleEditar = (student: Student) => {
+    setSelectedStudent(student);
+    setIsEditarModalOpen(true);
+  };
+
+  const handleEnviarEmail = (student: Student) => {
+    setSelectedStudent(student);
+    setIsEmailModalOpen(true);
+  };
+
+  const handleSaveStudent = (updatedStudent: Student) => {
+    setStudentsList((prev) =>
+      prev.map((s) => (s.id === updatedStudent.id ? updatedStudent : s))
+    );
+  };
 
   return (
     <DashboardLayout>
@@ -161,6 +191,32 @@ const Estudantes = () => {
         <NovaMatriculaModal
           open={isMatriculaModalOpen}
           onOpenChange={setIsMatriculaModalOpen}
+        />
+
+        {/* Modal Ver Perfil */}
+        <VerPerfilEstudanteModal
+          isOpen={isPerfilModalOpen}
+          onClose={() => setIsPerfilModalOpen(false)}
+          student={selectedStudent}
+          onSendEmail={() => {
+            setIsPerfilModalOpen(false);
+            setIsEmailModalOpen(true);
+          }}
+        />
+
+        {/* Modal Editar */}
+        <EditarEstudanteModal
+          isOpen={isEditarModalOpen}
+          onClose={() => setIsEditarModalOpen(false)}
+          student={selectedStudent}
+          onSave={handleSaveStudent}
+        />
+
+        {/* Modal Enviar Email */}
+        <EnviarEmailEstudanteModal
+          isOpen={isEmailModalOpen}
+          onClose={() => setIsEmailModalOpen(false)}
+          student={selectedStudent}
         />
 
         {/* Stats Cards */}
@@ -343,15 +399,15 @@ const Estudantes = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleVerPerfil(student)}>
                             <Eye className="h-4 w-4 mr-2" />
                             Ver Perfil
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditar(student)}>
                             <Edit className="h-4 w-4 mr-2" />
                             Editar
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEnviarEmail(student)}>
                             <Mail className="h-4 w-4 mr-2" />
                             Enviar Email
                           </DropdownMenuItem>
@@ -373,7 +429,7 @@ const Estudantes = () => {
         {/* Pagination */}
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Mostrando {filteredStudents.length} de {students.length} estudantes
+            Mostrando {filteredStudents.length} de {studentsList.length} estudantes
           </p>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" disabled>

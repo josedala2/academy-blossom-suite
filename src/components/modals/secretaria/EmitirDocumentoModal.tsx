@@ -28,43 +28,80 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
-// Mock data
+// Mock data - Estudantes com dados conforme Decreto 227/25
 const estudantes = [
-  { id: "1", nome: "João Manuel Silva", numero: "2024001", classe: "10ª A" },
-  { id: "2", nome: "Ana Beatriz Santos", numero: "2024002", classe: "11ª B" },
-  { id: "3", nome: "Carlos Eduardo Mendes", numero: "2024003", classe: "12ª A" },
-  { id: "4", nome: "Diana Rosa Ferreira", numero: "2024004", classe: "10ª C" },
-  { id: "5", nome: "Emanuel José Costa", numero: "2024005", classe: "11ª A" },
+  { id: "1", nome: "João Manuel Silva", numero: "2024001", classe: "10ª A", bi: "007654321LA045", iua: "AO-2024-EDU-000001" },
+  { id: "2", nome: "Ana Beatriz Santos", numero: "2024002", classe: "11ª B", bi: "008765432LA046", iua: "AO-2024-EDU-000002" },
+  { id: "3", nome: "Carlos Eduardo Mendes", numero: "2024003", classe: "12ª A", bi: "009876543LA047", iua: "AO-2024-EDU-000003" },
+  { id: "4", nome: "Diana Rosa Ferreira", numero: "2024004", classe: "10ª C", bi: "010987654LA048", iua: "AO-2024-EDU-000004" },
+  { id: "5", nome: "Emanuel José Costa", numero: "2024005", classe: "11ª A", bi: "011098765LA049", iua: "AO-2024-EDU-000005" },
 ];
 
+// Tipos de documento conforme Decreto Presidencial n.º 227/25
 const tiposDocumento = [
   { 
     value: "declaracao_matricula", 
     label: "Declaração de Matrícula", 
     codigo: "DM",
     requerAprovacao: false,
-    descricao: "Confirma a matrícula do estudante na instituição"
+    descricao: "Confirma a matrícula do estudante na instituição (Art. 4.º, alínea c)",
+    prazoEmissao: "Imediato"
   },
   { 
     value: "declaracao_frequencia", 
     label: "Declaração de Frequência", 
     codigo: "DF",
     requerAprovacao: false,
-    descricao: "Confirma a frequência regular do estudante"
+    descricao: "Confirma a frequência regular do estudante (Prazo: até 5 dias úteis)",
+    prazoEmissao: "Até 5 dias úteis"
+  },
+  { 
+    value: "certificado_habilitacoes", 
+    label: "Certificado de Habilitações", 
+    codigo: "CH",
+    requerAprovacao: true,
+    descricao: "Conclusão do Ensino Primário ou I Ciclo do Secundário (Art. 4.º, alínea a)",
+    prazoEmissao: "Até 30 dias úteis"
+  },
+  { 
+    value: "diploma", 
+    label: "Diploma", 
+    codigo: "DP",
+    requerAprovacao: true,
+    descricao: "Conclusão do II Ciclo - Técnico Médio Nível 5 QNQ (Art. 4.º, alínea b)",
+    prazoEmissao: "Até 30 dias úteis"
+  },
+  { 
+    value: "guia_transferencia", 
+    label: "Guia de Transferência", 
+    codigo: "GT",
+    requerAprovacao: true,
+    descricao: "Mobilidade entre instituições de ensino (Art. 4.º, alínea g)",
+    prazoEmissao: "Até 10 dias úteis"
+  },
+  { 
+    value: "historico_escolar", 
+    label: "Histórico Escolar", 
+    codigo: "HE",
+    requerAprovacao: true,
+    descricao: "Registo completo do percurso académico",
+    prazoEmissao: "Até 15 dias úteis"
   },
   { 
     value: "declaracao_simples", 
     label: "Declaração Simples", 
     codigo: "DS",
     requerAprovacao: true,
-    descricao: "Declaração genérica para diversos fins"
+    descricao: "Declaração genérica para diversos fins",
+    prazoEmissao: "Até 5 dias úteis"
   },
   { 
     value: "atestado", 
     label: "Atestado Administrativo", 
     codigo: "AT",
     requerAprovacao: true,
-    descricao: "Atestado para situações administrativas especiais"
+    descricao: "Atestado para situações administrativas especiais",
+    prazoEmissao: "Até 5 dias úteis"
   },
 ];
 
@@ -182,8 +219,8 @@ const EmitirDocumentoModal = ({ open, onOpenChange }: Props) => {
                 >
                   <CardContent className="py-3">
                     <div className="flex items-start justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <Badge variant="outline" className="font-mono">
                             {tipo.codigo}
                           </Badge>
@@ -192,9 +229,12 @@ const EmitirDocumentoModal = ({ open, onOpenChange }: Props) => {
                         <p className="text-sm text-muted-foreground mt-1">
                           {tipo.descricao}
                         </p>
+                        <p className="text-xs text-primary mt-1">
+                          Prazo: {tipo.prazoEmissao}
+                        </p>
                       </div>
                       {tipo.requerAprovacao && (
-                        <Badge variant="outline" className="text-orange-600 shrink-0">
+                        <Badge variant="outline" className="text-orange-600 shrink-0 ml-2">
                           <Lock className="h-3 w-3 mr-1" />
                           Aprovação
                         </Badge>
@@ -236,9 +276,12 @@ const EmitirDocumentoModal = ({ open, onOpenChange }: Props) => {
                       <User className="h-5 w-5 text-muted-foreground" />
                     </div>
                     <div>
-                      <div className="font-medium">{est.nome}</div>
+                    <div className="font-medium">{est.nome}</div>
                       <div className="text-sm text-muted-foreground">
-                        Nº {est.numero}
+                        Nº {est.numero} • BI: {est.bi}
+                      </div>
+                      <div className="text-xs text-primary">
+                        IUA: {est.iua}
                       </div>
                     </div>
                   </div>

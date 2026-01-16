@@ -32,6 +32,7 @@ import {
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import VerNotasModal from "@/components/modals/VerNotasModal";
 import NovaAvaliacaoModal from "@/components/modals/NovaAvaliacaoModal";
+import { GerarBoletinsModal } from "@/components/modals/GerarBoletinsModal";
 
 const exams = [
   {
@@ -142,6 +143,7 @@ const Avaliacoes = () => {
   const [selectedClass, setSelectedClass] = useState<string>("");
   const [isNovaAvaliacaoOpen, setIsNovaAvaliacaoOpen] = useState(false);
   const [isVerNotasOpen, setIsVerNotasOpen] = useState(false);
+  const [isGerarBoletinsOpen, setIsGerarBoletinsOpen] = useState(false);
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
 
   const handleVerNotas = (exam: Exam) => {
@@ -428,7 +430,7 @@ const Avaliacoes = () => {
                   <p className="text-sm text-muted-foreground mb-4">
                     Escolha a turma e o período para gerar os boletins individuais
                   </p>
-                  <Button>
+                  <Button onClick={() => setIsGerarBoletinsOpen(true)}>
                     <FileText className="h-4 w-4 mr-2" />
                     Gerar Boletins
                   </Button>
@@ -448,6 +450,11 @@ const Avaliacoes = () => {
           open={isVerNotasOpen}
           onOpenChange={setIsVerNotasOpen}
           exam={selectedExam}
+        />
+
+        <GerarBoletinsModal
+          open={isGerarBoletinsOpen}
+          onOpenChange={setIsGerarBoletinsOpen}
         />
       </div>
     </DashboardLayout>

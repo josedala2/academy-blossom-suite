@@ -32,6 +32,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import RegistarPagamentoModal from "@/components/modals/RegistarPagamentoModal";
 
 const payments = [
   {
@@ -101,6 +102,7 @@ const recentTransactions = [
 const Propinas = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string>("");
+  const [isPagamentoModalOpen, setIsPagamentoModalOpen] = useState(false);
 
   const filteredPayments = payments.filter((payment) => {
     const matchesSearch = payment.student
@@ -128,7 +130,7 @@ const Propinas = () => {
               <Download className="h-4 w-4 mr-2" />
               Exportar
             </Button>
-            <Button>
+            <Button onClick={() => setIsPagamentoModalOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Registar Pagamento
             </Button>
@@ -393,6 +395,12 @@ const Propinas = () => {
             </Card>
           </div>
         </div>
+
+        {/* Modal Registar Pagamento */}
+        <RegistarPagamentoModal
+          open={isPagamentoModalOpen}
+          onOpenChange={setIsPagamentoModalOpen}
+        />
       </div>
     </DashboardLayout>
   );

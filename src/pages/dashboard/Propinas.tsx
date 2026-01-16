@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Search,
   Plus,
@@ -127,6 +128,7 @@ const recentTransactions = [
 ];
 
 const Propinas = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string>("");
@@ -502,7 +504,18 @@ const Propinas = () => {
                     </span>
                   </div>
                 ))}
-                <Button variant="outline" className="w-full" size="sm">
+                <Button 
+                  variant="outline" 
+                  className="w-full" 
+                  size="sm"
+                  onClick={() => {
+                    setSelectedStatus("all");
+                    toast({
+                      title: "Todas as Transacções",
+                      description: "A mostrar todas as transacções na tabela principal.",
+                    });
+                  }}
+                >
                   Ver Todas
                 </Button>
               </CardContent>

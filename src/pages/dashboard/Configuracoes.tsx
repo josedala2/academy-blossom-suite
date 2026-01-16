@@ -1,0 +1,392 @@
+import { useState } from "react";
+import {
+  Settings,
+  User,
+  School,
+  Bell,
+  Lock,
+  CreditCard,
+  Users,
+  Calendar,
+  Shield,
+  Save,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import DashboardLayout from "@/components/layout/DashboardLayout";
+
+const Configuracoes = () => {
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [smsNotifications, setSmsNotifications] = useState(false);
+  const [twoFactor, setTwoFactor] = useState(false);
+
+  return (
+    <DashboardLayout>
+      <div className="space-y-6">
+        {/* Page Header */}
+        <div>
+          <h1 className="text-2xl font-display font-bold text-foreground">
+            Configurações
+          </h1>
+          <p className="text-muted-foreground">
+            Gerir configurações do sistema e preferências
+          </p>
+        </div>
+
+        {/* Tabs */}
+        <Tabs defaultValue="school" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 lg:w-auto lg:inline-flex">
+            <TabsTrigger value="school">
+              <School className="h-4 w-4 mr-2" />
+              Escola
+            </TabsTrigger>
+            <TabsTrigger value="academic">
+              <Calendar className="h-4 w-4 mr-2" />
+              Académico
+            </TabsTrigger>
+            <TabsTrigger value="financial">
+              <CreditCard className="h-4 w-4 mr-2" />
+              Financeiro
+            </TabsTrigger>
+            <TabsTrigger value="users">
+              <Users className="h-4 w-4 mr-2" />
+              Utilizadores
+            </TabsTrigger>
+            <TabsTrigger value="security">
+              <Shield className="h-4 w-4 mr-2" />
+              Segurança
+            </TabsTrigger>
+          </TabsList>
+
+          {/* School Settings */}
+          <TabsContent value="school">
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Informações da Escola</CardTitle>
+                  <CardDescription>
+                    Dados gerais da instituição de ensino
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Nome da Escola</Label>
+                    <Input defaultValue="Escola Secundária Nº 1 de Luanda" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>NIF</Label>
+                      <Input defaultValue="5000123456" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Código INAGBE</Label>
+                      <Input defaultValue="ESL001" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Morada</Label>
+                    <Textarea defaultValue="Rua Major Kanhangulo, nº 45, Maianga, Luanda" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Telefone</Label>
+                      <Input defaultValue="+244 923 456 789" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Email</Label>
+                      <Input defaultValue="geral@escola.ao" />
+                    </div>
+                  </div>
+                  <Button>
+                    <Save className="h-4 w-4 mr-2" />
+                    Guardar Alterações
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Logotipo e Identidade</CardTitle>
+                  <CardDescription>
+                    Personalize a aparência do sistema
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Logotipo</Label>
+                    <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
+                      <p className="text-muted-foreground text-sm">
+                        Arraste uma imagem ou clique para selecionar
+                      </p>
+                      <Button variant="outline" className="mt-2">
+                        Selecionar Ficheiro
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Cor Principal</Label>
+                    <div className="flex gap-2">
+                      <Input type="color" defaultValue="#2E7D32" className="w-16 h-10" />
+                      <Input defaultValue="#2E7D32" className="flex-1" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Academic Settings */}
+          <TabsContent value="academic">
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Ano Lectivo</CardTitle>
+                  <CardDescription>
+                    Configurações do ano lectivo actual
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Ano Lectivo</Label>
+                      <Select defaultValue="2025-2026">
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="2025-2026">2025/2026</SelectItem>
+                          <SelectItem value="2024-2025">2024/2025</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Período Actual</Label>
+                      <Select defaultValue="1tri">
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1tri">1º Trimestre</SelectItem>
+                          <SelectItem value="2tri">2º Trimestre</SelectItem>
+                          <SelectItem value="3tri">3º Trimestre</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Data Início</Label>
+                      <Input type="date" defaultValue="2025-09-01" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Data Fim</Label>
+                      <Input type="date" defaultValue="2026-07-15" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Critérios de Avaliação</CardTitle>
+                  <CardDescription>
+                    Configurar notas e aprovação
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Nota Mínima Aprovação</Label>
+                      <Input type="number" defaultValue="10" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Nota Máxima</Label>
+                      <Input type="number" defaultValue="20" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>% Máximo de Faltas</Label>
+                    <Input type="number" defaultValue="25" />
+                  </div>
+                  <Separator />
+                  <div className="space-y-2">
+                    <Label>Escala de Notas</Label>
+                    <div className="grid grid-cols-4 gap-2 text-sm">
+                      <div className="p-2 rounded bg-primary/10 text-center">
+                        <p className="font-medium">Excelente</p>
+                        <p className="text-muted-foreground">18-20</p>
+                      </div>
+                      <div className="p-2 rounded bg-secondary/10 text-center">
+                        <p className="font-medium">Bom</p>
+                        <p className="text-muted-foreground">14-17</p>
+                      </div>
+                      <div className="p-2 rounded bg-accent/10 text-center">
+                        <p className="font-medium">Suficiente</p>
+                        <p className="text-muted-foreground">10-13</p>
+                      </div>
+                      <div className="p-2 rounded bg-destructive/10 text-center">
+                        <p className="font-medium">Insuficiente</p>
+                        <p className="text-muted-foreground">0-9</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Financial Settings */}
+          <TabsContent value="financial">
+            <Card>
+              <CardHeader>
+                <CardTitle>Configurações de Propinas</CardTitle>
+                <CardDescription>
+                  Valores e prazos de pagamento
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Propina Base (Kz)</Label>
+                    <Input type="number" defaultValue="17500" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Dia de Vencimento</Label>
+                    <Input type="number" defaultValue="10" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Multa por Atraso (%)</Label>
+                    <Input type="number" defaultValue="5" />
+                  </div>
+                </div>
+                <Separator />
+                <div className="space-y-2">
+                  <Label>Métodos de Pagamento</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center justify-between p-3 rounded-lg border">
+                      <span>Dinheiro</span>
+                      <Switch defaultChecked />
+                    </div>
+                    <div className="flex items-center justify-between p-3 rounded-lg border">
+                      <span>Transferência</span>
+                      <Switch defaultChecked />
+                    </div>
+                    <div className="flex items-center justify-between p-3 rounded-lg border">
+                      <span>Multicaixa</span>
+                      <Switch defaultChecked />
+                    </div>
+                    <div className="flex items-center justify-between p-3 rounded-lg border">
+                      <span>Online</span>
+                      <Switch />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Users Settings */}
+          <TabsContent value="users">
+            <Card>
+              <CardHeader>
+                <CardTitle>Gestão de Utilizadores</CardTitle>
+                <CardDescription>
+                  Administrar perfis e permissões
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Funcionalidade em desenvolvimento...
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Security Settings */}
+          <TabsContent value="security">
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Notificações</CardTitle>
+                  <CardDescription>
+                    Configurar alertas e notificações
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Notificações por Email</p>
+                      <p className="text-sm text-muted-foreground">
+                        Receber alertas por email
+                      </p>
+                    </div>
+                    <Switch
+                      checked={emailNotifications}
+                      onCheckedChange={setEmailNotifications}
+                    />
+                  </div>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Notificações por SMS</p>
+                      <p className="text-sm text-muted-foreground">
+                        Receber alertas por SMS
+                      </p>
+                    </div>
+                    <Switch
+                      checked={smsNotifications}
+                      onCheckedChange={setSmsNotifications}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Segurança da Conta</CardTitle>
+                  <CardDescription>
+                    Proteja a sua conta
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Autenticação de 2 Factores</p>
+                      <p className="text-sm text-muted-foreground">
+                        Adicionar camada extra de segurança
+                      </p>
+                    </div>
+                    <Switch
+                      checked={twoFactor}
+                      onCheckedChange={setTwoFactor}
+                    />
+                  </div>
+                  <Separator />
+                  <Button variant="outline" className="w-full">
+                    <Lock className="h-4 w-4 mr-2" />
+                    Alterar Palavra-passe
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </DashboardLayout>
+  );
+};
+
+export default Configuracoes;

@@ -4,6 +4,17 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import Estudantes from "./pages/dashboard/Estudantes";
+import Professores from "./pages/dashboard/Professores";
+import Turmas from "./pages/dashboard/Turmas";
+import Avaliacoes from "./pages/dashboard/Avaliacoes";
+import Propinas from "./pages/dashboard/Propinas";
+import Horarios from "./pages/dashboard/Horarios";
+import Comunicados from "./pages/dashboard/Comunicados";
+import Relatorios from "./pages/dashboard/Relatorios";
+import Configuracoes from "./pages/dashboard/Configuracoes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -16,7 +27,17 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard/estudantes" element={<Estudantes />} />
+          <Route path="/dashboard/professores" element={<Professores />} />
+          <Route path="/dashboard/turmas" element={<Turmas />} />
+          <Route path="/dashboard/avaliacoes" element={<Avaliacoes />} />
+          <Route path="/dashboard/propinas" element={<Propinas />} />
+          <Route path="/dashboard/horarios" element={<Horarios />} />
+          <Route path="/dashboard/comunicados" element={<Comunicados />} />
+          <Route path="/dashboard/relatorios" element={<Relatorios />} />
+          <Route path="/dashboard/configuracoes" element={<Configuracoes />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -10,6 +10,7 @@ import {
   Calendar,
   Clock,
   AlertCircle,
+  Send,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import NovaMatriculaModal from "@/components/modals/NovaMatriculaModal";
 import RegistarPagamentoModal from "@/components/modals/RegistarPagamentoModal";
+import EnviarComunicadoModal from "@/components/modals/EnviarComunicadoModal";
 
 const stats = [
   {
@@ -76,12 +78,15 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [isMatriculaModalOpen, setIsMatriculaModalOpen] = useState(false);
   const [isPagamentoModalOpen, setIsPagamentoModalOpen] = useState(false);
+  const [isComunicadoModalOpen, setIsComunicadoModalOpen] = useState(false);
 
   const handleQuickAction = (href: string, modalType?: string) => {
     if (modalType === "matricula") {
       setIsMatriculaModalOpen(true);
     } else if (modalType === "pagamento") {
       setIsPagamentoModalOpen(true);
+    } else if (modalType === "comunicado") {
+      setIsComunicadoModalOpen(true);
     } else {
       navigate(href);
     }
@@ -314,7 +319,7 @@ const Dashboard = () => {
                   { label: "Nova Matrícula", icon: Users, href: "/dashboard/estudantes", modalType: "matricula" },
                   { label: "Lançar Notas", icon: GraduationCap, href: "/dashboard/avaliacoes", modalType: undefined },
                   { label: "Registar Pagamento", icon: CreditCard, href: "/dashboard/propinas", modalType: "pagamento" },
-                  { label: "Enviar Comunicado", icon: Calendar, href: "/dashboard/comunicados", modalType: undefined },
+                  { label: "Enviar Comunicado", icon: Send, href: "/dashboard/comunicados", modalType: "comunicado" },
                 ].map((action, index) => (
                   <Button
                     key={index}
@@ -340,6 +345,11 @@ const Dashboard = () => {
       <RegistarPagamentoModal
         open={isPagamentoModalOpen}
         onOpenChange={setIsPagamentoModalOpen}
+      />
+
+      <EnviarComunicadoModal
+        open={isComunicadoModalOpen}
+        onOpenChange={setIsComunicadoModalOpen}
       />
     </DashboardLayout>
   );

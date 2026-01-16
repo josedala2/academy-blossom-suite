@@ -13,8 +13,10 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
+  ClipboardCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import LancarAssiduidadeModal from "@/components/modals/LancarAssiduidadeModal";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -247,6 +249,7 @@ const Turmas = () => {
   const [isEstudantesOpen, setIsEstudantesOpen] = useState(false);
   const [isHorarioOpen, setIsHorarioOpen] = useState(false);
   const [isAssiduidadeOpen, setIsAssiduidadeOpen] = useState(false);
+  const [isLancarAssiduidadeOpen, setIsLancarAssiduidadeOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null);
 
   // Form state for new/edit class
@@ -309,6 +312,11 @@ const Turmas = () => {
   const handleVerAssiduidade = (cls: ClassItem) => {
     setSelectedClass(cls);
     setIsAssiduidadeOpen(true);
+  };
+
+  const handleLancarAssiduidade = (cls: ClassItem) => {
+    setSelectedClass(cls);
+    setIsLancarAssiduidadeOpen(true);
   };
 
   const handleSaveNewTurma = () => {
@@ -546,8 +554,11 @@ const Turmas = () => {
                     <Clock className="h-4 w-4 mr-1" />
                     Horário
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleVerAssiduidade(cls)}>
+                  <Button variant="outline" size="sm" onClick={() => handleVerAssiduidade(cls)} title="Ver Assiduidade">
                     <CalendarDays className="h-4 w-4" />
+                  </Button>
+                  <Button size="sm" onClick={() => handleLancarAssiduidade(cls)} title="Lançar Assiduidade">
+                    <ClipboardCheck className="h-4 w-4" />
                   </Button>
                 </div>
               </CardContent>
@@ -1070,6 +1081,14 @@ const Turmas = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Modal Lançar Assiduidade */}
+      <LancarAssiduidadeModal
+        open={isLancarAssiduidadeOpen}
+        onOpenChange={setIsLancarAssiduidadeOpen}
+        selectedClass={selectedClass}
+        students={sampleStudents}
+      />
     </DashboardLayout>
   );
 };

@@ -18,6 +18,7 @@ import {
   Bell,
   Search,
   User,
+  Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,7 @@ interface DashboardLayoutProps {
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Painel", href: "/dashboard" },
+  { icon: Building2, label: "Secretaria", href: "/dashboard/secretaria" },
   { icon: Users, label: "Estudantes", href: "/dashboard/estudantes" },
   { icon: GraduationCap, label: "Professores", href: "/dashboard/professores" },
   { icon: BookOpen, label: "Turmas", href: "/dashboard/turmas" },

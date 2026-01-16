@@ -20,6 +20,8 @@ import PreRegistos from "./pages/dashboard/secretaria/PreRegistos";
 import Visitantes from "./pages/dashboard/secretaria/Visitantes";
 import SecretariaEstudantes from "./pages/dashboard/secretaria/Estudantes";
 import SecretariaEncarregados from "./pages/dashboard/secretaria/Encarregados";
+import SecretariaDocumentos from "./pages/dashboard/secretaria/Documentos";
+import SecretariaTemplates from "./pages/dashboard/secretaria/Templates";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +50,8 @@ const App = () => (
           <Route path="/dashboard/secretaria/visitantes" element={<Visitantes />} />
           <Route path="/dashboard/secretaria/estudantes" element={<SecretariaEstudantes />} />
           <Route path="/dashboard/secretaria/encarregados" element={<SecretariaEncarregados />} />
+          <Route path="/dashboard/secretaria/documentos" element={<SecretariaDocumentos />} />
+          <Route path="/dashboard/secretaria/templates" element={<SecretariaTemplates />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

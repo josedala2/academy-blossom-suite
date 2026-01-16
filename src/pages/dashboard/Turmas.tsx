@@ -14,9 +14,11 @@ import {
   XCircle,
   AlertCircle,
   ClipboardCheck,
+  History,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LancarAssiduidadeModal from "@/components/modals/LancarAssiduidadeModal";
+import HistoricoAssiduidadeModal from "@/components/modals/HistoricoAssiduidadeModal";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -250,6 +252,7 @@ const Turmas = () => {
   const [isHorarioOpen, setIsHorarioOpen] = useState(false);
   const [isAssiduidadeOpen, setIsAssiduidadeOpen] = useState(false);
   const [isLancarAssiduidadeOpen, setIsLancarAssiduidadeOpen] = useState(false);
+  const [isHistoricoAssiduidadeOpen, setIsHistoricoAssiduidadeOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null);
 
   // Form state for new/edit class
@@ -317,6 +320,11 @@ const Turmas = () => {
   const handleLancarAssiduidade = (cls: ClassItem) => {
     setSelectedClass(cls);
     setIsLancarAssiduidadeOpen(true);
+  };
+
+  const handleHistoricoAssiduidade = (cls: ClassItem) => {
+    setSelectedClass(cls);
+    setIsHistoricoAssiduidadeOpen(true);
   };
 
   const handleSaveNewTurma = () => {
@@ -556,6 +564,9 @@ const Turmas = () => {
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => handleVerAssiduidade(cls)} title="Ver Assiduidade">
                     <CalendarDays className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleHistoricoAssiduidade(cls)} title="Histórico de Assiduidade">
+                    <History className="h-4 w-4" />
                   </Button>
                   <Button size="sm" onClick={() => handleLancarAssiduidade(cls)} title="Lançar Assiduidade">
                     <ClipboardCheck className="h-4 w-4" />
@@ -1088,6 +1099,13 @@ const Turmas = () => {
         onOpenChange={setIsLancarAssiduidadeOpen}
         selectedClass={selectedClass}
         students={sampleStudents}
+      />
+
+      {/* Modal Histórico Assiduidade */}
+      <HistoricoAssiduidadeModal
+        open={isHistoricoAssiduidadeOpen}
+        onOpenChange={setIsHistoricoAssiduidadeOpen}
+        selectedClass={selectedClass}
       />
     </DashboardLayout>
   );

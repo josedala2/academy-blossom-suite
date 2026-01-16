@@ -307,10 +307,38 @@ const Configuracoes = () => {
                   Administrar perfis e permissões
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Funcionalidade em desenvolvimento...
-                </p>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4">
+                  {[
+                    { nome: "Admin Principal", email: "admin@sge.ao", perfil: "Administrador", estado: "Activo" },
+                    { nome: "Maria Fernandes", email: "m.fernandes@sge.ao", perfil: "Secretária", estado: "Activo" },
+                    { nome: "João Cardoso", email: "j.cardoso@sge.ao", perfil: "Professor", estado: "Activo" },
+                    { nome: "Ana Neto", email: "a.neto@sge.ao", perfil: "Coordenador", estado: "Inactivo" },
+                  ].map((user, i) => (
+                    <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          <User className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{user.nome}</p>
+                          <p className="text-sm text-muted-foreground">{user.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className={`px-2 py-1 text-xs rounded ${user.estado === "Activo" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}>
+                          {user.estado}
+                        </span>
+                        <span className="text-sm text-muted-foreground">{user.perfil}</span>
+                        <Button variant="ghost" size="sm">Editar</Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <Button className="w-full">
+                  <Users className="h-4 w-4 mr-2" />
+                  Adicionar Utilizador
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>

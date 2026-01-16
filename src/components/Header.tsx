@@ -40,11 +40,11 @@ const Header = () => {
         <div className="container flex h-16 items-center justify-between">
           {/* Logo */}
           <a href="#" className="flex items-center justify-center group">
-            <img 
-              src={logoSGE} 
-              alt="SGE - Sistema de Gestão Escolar" 
+            <img
+              src={logoSGE}
+              alt="SGE - Sistema de Gestão Escolar"
               className="h-12 w-auto transition-transform group-hover:scale-105"
-              style={{ background: 'transparent' }}
+              style={{ background: 'transparent', filter: 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.8))' }}
             />
           </a>
 

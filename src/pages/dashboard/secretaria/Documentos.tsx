@@ -100,9 +100,14 @@ const documentosEmitidos = [
   },
 ];
 
+// Tipos de documento conforme Decreto Presidencial n.º 227/25
 const tiposDocumento = [
   { value: "declaracao_matricula", label: "Declaração de Matrícula", requerAprovacao: false },
   { value: "declaracao_frequencia", label: "Declaração de Frequência", requerAprovacao: false },
+  { value: "certificado_habilitacoes", label: "Certificado de Habilitações", requerAprovacao: true },
+  { value: "diploma", label: "Diploma", requerAprovacao: true },
+  { value: "guia_transferencia", label: "Guia de Transferência", requerAprovacao: true },
+  { value: "historico_escolar", label: "Histórico Escolar", requerAprovacao: true },
   { value: "declaracao_simples", label: "Declaração Simples", requerAprovacao: true },
   { value: "atestado", label: "Atestado Administrativo", requerAprovacao: true },
 ];

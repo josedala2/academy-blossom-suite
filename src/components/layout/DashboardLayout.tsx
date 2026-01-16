@@ -74,7 +74,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           {/* Logo */}
           <div className="flex h-16 items-center justify-between px-4 border-b border-sidebar-border">
             <Link to="/dashboard" className="flex items-center gap-2">
-              <img src={logoSGE} alt="SGE" className="h-10 w-auto brightness-0 invert" />
+              <img src={logoSGE} alt="SGE" className="h-10 w-auto" />
             </Link>
             <button
               className="lg:hidden p-2 rounded-md text-sidebar-foreground hover:bg-sidebar-accent"

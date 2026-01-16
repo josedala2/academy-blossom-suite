@@ -15,6 +15,11 @@ import Horarios from "./pages/dashboard/Horarios";
 import Comunicados from "./pages/dashboard/Comunicados";
 import Relatorios from "./pages/dashboard/Relatorios";
 import Configuracoes from "./pages/dashboard/Configuracoes";
+import Secretaria from "./pages/dashboard/Secretaria";
+import PreRegistos from "./pages/dashboard/secretaria/PreRegistos";
+import Visitantes from "./pages/dashboard/secretaria/Visitantes";
+import SecretariaEstudantes from "./pages/dashboard/secretaria/Estudantes";
+import SecretariaEncarregados from "./pages/dashboard/secretaria/Encarregados";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +43,11 @@ const App = () => (
           <Route path="/dashboard/comunicados" element={<Comunicados />} />
           <Route path="/dashboard/relatorios" element={<Relatorios />} />
           <Route path="/dashboard/configuracoes" element={<Configuracoes />} />
+          <Route path="/dashboard/secretaria" element={<Secretaria />} />
+          <Route path="/dashboard/secretaria/pre-registos" element={<PreRegistos />} />
+          <Route path="/dashboard/secretaria/visitantes" element={<Visitantes />} />
+          <Route path="/dashboard/secretaria/estudantes" element={<SecretariaEstudantes />} />
+          <Route path="/dashboard/secretaria/encarregados" element={<SecretariaEncarregados />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

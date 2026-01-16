@@ -33,6 +33,7 @@ import VerPerfilProfessorModal from "@/components/modals/VerPerfilProfessorModal
 import EditarProfessorModal from "@/components/modals/EditarProfessorModal";
 import EnviarEmailProfessorModal from "@/components/modals/EnviarEmailProfessorModal";
 import NovoProfessorModal from "@/components/modals/NovoProfessorModal";
+import VerHorarioProfessorModal from "@/components/modals/VerHorarioProfessorModal";
 
 interface Teacher {
   id: number;
@@ -111,6 +112,7 @@ const Professores = () => {
   const [isEditarModalOpen, setIsEditarModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [isNovoModalOpen, setIsNovoModalOpen] = useState(false);
+  const [isHorarioModalOpen, setIsHorarioModalOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
 
   const filteredTeachers = teachers.filter((teacher) => {
@@ -135,6 +137,11 @@ const Professores = () => {
   const handleEnviarEmail = (teacher: Teacher) => {
     setSelectedTeacher(teacher);
     setIsEmailModalOpen(true);
+  };
+
+  const handleVerHorario = (teacher: Teacher) => {
+    setSelectedTeacher(teacher);
+    setIsHorarioModalOpen(true);
   };
 
   const handleSaveTeacher = (data: {
@@ -365,7 +372,11 @@ const Professores = () => {
                   >
                     {teacher.status === "active" ? "Activo" : "Inactivo"}
                   </Badge>
-                  <Button variant="ghost" size="sm">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => handleVerHorario(teacher)}
+                  >
                     <BookOpen className="h-4 w-4 mr-1" />
                     Ver Horário
                   </Button>
@@ -401,6 +412,12 @@ const Professores = () => {
         isOpen={isNovoModalOpen}
         onClose={() => setIsNovoModalOpen(false)}
         onSave={handleAddTeacher}
+      />
+
+      <VerHorarioProfessorModal
+        isOpen={isHorarioModalOpen}
+        onClose={() => setIsHorarioModalOpen(false)}
+        teacher={selectedTeacher}
       />
     </DashboardLayout>
   );

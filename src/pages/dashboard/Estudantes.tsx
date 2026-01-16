@@ -44,6 +44,7 @@ import NovaMatriculaModal from "@/components/modals/NovaMatriculaModal";
 import VerPerfilEstudanteModal from "@/components/modals/VerPerfilEstudanteModal";
 import EditarEstudanteModal from "@/components/modals/EditarEstudanteModal";
 import EnviarEmailEstudanteModal from "@/components/modals/EnviarEmailEstudanteModal";
+import ConfirmarEliminarEstudanteModal from "@/components/modals/ConfirmarEliminarEstudanteModal";
 import { useToast } from "@/hooks/use-toast";
 
 interface Student {
@@ -129,6 +130,7 @@ const Estudantes = () => {
   const [isPerfilModalOpen, setIsPerfilModalOpen] = useState(false);
   const [isEditarModalOpen, setIsEditarModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [isEliminarModalOpen, setIsEliminarModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [studentsList, setStudentsList] = useState<Student[]>(students);
 
@@ -156,10 +158,23 @@ const Estudantes = () => {
     setIsEmailModalOpen(true);
   };
 
+  const handleEliminar = (student: Student) => {
+    setSelectedStudent(student);
+    setIsEliminarModalOpen(true);
+  };
+
   const handleSaveStudent = (updatedStudent: Student) => {
     setStudentsList((prev) =>
       prev.map((s) => (s.id === updatedStudent.id ? updatedStudent : s))
     );
+  };
+
+  const handleConfirmDelete = (studentId: number) => {
+    setStudentsList((prev) => prev.filter((s) => s.id !== studentId));
+    toast({
+      title: "Estudante eliminado",
+      description: "O estudante foi removido do sistema com sucesso.",
+    });
   };
 
   return (
@@ -217,6 +232,14 @@ const Estudantes = () => {
           isOpen={isEmailModalOpen}
           onClose={() => setIsEmailModalOpen(false)}
           student={selectedStudent}
+        />
+
+        {/* Modal Confirmar Eliminar */}
+        <ConfirmarEliminarEstudanteModal
+          isOpen={isEliminarModalOpen}
+          onClose={() => setIsEliminarModalOpen(false)}
+          student={selectedStudent}
+          onConfirm={handleConfirmDelete}
         />
 
         {/* Stats Cards */}
@@ -412,7 +435,10 @@ const Estudantes = () => {
                             Enviar Email
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive">
+                          <DropdownMenuItem 
+                            className="text-destructive"
+                            onClick={() => handleEliminar(student)}
+                          >
                             <Trash2 className="h-4 w-4 mr-2" />
                             Eliminar
                           </DropdownMenuItem>

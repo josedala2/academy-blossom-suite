@@ -33,6 +33,9 @@ import {
 } from "@/components/ui/table";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import RegistarPagamentoModal from "@/components/modals/RegistarPagamentoModal";
+import GerarRecibosModal from "@/components/modals/GerarRecibosModal";
+import EnviarLembretesModal from "@/components/modals/EnviarLembretesModal";
+import RelatorioMensalModal from "@/components/modals/RelatorioMensalModal";
 
 const payments = [
   {
@@ -103,6 +106,9 @@ const Propinas = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [isPagamentoModalOpen, setIsPagamentoModalOpen] = useState(false);
+  const [isRecibosModalOpen, setIsRecibosModalOpen] = useState(false);
+  const [isLembretesModalOpen, setIsLembretesModalOpen] = useState(false);
+  const [isRelatorioModalOpen, setIsRelatorioModalOpen] = useState(false);
 
   const filteredPayments = payments.filter((payment) => {
     const matchesSearch = payment.student
@@ -379,15 +385,27 @@ const Propinas = () => {
                 <CardTitle className="text-base">Acções Rápidas</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button variant="outline" className="w-full justify-start">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => setIsRecibosModalOpen(true)}
+                >
                   <Receipt className="h-4 w-4 mr-2" />
                   Gerar Recibos
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => setIsLembretesModalOpen(true)}
+                >
                   <Send className="h-4 w-4 mr-2" />
                   Enviar Lembretes
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => setIsRelatorioModalOpen(true)}
+                >
                   <Download className="h-4 w-4 mr-2" />
                   Relatório Mensal
                 </Button>
@@ -400,6 +418,24 @@ const Propinas = () => {
         <RegistarPagamentoModal
           open={isPagamentoModalOpen}
           onOpenChange={setIsPagamentoModalOpen}
+        />
+
+        {/* Modal Gerar Recibos */}
+        <GerarRecibosModal
+          open={isRecibosModalOpen}
+          onOpenChange={setIsRecibosModalOpen}
+        />
+
+        {/* Modal Enviar Lembretes */}
+        <EnviarLembretesModal
+          open={isLembretesModalOpen}
+          onOpenChange={setIsLembretesModalOpen}
+        />
+
+        {/* Modal Relatório Mensal */}
+        <RelatorioMensalModal
+          open={isRelatorioModalOpen}
+          onOpenChange={setIsRelatorioModalOpen}
         />
       </div>
     </DashboardLayout>

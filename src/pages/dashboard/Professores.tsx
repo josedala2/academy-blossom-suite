@@ -32,6 +32,7 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import VerPerfilProfessorModal from "@/components/modals/VerPerfilProfessorModal";
 import EditarProfessorModal from "@/components/modals/EditarProfessorModal";
 import EnviarEmailProfessorModal from "@/components/modals/EnviarEmailProfessorModal";
+import NovoProfessorModal from "@/components/modals/NovoProfessorModal";
 
 interface Teacher {
   id: number;
@@ -109,6 +110,7 @@ const Professores = () => {
   const [isPerfilModalOpen, setIsPerfilModalOpen] = useState(false);
   const [isEditarModalOpen, setIsEditarModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [isNovoModalOpen, setIsNovoModalOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
 
   const filteredTeachers = teachers.filter((teacher) => {
@@ -153,6 +155,10 @@ const Professores = () => {
     }
   };
 
+  const handleAddTeacher = (data: Teacher) => {
+    setTeachers((prev) => [data, ...prev]);
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -171,7 +177,7 @@ const Professores = () => {
               <Download className="h-4 w-4 mr-2" />
               Exportar
             </Button>
-            <Button>
+            <Button onClick={() => setIsNovoModalOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Novo Professor
             </Button>
@@ -389,6 +395,12 @@ const Professores = () => {
         isOpen={isEmailModalOpen}
         onClose={() => setIsEmailModalOpen(false)}
         teacher={selectedTeacher}
+      />
+
+      <NovoProfessorModal
+        isOpen={isNovoModalOpen}
+        onClose={() => setIsNovoModalOpen(false)}
+        onSave={handleAddTeacher}
       />
     </DashboardLayout>
   );

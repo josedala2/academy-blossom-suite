@@ -141,10 +141,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Top header */}
-        <header className="sticky top-0 z-30 h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6">
-          <div className="flex items-center gap-4">
+        <header className="sticky top-0 z-30 h-14 sm:h-16 bg-card border-b border-border flex items-center justify-between px-3 sm:px-4 lg:px-6">
+          <div className="flex items-center gap-2 sm:gap-4">
             <button
-              className="lg:hidden p-2 rounded-md hover:bg-muted"
+              className="lg:hidden p-1.5 sm:p-2 rounded-md hover:bg-muted"
               onClick={() => setSidebarOpen(true)}
             >
               <Menu className="h-5 w-5" />
@@ -153,12 +153,12 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Pesquisar estudantes, professores..."
-                className="w-80 pl-10"
+                className="w-60 lg:w-80 pl-10"
               />
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3">
             {/* Notifications */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -218,7 +218,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         </header>
 
         {/* Page content */}
-        <main className="p-4 lg:p-6">{children}</main>
+        <main className="p-3 sm:p-4 lg:p-6">{children}</main>
       </div>
     </div>
   );

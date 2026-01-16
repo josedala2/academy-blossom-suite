@@ -371,63 +371,63 @@ const Turmas = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Page Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
           <div>
-            <h1 className="text-2xl font-display font-bold text-foreground">
+            <h1 className="text-xl sm:text-2xl font-display font-bold text-foreground">
               Gestão de Turmas
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground">
               Gerir turmas, salas e atribuições de professores
             </p>
           </div>
-          <Button onClick={() => setIsNovaTurmaOpen(true)}>
+          <Button onClick={() => setIsNovaTurmaOpen(true)} className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Nova Turma
           </Button>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardHeader className="pb-1 sm:pb-2 p-3 sm:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
                 Total Turmas
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">32</div>
+            <CardContent className="p-3 sm:p-6 pt-0">
+              <div className="text-xl sm:text-2xl font-bold">32</div>
             </CardContent>
           </Card>
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardHeader className="pb-1 sm:pb-2 p-3 sm:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
                 Total Estudantes
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary">{totalStudents}</div>
+            <CardContent className="p-3 sm:p-6 pt-0">
+              <div className="text-xl sm:text-2xl font-bold text-primary">{totalStudents}</div>
             </CardContent>
           </Card>
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardHeader className="pb-1 sm:pb-2 p-3 sm:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
                 Capacidade Total
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-secondary">{totalCapacity}</div>
+            <CardContent className="p-3 sm:p-6 pt-0">
+              <div className="text-xl sm:text-2xl font-bold text-secondary">{totalCapacity}</div>
             </CardContent>
           </Card>
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardHeader className="pb-1 sm:pb-2 p-3 sm:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
                 Taxa Ocupação
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-accent">
+            <CardContent className="p-3 sm:p-6 pt-0">
+              <div className="text-xl sm:text-2xl font-bold text-accent">
                 {Math.round((totalStudents / totalCapacity) * 100)}%
               </div>
             </CardContent>
@@ -435,48 +435,50 @@ const Turmas = () => {
         </div>
 
         <Tabs defaultValue="turmas" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="turmas">Turmas</TabsTrigger>
-            <TabsTrigger value="assiduidade">Mapa de Assiduidade</TabsTrigger>
+          <TabsList className="w-full sm:w-auto">
+            <TabsTrigger value="turmas" className="text-xs sm:text-sm flex-1 sm:flex-none">Turmas</TabsTrigger>
+            <TabsTrigger value="assiduidade" className="text-xs sm:text-sm flex-1 sm:flex-none">Mapa de Assiduidade</TabsTrigger>
           </TabsList>
 
           <TabsContent value="turmas" className="space-y-4">
             {/* Filters */}
             <Card>
-              <CardContent className="pt-6">
-                <div className="flex flex-col md:flex-row gap-4">
+              <CardContent className="p-3 sm:pt-6 sm:p-6">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
                   <div className="flex-1 relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Pesquisar turma..."
-                      className="pl-10"
+                      className="pl-10 h-9 sm:h-10 text-sm"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
                   </div>
-                  <Select value={selectedLevel} onValueChange={setSelectedLevel}>
-                    <SelectTrigger className="w-full md:w-40">
-                      <SelectValue placeholder="Classe" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas</SelectItem>
-                      <SelectItem value="8ª">8ª Classe</SelectItem>
-                      <SelectItem value="9ª">9ª Classe</SelectItem>
-                      <SelectItem value="10ª">10ª Classe</SelectItem>
-                      <SelectItem value="11ª">11ª Classe</SelectItem>
-                      <SelectItem value="12ª">12ª Classe</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={selectedShift} onValueChange={setSelectedShift}>
-                    <SelectTrigger className="w-full md:w-40">
-                      <SelectValue placeholder="Turno" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="Manhã">Manhã</SelectItem>
-                      <SelectItem value="Tarde">Tarde</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex gap-2">
+                    <Select value={selectedLevel} onValueChange={setSelectedLevel}>
+                      <SelectTrigger className="w-full sm:w-32 md:w-40 h-9 sm:h-10 text-sm">
+                        <SelectValue placeholder="Classe" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas</SelectItem>
+                        <SelectItem value="8ª">8ª Classe</SelectItem>
+                        <SelectItem value="9ª">9ª Classe</SelectItem>
+                        <SelectItem value="10ª">10ª Classe</SelectItem>
+                        <SelectItem value="11ª">11ª Classe</SelectItem>
+                        <SelectItem value="12ª">12ª Classe</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={selectedShift} onValueChange={setSelectedShift}>
+                      <SelectTrigger className="w-full sm:w-32 md:w-40 h-9 sm:h-10 text-sm">
+                        <SelectValue placeholder="Turno" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos</SelectItem>
+                        <SelectItem value="Manhã">Manhã</SelectItem>
+                        <SelectItem value="Tarde">Tarde</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -553,24 +555,28 @@ const Turmas = () => {
                   <p className="text-sm font-medium">{cls.director}</p>
                 </div>
 
-                <div className="flex gap-2 pt-2">
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => handleVerEstudantes(cls)}>
-                    <Users className="h-4 w-4 mr-1" />
-                    Estudantes
+                <div className="flex flex-wrap gap-2 pt-2">
+                  <Button variant="outline" size="sm" className="flex-1 min-w-[80px] text-xs sm:text-sm" onClick={() => handleVerEstudantes(cls)}>
+                    <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                    <span className="hidden xs:inline">Estudantes</span>
+                    <span className="xs:hidden">Est.</span>
                   </Button>
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => handleVerHorario(cls)}>
-                    <Clock className="h-4 w-4 mr-1" />
-                    Horário
+                  <Button variant="outline" size="sm" className="flex-1 min-w-[70px] text-xs sm:text-sm" onClick={() => handleVerHorario(cls)}>
+                    <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                    <span className="hidden xs:inline">Horário</span>
+                    <span className="xs:hidden">Hor.</span>
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleVerAssiduidade(cls)} title="Ver Assiduidade">
-                    <CalendarDays className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleHistoricoAssiduidade(cls)} title="Histórico de Assiduidade">
-                    <History className="h-4 w-4" />
-                  </Button>
-                  <Button size="sm" onClick={() => handleLancarAssiduidade(cls)} title="Lançar Assiduidade">
-                    <ClipboardCheck className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-1 sm:gap-2">
+                    <Button variant="outline" size="sm" className="px-2 sm:px-3" onClick={() => handleVerAssiduidade(cls)} title="Ver Assiduidade">
+                      <CalendarDays className="h-3 w-3 sm:h-4 sm:w-4" />
+                    </Button>
+                    <Button variant="outline" size="sm" className="px-2 sm:px-3" onClick={() => handleHistoricoAssiduidade(cls)} title="Histórico de Assiduidade">
+                      <History className="h-3 w-3 sm:h-4 sm:w-4" />
+                    </Button>
+                    <Button size="sm" className="px-2 sm:px-3" onClick={() => handleLancarAssiduidade(cls)} title="Lançar Assiduidade">
+                      <ClipboardCheck className="h-3 w-3 sm:h-4 sm:w-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

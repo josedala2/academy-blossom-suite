@@ -189,36 +189,36 @@ const LancarAssiduidadeModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-primary" />
-            Lançar Assiduidade - {selectedClass?.name}
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+            <span className="truncate">Lançar Assiduidade - {selectedClass?.name}</span>
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs sm:text-sm">
             Registe a presença dos alunos para a aula
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/30 rounded-lg">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 p-3 sm:p-4 bg-muted/30 rounded-lg">
             <div>
-              <Label className="text-sm font-medium">Data</Label>
+              <Label className="text-xs sm:text-sm font-medium">Data</Label>
               <Input
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="mt-1"
+                className="mt-1 h-9 sm:h-10 text-sm"
               />
             </div>
             <div>
-              <Label className="text-sm font-medium">Disciplina</Label>
+              <Label className="text-xs sm:text-sm font-medium">Disciplina</Label>
               <Select
                 value={selectedDisciplina}
                 onValueChange={setSelectedDisciplina}
               >
-                <SelectTrigger className="mt-1">
+                <SelectTrigger className="mt-1 h-9 sm:h-10 text-sm">
                   <SelectValue placeholder="Seleccione" />
                 </SelectTrigger>
                 <SelectContent>
@@ -230,10 +230,10 @@ const LancarAssiduidadeModal = ({
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label className="text-sm font-medium">Tempo Lectivo</Label>
+            <div className="sm:col-span-2 md:col-span-1">
+              <Label className="text-xs sm:text-sm font-medium">Tempo Lectivo</Label>
               <Select value={selectedTempo} onValueChange={setSelectedTempo}>
-                <SelectTrigger className="mt-1">
+                <SelectTrigger className="mt-1 h-9 sm:h-10 text-sm">
                   <SelectValue placeholder="Seleccione" />
                 </SelectTrigger>
                 <SelectContent>
@@ -249,50 +249,50 @@ const LancarAssiduidadeModal = ({
           </div>
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-4 gap-3">
-            <div className="p-3 bg-primary/10 rounded-lg text-center">
-              <p className="text-xl font-bold text-primary">{presentCount}</p>
-              <p className="text-xs text-muted-foreground">Presentes</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+            <div className="p-2 sm:p-3 bg-primary/10 rounded-lg text-center">
+              <p className="text-lg sm:text-xl font-bold text-primary">{presentCount}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Presentes</p>
             </div>
-            <div className="p-3 bg-destructive/10 rounded-lg text-center">
-              <p className="text-xl font-bold text-destructive">{absentCount}</p>
-              <p className="text-xs text-muted-foreground">Faltas</p>
+            <div className="p-2 sm:p-3 bg-destructive/10 rounded-lg text-center">
+              <p className="text-lg sm:text-xl font-bold text-destructive">{absentCount}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Faltas</p>
             </div>
-            <div className="p-3 bg-secondary/10 rounded-lg text-center">
-              <p className="text-xl font-bold text-secondary">
+            <div className="p-2 sm:p-3 bg-secondary/10 rounded-lg text-center">
+              <p className="text-lg sm:text-xl font-bold text-secondary">
                 {attendanceRecords.filter((r) => r.status === "justificada").length}
               </p>
-              <p className="text-xs text-muted-foreground">Justificadas</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Justificadas</p>
             </div>
-            <div className="p-3 bg-accent/10 rounded-lg text-center">
-              <p className="text-xl font-bold text-accent">
+            <div className="p-2 sm:p-3 bg-accent/10 rounded-lg text-center">
+              <p className="text-lg sm:text-xl font-bold text-accent">
                 {attendanceRecords.filter((r) => r.status === "atraso").length}
               </p>
-              <p className="text-xs text-muted-foreground">Atrasos</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Atrasos</p>
             </div>
           </div>
 
           {/* Select All */}
-          <div className="flex items-center gap-2 p-3 border rounded-lg">
+          <div className="flex items-center gap-2 p-2 sm:p-3 border rounded-lg">
             <Checkbox
               id="selectAll"
               checked={selectAll}
               onCheckedChange={(checked) => handleSelectAll(!!checked)}
             />
-            <Label htmlFor="selectAll" className="cursor-pointer">
+            <Label htmlFor="selectAll" className="cursor-pointer text-sm">
               Marcar todos como presentes
             </Label>
           </div>
 
           {/* Students Table */}
-          <div className="border rounded-lg overflow-hidden">
+          <div className="border rounded-lg overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50">
-                  <TableHead className="w-20">Nº</TableHead>
-                  <TableHead>Nome do Aluno</TableHead>
-                  <TableHead className="w-40">Estado</TableHead>
-                  <TableHead className="w-48">Observação</TableHead>
+                  <TableHead className="w-16 sm:w-20 text-xs sm:text-sm">Nº</TableHead>
+                  <TableHead className="min-w-[150px] text-xs sm:text-sm">Nome do Aluno</TableHead>
+                  <TableHead className="w-28 sm:w-40 text-xs sm:text-sm">Estado</TableHead>
+                  <TableHead className="w-32 sm:w-48 text-xs sm:text-sm hidden sm:table-cell">Observação</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -302,10 +302,10 @@ const LancarAssiduidadeModal = ({
                   );
                   return (
                     <TableRow key={student.id}>
-                      <TableCell className="font-mono text-sm">
+                      <TableCell className="font-mono text-xs sm:text-sm">
                         {student.numero}
                       </TableCell>
-                      <TableCell className="font-medium">{student.nome}</TableCell>
+                      <TableCell className="font-medium text-xs sm:text-sm">{student.nome}</TableCell>
                       <TableCell>
                         <Select
                           value={record?.status || "presente"}
@@ -313,38 +313,42 @@ const LancarAssiduidadeModal = ({
                             handleStatusChange(student.id, value as AttendanceStatus)
                           }
                         >
-                          <SelectTrigger className="h-8 text-xs">
+                          <SelectTrigger className="h-7 sm:h-8 text-[10px] sm:text-xs">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="presente">
                               <span className="flex items-center gap-1">
                                 <CheckCircle2 className="h-3 w-3 text-primary" />
-                                Presente
+                                <span className="hidden sm:inline">Presente</span>
+                                <span className="sm:hidden">P</span>
                               </span>
                             </SelectItem>
                             <SelectItem value="falta">
                               <span className="flex items-center gap-1">
                                 <XCircle className="h-3 w-3 text-destructive" />
-                                Falta
+                                <span className="hidden sm:inline">Falta</span>
+                                <span className="sm:hidden">F</span>
                               </span>
                             </SelectItem>
                             <SelectItem value="justificada">
                               <span className="flex items-center gap-1">
                                 <CheckCircle2 className="h-3 w-3 text-secondary" />
-                                Justificada
+                                <span className="hidden sm:inline">Justificada</span>
+                                <span className="sm:hidden">J</span>
                               </span>
                             </SelectItem>
                             <SelectItem value="atraso">
                               <span className="flex items-center gap-1">
                                 <Clock className="h-3 w-3 text-accent" />
-                                Atraso
+                                <span className="hidden sm:inline">Atraso</span>
+                                <span className="sm:hidden">A</span>
                               </span>
                             </SelectItem>
                           </SelectContent>
                         </Select>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden sm:table-cell">
                         <Input
                           placeholder="Observação..."
                           className="h-8 text-xs"
@@ -362,11 +366,11 @@ const LancarAssiduidadeModal = ({
           </div>
         </div>
 
-        <DialogFooter className="mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="mt-4 flex-col sm:flex-row gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
             Cancelar
           </Button>
-          <Button onClick={handleSave}>
+          <Button onClick={handleSave} className="w-full sm:w-auto">
             <Save className="h-4 w-4 mr-2" />
             Guardar Assiduidade
           </Button>

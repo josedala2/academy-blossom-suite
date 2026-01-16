@@ -18,7 +18,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-
+import CriarHorarioModal from "@/components/modals/CriarHorarioModal";
+import { useToast } from "@/hooks/use-toast";
 const schedule = {
   "Segunda": [
     { time: "07:30 - 08:15", subject: "Matemática", teacher: "Prof. António", room: "Sala 101" },
@@ -77,9 +78,18 @@ const subjectColors: Record<string, string> = {
 const days = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
 
 const Horarios = () => {
+  const { toast } = useToast();
   const [selectedClass, setSelectedClass] = useState("10ª A");
   const [view, setView] = useState<"week" | "day">("week");
+  const [isCriarModalOpen, setIsCriarModalOpen] = useState(false);
 
+  const handleSaveSchedule = (scheduleData: { turma: string; semestre: string; entries: any[] }) => {
+    console.log("Novo horário criado:", scheduleData);
+    toast({
+      title: "Horário criado com sucesso!",
+      description: `Horário da turma ${scheduleData.turma} foi guardado.`,
+    });
+  };
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -98,12 +108,19 @@ const Horarios = () => {
               <Download className="h-4 w-4 mr-2" />
               Exportar PDF
             </Button>
-            <Button>
+            <Button onClick={() => setIsCriarModalOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Criar Horário
             </Button>
           </div>
         </div>
+
+        {/* Create Schedule Modal */}
+        <CriarHorarioModal
+          isOpen={isCriarModalOpen}
+          onClose={() => setIsCriarModalOpen(false)}
+          onSave={handleSaveSchedule}
+        />
 
         {/* Controls */}
         <Card>

@@ -10,6 +10,7 @@ import {
   Clock,
   AlertCircle,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -69,6 +70,8 @@ const pendingPayments = [
 ];
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -293,7 +296,7 @@ const Dashboard = () => {
             <CardContent>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { label: "Nova Matrícula", icon: Users, href: "/dashboard/estudantes/novo" },
+                  { label: "Nova Matrícula", icon: Users, href: "/dashboard/estudantes" },
                   { label: "Lançar Notas", icon: GraduationCap, href: "/dashboard/avaliacoes" },
                   { label: "Registar Pagamento", icon: CreditCard, href: "/dashboard/propinas" },
                   { label: "Enviar Comunicado", icon: Calendar, href: "/dashboard/comunicados" },
@@ -301,7 +304,8 @@ const Dashboard = () => {
                   <Button
                     key={index}
                     variant="outline"
-                    className="h-auto py-4 flex-col gap-2"
+                    className="h-auto py-4 flex-col gap-2 hover:border-primary hover:text-primary transition-colors"
+                    onClick={() => navigate(action.href)}
                   >
                     <action.icon className="h-6 w-6" />
                     <span className="text-sm">{action.label}</span>

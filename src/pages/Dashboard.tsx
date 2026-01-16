@@ -94,39 +94,41 @@ const Dashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Page Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
           <div>
-            <h1 className="text-2xl font-display font-bold text-foreground">
+            <h1 className="text-xl sm:text-2xl font-display font-bold text-foreground">
               Painel de Controlo
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground">
               Bem-vindo de volta! Aqui está o resumo da sua escola.
             </p>
           </div>
-          <div className="flex gap-3">
-            <Button variant="outline">
-              <Calendar className="h-4 w-4 mr-2" />
-              Janeiro 2026
+          <div className="flex gap-2 sm:gap-3">
+            <Button variant="outline" size="sm" className="text-xs sm:text-sm">
+              <Calendar className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="hidden xs:inline">Janeiro 2026</span>
+              <span className="xs:hidden">Jan 2026</span>
             </Button>
-            <Button onClick={() => setIsMatriculaModalOpen(true)}>
-              Nova Matrícula
-              <ArrowRight className="h-4 w-4 ml-2" />
+            <Button size="sm" className="text-xs sm:text-sm" onClick={() => setIsMatriculaModalOpen(true)}>
+              <span className="hidden sm:inline">Nova Matrícula</span>
+              <span className="sm:hidden">Matrícula</span>
+              <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
             </Button>
           </div>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
           {stats.map((stat, index) => (
             <Card key={index} className="card-hover">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-3 sm:p-6">
+                <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
                   {stat.title}
                 </CardTitle>
                 <div
-                  className={`h-10 w-10 rounded-lg flex items-center justify-center ${
+                  className={`h-8 w-8 sm:h-10 sm:w-10 rounded-lg flex items-center justify-center ${
                     stat.color === "primary"
                       ? "bg-primary/10 text-primary"
                       : stat.color === "secondary"
@@ -134,19 +136,19 @@ const Dashboard = () => {
                       : "bg-accent/10 text-accent"
                   }`}
                 >
-                  <stat.icon className="h-5 w-5" />
+                  <stat.icon className="h-4 w-4 sm:h-5 sm:w-5" />
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
+              <CardContent className="p-3 sm:p-6 pt-0">
+                <div className="text-lg sm:text-2xl font-bold">{stat.value}</div>
                 <div className="flex items-center gap-1 mt-1">
                   {stat.trend === "up" ? (
-                    <TrendingUp className="h-4 w-4 text-primary" />
+                    <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                   ) : stat.trend === "down" ? (
-                    <TrendingDown className="h-4 w-4 text-destructive" />
+                    <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4 text-destructive" />
                   ) : null}
                   <span
-                    className={`text-sm ${
+                    className={`text-[10px] sm:text-sm ${
                       stat.trend === "up"
                         ? "text-primary"
                         : stat.trend === "down"
@@ -154,7 +156,7 @@ const Dashboard = () => {
                         : "text-muted-foreground"
                     }`}
                   >
-                    {stat.change} este mês
+                    {stat.change} <span className="hidden sm:inline">este mês</span>
                   </span>
                 </div>
               </CardContent>

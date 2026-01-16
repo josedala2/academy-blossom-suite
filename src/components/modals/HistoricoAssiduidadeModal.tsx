@@ -242,39 +242,39 @@ const HistoricoAssiduidadeModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-5xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <History className="h-5 w-5 text-primary" />
-            Histórico de Assiduidade - {selectedClass?.name}
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <History className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+            <span className="truncate">Histórico de Assiduidade - {selectedClass?.name}</span>
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs sm:text-sm">
             Consulte todos os registos de assiduidade desta turma
           </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="registos" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="registos">Registos</TabsTrigger>
-            <TabsTrigger value="estatisticas">Estatísticas</TabsTrigger>
-            <TabsTrigger value="alunos">Por Aluno</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 h-9 sm:h-10">
+            <TabsTrigger value="registos" className="text-xs sm:text-sm">Registos</TabsTrigger>
+            <TabsTrigger value="estatisticas" className="text-xs sm:text-sm">Estatísticas</TabsTrigger>
+            <TabsTrigger value="alunos" className="text-xs sm:text-sm">Por Aluno</TabsTrigger>
           </TabsList>
 
           {/* Registos Tab */}
           <TabsContent value="registos" className="space-y-4">
             {/* Filters */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 p-4 bg-muted/30 rounded-lg">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 p-3 sm:p-4 bg-muted/30 rounded-lg">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Pesquisar..."
-                  className="pl-9"
+                  className="pl-9 h-9 sm:h-10 text-sm"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
               <Select value={selectedDisciplina} onValueChange={setSelectedDisciplina}>
-                <SelectTrigger>
+                <SelectTrigger className="h-9 sm:h-10 text-sm">
                   <SelectValue placeholder="Disciplina" />
                 </SelectTrigger>
                 <SelectContent>
@@ -290,45 +290,47 @@ const HistoricoAssiduidadeModal = ({
                 placeholder="Data início"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
+                className="h-9 sm:h-10 text-sm"
               />
               <Input
                 type="date"
                 placeholder="Data fim"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
+                className="h-9 sm:h-10 text-sm"
               />
             </div>
 
             {/* Stats Summary */}
-            <div className="grid grid-cols-5 gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
               <Card>
-                <CardContent className="p-3 text-center">
-                  <p className="text-lg font-bold text-primary">{filteredRegistos.length}</p>
-                  <p className="text-xs text-muted-foreground">Registos</p>
+                <CardContent className="p-2 sm:p-3 text-center">
+                  <p className="text-sm sm:text-lg font-bold text-primary">{filteredRegistos.length}</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Registos</p>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-3 text-center">
-                  <p className="text-lg font-bold text-primary">{totalPresentes}</p>
-                  <p className="text-xs text-muted-foreground">Presenças</p>
+                <CardContent className="p-2 sm:p-3 text-center">
+                  <p className="text-sm sm:text-lg font-bold text-primary">{totalPresentes}</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Presenças</p>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-3 text-center">
-                  <p className="text-lg font-bold text-destructive">{totalFaltas}</p>
-                  <p className="text-xs text-muted-foreground">Faltas</p>
+                <CardContent className="p-2 sm:p-3 text-center">
+                  <p className="text-sm sm:text-lg font-bold text-destructive">{totalFaltas}</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Faltas</p>
                 </CardContent>
               </Card>
-              <Card>
-                <CardContent className="p-3 text-center">
-                  <p className="text-lg font-bold text-secondary">{totalJustificadas}</p>
-                  <p className="text-xs text-muted-foreground">Justificadas</p>
+              <Card className="hidden sm:block">
+                <CardContent className="p-2 sm:p-3 text-center">
+                  <p className="text-sm sm:text-lg font-bold text-secondary">{totalJustificadas}</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Justificadas</p>
                 </CardContent>
               </Card>
-              <Card>
-                <CardContent className="p-3 text-center">
-                  <p className="text-lg font-bold text-accent">{taxaMedia}%</p>
-                  <p className="text-xs text-muted-foreground">Taxa Média</p>
+              <Card className="hidden sm:block">
+                <CardContent className="p-2 sm:p-3 text-center">
+                  <p className="text-sm sm:text-lg font-bold text-accent">{taxaMedia}%</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Taxa Média</p>
                 </CardContent>
               </Card>
             </div>

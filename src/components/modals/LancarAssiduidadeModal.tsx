@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +32,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Calendar, CheckCircle2, XCircle, Clock, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { sanitizeString } from "@/lib/validation";
 
 interface Student {
   id: number;
@@ -82,6 +94,15 @@ const disciplinas = [
   "TIC",
 ];
 
+// Schema de validação
+const assiduidadeFormSchema = z.object({
+  data: z.string().min(1, { message: "Data é obrigatória" }),
+  disciplina: z.string().min(1, { message: "Seleccione uma disciplina" }),
+  tempo: z.string().min(1, { message: "Seleccione o tempo lectivo" }),
+});
+
+type AssiduidadeFormData = z.infer<typeof assiduidadeFormSchema>;
+
 const LancarAssiduidadeModal = ({
   open,
   onOpenChange,
@@ -89,11 +110,6 @@ const LancarAssiduidadeModal = ({
   students,
 }: LancarAssiduidadeModalProps) => {
   const { toast } = useToast();
-  const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
-  const [selectedDisciplina, setSelectedDisciplina] = useState("");
-  const [selectedTempo, setSelectedTempo] = useState("");
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>(
     students.map((s) => ({
       studentId: s.id,
@@ -102,6 +118,15 @@ const LancarAssiduidadeModal = ({
     }))
   );
   const [selectAll, setSelectAll] = useState(true);
+
+  const form = useForm<AssiduidadeFormData>({
+    resolver: zodResolver(assiduidadeFormSchema),
+    defaultValues: {
+      data: new Date().toISOString().split("T")[0],
+      disciplina: "",
+      tempo: "",
+    },
+  });
 
   const handleStatusChange = (studentId: number, status: AttendanceStatus) => {
     setAttendanceRecords((prev) =>
@@ -114,7 +139,9 @@ const LancarAssiduidadeModal = ({
   const handleObservationChange = (studentId: number, observation: string) => {
     setAttendanceRecords((prev) =>
       prev.map((record) =>
-        record.studentId === studentId ? { ...record, observation } : record
+        record.studentId === studentId 
+          ? { ...record, observation: sanitizeString(observation) } 
+          : record
       )
     );
   };
@@ -129,16 +156,7 @@ const LancarAssiduidadeModal = ({
     );
   };
 
-  const handleSave = () => {
-    if (!selectedDisciplina || !selectedTempo) {
-      toast({
-        title: "Campos obrigatórios",
-        description: "Seleccione a disciplina e o tempo lectivo.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const onSubmit = (data: AssiduidadeFormData) => {
     const presentes = attendanceRecords.filter((r) => r.status === "presente").length;
     const faltas = attendanceRecords.filter((r) => r.status === "falta").length;
     const justificadas = attendanceRecords.filter((r) => r.status === "justificada").length;
@@ -200,181 +218,207 @@ const LancarAssiduidadeModal = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 sm:space-y-6">
-          {/* Filters */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 p-3 sm:p-4 bg-muted/30 rounded-lg">
-            <div>
-              <Label className="text-xs sm:text-sm font-medium">Data</Label>
-              <Input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="mt-1 h-9 sm:h-10 text-sm"
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6">
+            {/* Filters */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 p-3 sm:p-4 bg-muted/30 rounded-lg">
+              <FormField
+                control={form.control}
+                name="data"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs sm:text-sm font-medium">Data</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="date"
+                        {...field}
+                        className="mt-1 h-9 sm:h-10 text-sm"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="disciplina"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs sm:text-sm font-medium">Disciplina</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="mt-1 h-9 sm:h-10 text-sm">
+                          <SelectValue placeholder="Seleccione" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {disciplinas.map((d) => (
+                          <SelectItem key={d} value={d}>
+                            {d}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="tempo"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-2 md:col-span-1">
+                    <FormLabel className="text-xs sm:text-sm font-medium">Tempo Lectivo</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="mt-1 h-9 sm:h-10 text-sm">
+                          <SelectValue placeholder="Seleccione" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="1">1º Tempo (07:30 - 08:20)</SelectItem>
+                        <SelectItem value="2">2º Tempo (08:20 - 09:10)</SelectItem>
+                        <SelectItem value="3">3º Tempo (09:30 - 10:20)</SelectItem>
+                        <SelectItem value="4">4º Tempo (10:20 - 11:10)</SelectItem>
+                        <SelectItem value="5">5º Tempo (11:30 - 12:20)</SelectItem>
+                        <SelectItem value="6">6º Tempo (12:20 - 13:10)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
-            <div>
-              <Label className="text-xs sm:text-sm font-medium">Disciplina</Label>
-              <Select
-                value={selectedDisciplina}
-                onValueChange={setSelectedDisciplina}
-              >
-                <SelectTrigger className="mt-1 h-9 sm:h-10 text-sm">
-                  <SelectValue placeholder="Seleccione" />
-                </SelectTrigger>
-                <SelectContent>
-                  {disciplinas.map((d) => (
-                    <SelectItem key={d} value={d}>
-                      {d}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="sm:col-span-2 md:col-span-1">
-              <Label className="text-xs sm:text-sm font-medium">Tempo Lectivo</Label>
-              <Select value={selectedTempo} onValueChange={setSelectedTempo}>
-                <SelectTrigger className="mt-1 h-9 sm:h-10 text-sm">
-                  <SelectValue placeholder="Seleccione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">1º Tempo (07:30 - 08:20)</SelectItem>
-                  <SelectItem value="2">2º Tempo (08:20 - 09:10)</SelectItem>
-                  <SelectItem value="3">3º Tempo (09:30 - 10:20)</SelectItem>
-                  <SelectItem value="4">4º Tempo (10:20 - 11:10)</SelectItem>
-                  <SelectItem value="5">5º Tempo (11:30 - 12:20)</SelectItem>
-                  <SelectItem value="6">6º Tempo (12:20 - 13:10)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
 
-          {/* Quick Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-            <div className="p-2 sm:p-3 bg-primary/10 rounded-lg text-center">
-              <p className="text-lg sm:text-xl font-bold text-primary">{presentCount}</p>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">Presentes</p>
+            {/* Quick Stats */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+              <div className="p-2 sm:p-3 bg-primary/10 rounded-lg text-center">
+                <p className="text-lg sm:text-xl font-bold text-primary">{presentCount}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Presentes</p>
+              </div>
+              <div className="p-2 sm:p-3 bg-destructive/10 rounded-lg text-center">
+                <p className="text-lg sm:text-xl font-bold text-destructive">{absentCount}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Faltas</p>
+              </div>
+              <div className="p-2 sm:p-3 bg-secondary/10 rounded-lg text-center">
+                <p className="text-lg sm:text-xl font-bold text-secondary">
+                  {attendanceRecords.filter((r) => r.status === "justificada").length}
+                </p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Justificadas</p>
+              </div>
+              <div className="p-2 sm:p-3 bg-accent/10 rounded-lg text-center">
+                <p className="text-lg sm:text-xl font-bold text-accent">
+                  {attendanceRecords.filter((r) => r.status === "atraso").length}
+                </p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Atrasos</p>
+              </div>
             </div>
-            <div className="p-2 sm:p-3 bg-destructive/10 rounded-lg text-center">
-              <p className="text-lg sm:text-xl font-bold text-destructive">{absentCount}</p>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">Faltas</p>
-            </div>
-            <div className="p-2 sm:p-3 bg-secondary/10 rounded-lg text-center">
-              <p className="text-lg sm:text-xl font-bold text-secondary">
-                {attendanceRecords.filter((r) => r.status === "justificada").length}
-              </p>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">Justificadas</p>
-            </div>
-            <div className="p-2 sm:p-3 bg-accent/10 rounded-lg text-center">
-              <p className="text-lg sm:text-xl font-bold text-accent">
-                {attendanceRecords.filter((r) => r.status === "atraso").length}
-              </p>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">Atrasos</p>
-            </div>
-          </div>
 
-          {/* Select All */}
-          <div className="flex items-center gap-2 p-2 sm:p-3 border rounded-lg">
-            <Checkbox
-              id="selectAll"
-              checked={selectAll}
-              onCheckedChange={(checked) => handleSelectAll(!!checked)}
-            />
-            <Label htmlFor="selectAll" className="cursor-pointer text-sm">
-              Marcar todos como presentes
-            </Label>
-          </div>
+            {/* Select All */}
+            <div className="flex items-center gap-2 p-2 sm:p-3 border rounded-lg">
+              <Checkbox
+                id="selectAll"
+                checked={selectAll}
+                onCheckedChange={(checked) => handleSelectAll(!!checked)}
+              />
+              <Label htmlFor="selectAll" className="cursor-pointer text-sm">
+                Marcar todos como presentes
+              </Label>
+            </div>
 
-          {/* Students Table */}
-          <div className="border rounded-lg overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="w-16 sm:w-20 text-xs sm:text-sm">Nº</TableHead>
-                  <TableHead className="min-w-[150px] text-xs sm:text-sm">Nome do Aluno</TableHead>
-                  <TableHead className="w-28 sm:w-40 text-xs sm:text-sm">Estado</TableHead>
-                  <TableHead className="w-32 sm:w-48 text-xs sm:text-sm hidden sm:table-cell">Observação</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {students.map((student) => {
-                  const record = attendanceRecords.find(
-                    (r) => r.studentId === student.id
-                  );
-                  return (
-                    <TableRow key={student.id}>
-                      <TableCell className="font-mono text-xs sm:text-sm">
-                        {student.numero}
-                      </TableCell>
-                      <TableCell className="font-medium text-xs sm:text-sm">{student.nome}</TableCell>
-                      <TableCell>
-                        <Select
-                          value={record?.status || "presente"}
-                          onValueChange={(value) =>
-                            handleStatusChange(student.id, value as AttendanceStatus)
-                          }
-                        >
-                          <SelectTrigger className="h-7 sm:h-8 text-[10px] sm:text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="presente">
-                              <span className="flex items-center gap-1">
-                                <CheckCircle2 className="h-3 w-3 text-primary" />
-                                <span className="hidden sm:inline">Presente</span>
-                                <span className="sm:hidden">P</span>
-                              </span>
-                            </SelectItem>
-                            <SelectItem value="falta">
-                              <span className="flex items-center gap-1">
-                                <XCircle className="h-3 w-3 text-destructive" />
-                                <span className="hidden sm:inline">Falta</span>
-                                <span className="sm:hidden">F</span>
-                              </span>
-                            </SelectItem>
-                            <SelectItem value="justificada">
-                              <span className="flex items-center gap-1">
-                                <CheckCircle2 className="h-3 w-3 text-secondary" />
-                                <span className="hidden sm:inline">Justificada</span>
-                                <span className="sm:hidden">J</span>
-                              </span>
-                            </SelectItem>
-                            <SelectItem value="atraso">
-                              <span className="flex items-center gap-1">
-                                <Clock className="h-3 w-3 text-accent" />
-                                <span className="hidden sm:inline">Atraso</span>
-                                <span className="sm:hidden">A</span>
-                              </span>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        <Input
-                          placeholder="Observação..."
-                          className="h-8 text-xs"
-                          value={record?.observation || ""}
-                          onChange={(e) =>
-                            handleObservationChange(student.id, e.target.value)
-                          }
-                        />
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
+            {/* Students Table */}
+            <div className="border rounded-lg overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="w-16 sm:w-20 text-xs sm:text-sm">Nº</TableHead>
+                    <TableHead className="min-w-[150px] text-xs sm:text-sm">Nome do Aluno</TableHead>
+                    <TableHead className="w-28 sm:w-40 text-xs sm:text-sm">Estado</TableHead>
+                    <TableHead className="w-32 sm:w-48 text-xs sm:text-sm hidden sm:table-cell">Observação</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {students.map((student) => {
+                    const record = attendanceRecords.find(
+                      (r) => r.studentId === student.id
+                    );
+                    return (
+                      <TableRow key={student.id}>
+                        <TableCell className="font-mono text-xs sm:text-sm">
+                          {student.numero}
+                        </TableCell>
+                        <TableCell className="font-medium text-xs sm:text-sm">{student.nome}</TableCell>
+                        <TableCell>
+                          <Select
+                            value={record?.status || "presente"}
+                            onValueChange={(value) =>
+                              handleStatusChange(student.id, value as AttendanceStatus)
+                            }
+                          >
+                            <SelectTrigger className="h-7 sm:h-8 text-[10px] sm:text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="presente">
+                                <span className="flex items-center gap-1">
+                                  <CheckCircle2 className="h-3 w-3 text-primary" />
+                                  <span className="hidden sm:inline">Presente</span>
+                                  <span className="sm:hidden">P</span>
+                                </span>
+                              </SelectItem>
+                              <SelectItem value="falta">
+                                <span className="flex items-center gap-1">
+                                  <XCircle className="h-3 w-3 text-destructive" />
+                                  <span className="hidden sm:inline">Falta</span>
+                                  <span className="sm:hidden">F</span>
+                                </span>
+                              </SelectItem>
+                              <SelectItem value="justificada">
+                                <span className="flex items-center gap-1">
+                                  <CheckCircle2 className="h-3 w-3 text-secondary" />
+                                  <span className="hidden sm:inline">Justificada</span>
+                                  <span className="sm:hidden">J</span>
+                                </span>
+                              </SelectItem>
+                              <SelectItem value="atraso">
+                                <span className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3 text-accent" />
+                                  <span className="hidden sm:inline">Atraso</span>
+                                  <span className="sm:hidden">A</span>
+                                </span>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          <Input
+                            placeholder="Observação..."
+                            className="h-8 text-xs"
+                            value={record?.observation || ""}
+                            maxLength={200}
+                            onChange={(e) =>
+                              handleObservationChange(student.id, e.target.value)
+                            }
+                          />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
 
-        <DialogFooter className="mt-4 flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
-            Cancelar
-          </Button>
-          <Button onClick={handleSave} className="w-full sm:w-auto">
-            <Save className="h-4 w-4 mr-2" />
-            Guardar Assiduidade
-          </Button>
-        </DialogFooter>
+            <DialogFooter className="mt-4 flex-col sm:flex-row gap-2">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
+                Cancelar
+              </Button>
+              <Button type="submit" className="w-full sm:w-auto">
+                <Save className="h-4 w-4 mr-2" />
+                Guardar Assiduidade
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

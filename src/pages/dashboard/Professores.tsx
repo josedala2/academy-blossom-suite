@@ -29,8 +29,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import VerPerfilProfessorModal from "@/components/modals/VerPerfilProfessorModal";
+import EditarProfessorModal from "@/components/modals/EditarProfessorModal";
+import EnviarEmailProfessorModal from "@/components/modals/EnviarEmailProfessorModal";
 
-const teachers = [
+interface Teacher {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  subjects: string[];
+  classes: string[];
+  status: string;
+}
+
+const teachersData: Teacher[] = [
   {
     id: 1,
     name: "Prof. António Fernandes",
@@ -90,15 +103,55 @@ const teachers = [
 const Professores = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSubject, setSelectedSubject] = useState<string>("");
+  const [teachers, setTeachers] = useState<Teacher[]>(teachersData);
+
+  // Modal states
+  const [isPerfilModalOpen, setIsPerfilModalOpen] = useState(false);
+  const [isEditarModalOpen, setIsEditarModalOpen] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
 
   const filteredTeachers = teachers.filter((teacher) => {
     const matchesSearch =
       teacher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       teacher.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesSubject =
-      !selectedSubject || teacher.subjects.includes(selectedSubject);
+      !selectedSubject || selectedSubject === "all" || teacher.subjects.includes(selectedSubject);
     return matchesSearch && matchesSubject;
   });
+
+  const handleVerPerfil = (teacher: Teacher) => {
+    setSelectedTeacher(teacher);
+    setIsPerfilModalOpen(true);
+  };
+
+  const handleEditar = (teacher: Teacher) => {
+    setSelectedTeacher(teacher);
+    setIsEditarModalOpen(true);
+  };
+
+  const handleEnviarEmail = (teacher: Teacher) => {
+    setSelectedTeacher(teacher);
+    setIsEmailModalOpen(true);
+  };
+
+  const handleSaveTeacher = (data: {
+    name: string;
+    email: string;
+    phone: string;
+    subjects: string[];
+    status: "active" | "inactive";
+  }) => {
+    if (selectedTeacher) {
+      setTeachers((prev) =>
+        prev.map((t) =>
+          t.id === selectedTeacher.id
+            ? { ...t, ...data }
+            : t
+        )
+      );
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -134,7 +187,7 @@ const Professores = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">48</div>
+              <div className="text-2xl font-bold">{teachers.length}</div>
             </CardContent>
           </Card>
           <Card>
@@ -144,7 +197,9 @@ const Professores = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-primary">45</div>
+              <div className="text-2xl font-bold text-primary">
+                {teachers.filter((t) => t.status === "active").length}
+              </div>
             </CardContent>
           </Card>
           <Card>
@@ -236,15 +291,15 @@ const Professores = () => {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleVerPerfil(teacher)}>
                         <Eye className="h-4 w-4 mr-2" />
                         Ver Perfil
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleEditar(teacher)}>
                         <Edit className="h-4 w-4 mr-2" />
                         Editar
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleEnviarEmail(teacher)}>
                         <Mail className="h-4 w-4 mr-2" />
                         Enviar Email
                       </DropdownMenuItem>
@@ -314,6 +369,27 @@ const Professores = () => {
           ))}
         </div>
       </div>
+
+      {/* Modals */}
+      <VerPerfilProfessorModal
+        isOpen={isPerfilModalOpen}
+        onClose={() => setIsPerfilModalOpen(false)}
+        teacher={selectedTeacher}
+        onSendEmail={handleEnviarEmail}
+      />
+
+      <EditarProfessorModal
+        isOpen={isEditarModalOpen}
+        onClose={() => setIsEditarModalOpen(false)}
+        teacher={selectedTeacher}
+        onSave={handleSaveTeacher}
+      />
+
+      <EnviarEmailProfessorModal
+        isOpen={isEmailModalOpen}
+        onClose={() => setIsEmailModalOpen(false)}
+        teacher={selectedTeacher}
+      />
     </DashboardLayout>
   );
 };

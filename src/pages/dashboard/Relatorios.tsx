@@ -25,6 +25,83 @@ import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+} from "recharts";
+
+// Chart data for Academic Summary
+const academicPerformanceData = [
+  { turma: "10ª A", media: 14.5, aprovados: 85, reprovados: 15 },
+  { turma: "10ª B", media: 13.8, aprovados: 78, reprovados: 22 },
+  { turma: "11ª A", media: 15.2, aprovados: 92, reprovados: 8 },
+  { turma: "11ª B", media: 14.1, aprovados: 80, reprovados: 20 },
+  { turma: "12ª A", media: 15.8, aprovados: 95, reprovados: 5 },
+  { turma: "12ª B", media: 14.6, aprovados: 88, reprovados: 12 },
+];
+
+const disciplinePerformanceData = [
+  { disciplina: "Matemática", media: 13.5 },
+  { disciplina: "Português", media: 14.2 },
+  { disciplina: "Física", media: 12.8 },
+  { disciplina: "Química", media: 13.1 },
+  { disciplina: "Biologia", media: 14.8 },
+  { disciplina: "Inglês", media: 15.2 },
+];
+
+const studentDistributionData = [
+  { name: "Aprovados", value: 680, color: "hsl(var(--primary))" },
+  { name: "Reprovados", value: 95, color: "hsl(var(--destructive))" },
+  { name: "Em Avaliação", value: 72, color: "hsl(var(--secondary))" },
+];
+
+// Chart data for Financial Summary
+const monthlyRevenueData = [
+  { mes: "Set", previsto: 15000000, realizado: 12500000 },
+  { mes: "Out", previsto: 15000000, realizado: 13200000 },
+  { mes: "Nov", previsto: 15000000, realizado: 14100000 },
+  { mes: "Dez", previsto: 15000000, realizado: 11800000 },
+  { mes: "Jan", previsto: 15000000, realizado: 12540000 },
+  { mes: "Fev", previsto: 15000000, realizado: 0 },
+];
+
+const paymentStatusData = [
+  { name: "Pagos", value: 523, color: "hsl(var(--primary))" },
+  { name: "Pendentes", value: 156, color: "hsl(var(--secondary))" },
+  { name: "Em Atraso", value: 68, color: "hsl(var(--destructive))" },
+];
+
+const revenueByClassData = [
+  { turma: "10ª A", valor: 2450000 },
+  { turma: "10ª B", valor: 2280000 },
+  { turma: "11ª A", valor: 2650000 },
+  { turma: "11ª B", valor: 2150000 },
+  { turma: "12ª A", valor: 2890000 },
+  { turma: "12ª B", valor: 2120000 },
+];
+
+const formatCurrency = (value: number) => {
+  if (value >= 1000000) {
+    return `${(value / 1000000).toFixed(1)}M Kz`;
+  }
+  if (value >= 1000) {
+    return `${(value / 1000).toFixed(0)}K Kz`;
+  }
+  return `${value} Kz`;
+};
 
 const reportCategories = [
   {
@@ -413,6 +490,221 @@ const Relatorios = () => {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Academic Summary Charts */}
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <GraduationCap className="h-5 w-5 text-primary" />
+            Resumo Académico
+          </h2>
+          <div className="grid gap-4 md:grid-cols-3">
+            {/* Academic Performance by Class */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Média por Turma</CardTitle>
+                <CardDescription className="text-xs">Desempenho académico geral</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[200px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={academicPerformanceData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="turma" tick={{ fontSize: 10 }} />
+                      <YAxis domain={[0, 20]} tick={{ fontSize: 10 }} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: "hsl(var(--background))", 
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "8px",
+                          fontSize: "12px"
+                        }} 
+                      />
+                      <Bar dataKey="media" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Discipline Performance */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Média por Disciplina</CardTitle>
+                <CardDescription className="text-xs">Rendimento por área</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[200px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={disciplinePerformanceData} layout="vertical" margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis type="number" domain={[0, 20]} tick={{ fontSize: 10 }} />
+                      <YAxis dataKey="disciplina" type="category" tick={{ fontSize: 9 }} width={60} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: "hsl(var(--background))", 
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "8px",
+                          fontSize: "12px"
+                        }} 
+                      />
+                      <Bar dataKey="media" fill="hsl(var(--secondary))" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Student Distribution */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Distribuição de Estudantes</CardTitle>
+                <CardDescription className="text-xs">Por estado académico</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[200px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={studentDistributionData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={40}
+                        outerRadius={70}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {studentDistributionData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: "hsl(var(--background))", 
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "8px",
+                          fontSize: "12px"
+                        }} 
+                      />
+                      <Legend 
+                        iconSize={8} 
+                        wrapperStyle={{ fontSize: "10px" }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Financial Summary Charts */}
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <CreditCard className="h-5 w-5 text-secondary" />
+            Resumo Financeiro
+          </h2>
+          <div className="grid gap-4 md:grid-cols-3">
+            {/* Monthly Revenue */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Receitas Mensais</CardTitle>
+                <CardDescription className="text-xs">Previsto vs Realizado</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[200px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={monthlyRevenueData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="mes" tick={{ fontSize: 10 }} />
+                      <YAxis tick={{ fontSize: 10 }} tickFormatter={formatCurrency} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: "hsl(var(--background))", 
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "8px",
+                          fontSize: "12px"
+                        }}
+                        formatter={(value: number) => formatCurrency(value)}
+                      />
+                      <Area type="monotone" dataKey="previsto" stroke="hsl(var(--muted-foreground))" fill="hsl(var(--muted))" strokeDasharray="5 5" />
+                      <Area type="monotone" dataKey="realizado" stroke="hsl(var(--primary))" fill="hsl(var(--primary)/0.3)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Payment Status */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Estado de Pagamentos</CardTitle>
+                <CardDescription className="text-xs">Situação actual das propinas</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[200px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={paymentStatusData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={40}
+                        outerRadius={70}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {paymentStatusData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: "hsl(var(--background))", 
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "8px",
+                          fontSize: "12px"
+                        }} 
+                      />
+                      <Legend 
+                        iconSize={8} 
+                        wrapperStyle={{ fontSize: "10px" }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Revenue by Class */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Receitas por Turma</CardTitle>
+                <CardDescription className="text-xs">Valores arrecadados</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[200px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={revenueByClassData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="turma" tick={{ fontSize: 10 }} />
+                      <YAxis tick={{ fontSize: 10 }} tickFormatter={formatCurrency} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: "hsl(var(--background))", 
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "8px",
+                          fontSize: "12px"
+                        }}
+                        formatter={(value: number) => formatCurrency(value)}
+                      />
+                      <Bar dataKey="valor" fill="hsl(var(--secondary))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">

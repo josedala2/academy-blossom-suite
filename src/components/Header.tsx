@@ -43,7 +43,7 @@ const Header = () => {
             <img
               src={logoSGE}
               alt="SGE - Sistema de Gestão Escolar"
-              className="h-12 w-auto transition-transform group-hover:scale-105"
+              className="h-16 w-auto transition-transform group-hover:scale-105"
               style={{ background: 'transparent', filter: 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.8))' }}
             />
           </a>

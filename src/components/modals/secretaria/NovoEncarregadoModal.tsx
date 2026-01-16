@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Dialog,
   DialogContent,
@@ -6,9 +9,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -22,11 +32,54 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { UserPlus, X, Search } from "lucide-react";
+import {
+  nameSchema,
+  phoneSchema,
+  optionalPhoneSchema,
+  optionalEmailSchema,
+  optionalAddressSchema,
+  sanitizeString,
+} from "@/lib/validation";
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
+// Schema de validação OWASP compliant
+const encarregadoSchema = z.object({
+  nome: nameSchema,
+  parentesco: z.string().optional(),
+  telefone: phoneSchema,
+  telefoneAlt: optionalPhoneSchema,
+  email: optionalEmailSchema,
+  endereco: optionalAddressSchema,
+  profissao: z
+    .string()
+    .trim()
+    .max(100, { message: "Profissão deve ter no máximo 100 caracteres" })
+    .transform(sanitizeString)
+    .optional()
+    .or(z.literal("")),
+  localTrabalho: z
+    .string()
+    .trim()
+    .max(200, { message: "Local de trabalho deve ter no máximo 200 caracteres" })
+    .transform(sanitizeString)
+    .optional()
+    .or(z.literal("")),
+  documentoTipo: z.enum(["bi", "passaporte", "cedula"]),
+  documentoNumero: z
+    .string()
+    .trim()
+    .max(30, { message: "Número do documento deve ter no máximo 30 caracteres" })
+    .regex(/^[a-zA-Z0-9-]*$/, { message: "Número do documento inválido" })
+    .optional()
+    .or(z.literal("")),
+  criarCredenciais: z.boolean(),
+});
+
+type EncarregadoFormData = z.infer<typeof encarregadoSchema>;
 
 // Mock estudantes para associar
 const estudantesDisponiveis = [
@@ -39,21 +92,25 @@ const estudantesDisponiveis = [
 
 const NovoEncarregadoModal = ({ open, onOpenChange }: Props) => {
   const { toast } = useToast();
-  const [formData, setFormData] = useState({
-    nome: "",
-    parentesco: "",
-    telefone: "",
-    telefoneAlt: "",
-    email: "",
-    endereco: "",
-    profissao: "",
-    localTrabalho: "",
-    documentoTipo: "bi",
-    documentoNumero: "",
-    criarCredenciais: true,
-  });
   const [estudantesSelecionados, setEstudantesSelecionados] = useState<string[]>([]);
   const [searchEstudante, setSearchEstudante] = useState("");
+
+  const form = useForm<EncarregadoFormData>({
+    resolver: zodResolver(encarregadoSchema),
+    defaultValues: {
+      nome: "",
+      parentesco: "",
+      telefone: "",
+      telefoneAlt: "",
+      email: "",
+      endereco: "",
+      profissao: "",
+      localTrabalho: "",
+      documentoTipo: "bi",
+      documentoNumero: "",
+      criarCredenciais: true,
+    },
+  });
 
   const filteredEstudantes = estudantesDisponiveis.filter(
     (est) =>
@@ -70,45 +127,27 @@ const NovoEncarregadoModal = ({ open, onOpenChange }: Props) => {
     setEstudantesSelecionados(estudantesSelecionados.filter((e) => e !== id));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.nome || !formData.telefone) {
-      toast({
-        title: "Campos obrigatórios",
-        description: "Por favor preencha o nome e telefone.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const onSubmit = (data: EncarregadoFormData) => {
     toast({
       title: "Encarregado criado",
-      description: formData.criarCredenciais
+      description: data.criarCredenciais
         ? "Encarregado criado e credenciais enviadas com sucesso."
         : "Encarregado criado com sucesso.",
     });
     
-    // Reset form
-    setFormData({
-      nome: "",
-      parentesco: "",
-      telefone: "",
-      telefoneAlt: "",
-      email: "",
-      endereco: "",
-      profissao: "",
-      localTrabalho: "",
-      documentoTipo: "bi",
-      documentoNumero: "",
-      criarCredenciais: true,
-    });
+    form.reset();
+    setEstudantesSelecionados([]);
+    onOpenChange(false);
+  };
+
+  const handleClose = () => {
+    form.reset();
     setEstudantesSelecionados([]);
     onOpenChange(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -117,223 +156,276 @@ const NovoEncarregadoModal = ({ open, onOpenChange }: Props) => {
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Dados Pessoais */}
-          <div className="space-y-4">
-            <h4 className="font-medium">Dados Pessoais</h4>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">
-                <Label htmlFor="nome">Nome Completo *</Label>
-                <Input
-                  id="nome"
-                  value={formData.nome}
-                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                  placeholder="Nome completo do encarregado"
-                  required
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Dados Pessoais */}
+            <div className="space-y-4">
+              <h4 className="font-medium">Dados Pessoais</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="nome"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Nome Completo *</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Nome completo do encarregado"
+                          maxLength={100}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <div>
-                <Label htmlFor="parentesco">Parentesco</Label>
-                <Select
-                  value={formData.parentesco}
-                  onValueChange={(value) => setFormData({ ...formData, parentesco: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccione..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pai">Pai</SelectItem>
-                    <SelectItem value="mae">Mãe</SelectItem>
-                    <SelectItem value="avo">Avô/Avó</SelectItem>
-                    <SelectItem value="tio">Tio/Tia</SelectItem>
-                    <SelectItem value="irmao">Irmão/Irmã</SelectItem>
-                    <SelectItem value="tutor">Tutor Legal</SelectItem>
-                    <SelectItem value="outro">Outro</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="profissao">Profissão</Label>
-                <Input
-                  id="profissao"
-                  value={formData.profissao}
-                  onChange={(e) => setFormData({ ...formData, profissao: e.target.value })}
-                  placeholder="Profissão"
+                <FormField
+                  control={form.control}
+                  name="parentesco"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Parentesco</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccione..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="pai">Pai</SelectItem>
+                          <SelectItem value="mae">Mãe</SelectItem>
+                          <SelectItem value="avo">Avô/Avó</SelectItem>
+                          <SelectItem value="tio">Tio/Tia</SelectItem>
+                          <SelectItem value="irmao">Irmão/Irmã</SelectItem>
+                          <SelectItem value="tutor">Tutor Legal</SelectItem>
+                          <SelectItem value="outro">Outro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <div className="col-span-2">
-                <Label htmlFor="localTrabalho">Local de Trabalho</Label>
-                <Input
-                  id="localTrabalho"
-                  value={formData.localTrabalho}
-                  onChange={(e) => setFormData({ ...formData, localTrabalho: e.target.value })}
-                  placeholder="Empresa ou instituição"
+                <FormField
+                  control={form.control}
+                  name="profissao"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Profissão</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Profissão" maxLength={100} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Documento */}
-          <div className="space-y-4">
-            <h4 className="font-medium">Documento de Identificação</h4>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <Label>Tipo</Label>
-                <Select
-                  value={formData.documentoTipo}
-                  onValueChange={(value) => setFormData({ ...formData, documentoTipo: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="bi">BI</SelectItem>
-                    <SelectItem value="passaporte">Passaporte</SelectItem>
-                    <SelectItem value="cedula">Cédula</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="col-span-2">
-                <Label htmlFor="documentoNumero">Número</Label>
-                <Input
-                  id="documentoNumero"
-                  value={formData.documentoNumero}
-                  onChange={(e) => setFormData({ ...formData, documentoNumero: e.target.value })}
-                  placeholder="Número do documento"
+                <FormField
+                  control={form.control}
+                  name="localTrabalho"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Local de Trabalho</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Empresa ou instituição" maxLength={200} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
             </div>
-          </div>
 
-          <Separator />
+            <Separator />
 
-          {/* Contactos */}
-          <div className="space-y-4">
-            <h4 className="font-medium">Contactos</h4>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="telefone">Telefone Principal *</Label>
-                <Input
-                  id="telefone"
-                  value={formData.telefone}
-                  onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-                  placeholder="+244 9XX XXX XXX"
-                  required
+            {/* Documento */}
+            <div className="space-y-4">
+              <h4 className="font-medium">Documento de Identificação</h4>
+              <div className="grid grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="documentoTipo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="bi">BI</SelectItem>
+                          <SelectItem value="passaporte">Passaporte</SelectItem>
+                          <SelectItem value="cedula">Cédula</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <div>
-                <Label htmlFor="telefoneAlt">Telefone Alternativo</Label>
-                <Input
-                  id="telefoneAlt"
-                  value={formData.telefoneAlt}
-                  onChange={(e) => setFormData({ ...formData, telefoneAlt: e.target.value })}
-                  placeholder="+244 9XX XXX XXX"
-                />
-              </div>
-              <div className="col-span-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="email@exemplo.com"
-                />
-              </div>
-              <div className="col-span-2">
-                <Label htmlFor="endereco">Endereço</Label>
-                <Textarea
-                  id="endereco"
-                  value={formData.endereco}
-                  onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
-                  placeholder="Endereço completo"
-                  rows={2}
+                <FormField
+                  control={form.control}
+                  name="documentoNumero"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Número</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Número do documento" maxLength={30} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
             </div>
-          </div>
 
-          <Separator />
+            <Separator />
 
-          {/* Associar Estudantes */}
-          <div className="space-y-4">
-            <h4 className="font-medium">Associar Estudantes</h4>
-            
-            {/* Estudantes Selecionados */}
-            {estudantesSelecionados.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-2">
-                {estudantesSelecionados.map((id) => {
-                  const est = estudantesDisponiveis.find((e) => e.id === id);
-                  return est ? (
-                    <Badge key={id} variant="secondary" className="flex items-center gap-1">
-                      {est.nome} ({est.classe})
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveEstudante(id)}
-                        className="ml-1 hover:text-destructive"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ) : null;
-                })}
+            {/* Contactos */}
+            <div className="space-y-4">
+              <h4 className="font-medium">Contactos</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="telefone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Telefone Principal *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="+244 9XX XXX XXX" maxLength={20} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="telefoneAlt"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Telefone Alternativo</FormLabel>
+                      <FormControl>
+                        <Input placeholder="+244 9XX XXX XXX" maxLength={20} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="email@exemplo.com" maxLength={255} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="endereco"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Endereço</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Endereço completo" rows={2} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-            )}
-
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Pesquisar estudante para associar..."
-                value={searchEstudante}
-                onChange={(e) => setSearchEstudante(e.target.value)}
-                className="pl-10"
-              />
             </div>
 
-            {/* Resultados */}
-            {searchEstudante && filteredEstudantes.length > 0 && (
-              <div className="border rounded-lg max-h-40 overflow-y-auto">
-                {filteredEstudantes.map((est) => (
-                  <button
-                    key={est.id}
-                    type="button"
-                    onClick={() => handleAddEstudante(est.id)}
-                    className="w-full px-3 py-2 text-left hover:bg-muted flex justify-between items-center"
-                  >
-                    <span>{est.nome}</span>
-                    <Badge variant="outline">{est.classe}</Badge>
-                  </button>
-                ))}
+            <Separator />
+
+            {/* Associar Estudantes */}
+            <div className="space-y-4">
+              <h4 className="font-medium">Associar Estudantes</h4>
+              
+              {/* Estudantes Selecionados */}
+              {estudantesSelecionados.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {estudantesSelecionados.map((id) => {
+                    const est = estudantesDisponiveis.find((e) => e.id === id);
+                    return est ? (
+                      <Badge key={id} variant="secondary" className="flex items-center gap-1">
+                        {est.nome} ({est.classe})
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveEstudante(id)}
+                          className="ml-1 hover:text-destructive"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ) : null;
+                  })}
+                </div>
+              )}
+
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Pesquisar estudante para associar..."
+                  value={searchEstudante}
+                  onChange={(e) => setSearchEstudante(e.target.value)}
+                  className="pl-10"
+                />
               </div>
-            )}
-          </div>
 
-          <Separator />
+              {/* Resultados */}
+              {searchEstudante && filteredEstudantes.length > 0 && (
+                <div className="border rounded-lg max-h-40 overflow-y-auto">
+                  {filteredEstudantes.map((est) => (
+                    <button
+                      key={est.id}
+                      type="button"
+                      onClick={() => handleAddEstudante(est.id)}
+                      className="w-full px-3 py-2 text-left hover:bg-muted flex justify-between items-center"
+                    >
+                      <span>{est.nome}</span>
+                      <Badge variant="outline">{est.classe}</Badge>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
-          {/* Credenciais */}
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="criarCredenciais"
-              checked={formData.criarCredenciais}
-              onCheckedChange={(checked) =>
-                setFormData({ ...formData, criarCredenciais: checked as boolean })
-              }
+            <Separator />
+
+            {/* Credenciais */}
+            <FormField
+              control={form.control}
+              name="criarCredenciais"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel className="text-sm font-normal">
+                      Criar credenciais de acesso ao portal (email ou SMS)
+                    </FormLabel>
+                  </div>
+                </FormItem>
+              )}
             />
-            <Label htmlFor="criarCredenciais" className="text-sm">
-              Criar credenciais de acesso ao portal (email ou SMS)
-            </Label>
-          </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit">Criar Encarregado</Button>
-          </DialogFooter>
-        </form>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={handleClose}>
+                Cancelar
+              </Button>
+              <Button type="submit">Criar Encarregado</Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

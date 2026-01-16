@@ -30,6 +30,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import VerNotasModal from "@/components/modals/VerNotasModal";
+import NovaAvaliacaoModal from "@/components/modals/NovaAvaliacaoModal";
 
 const exams = [
   {
@@ -125,9 +127,27 @@ const grades = [
   },
 ];
 
+interface Exam {
+  id: number;
+  name: string;
+  class: string;
+  subject: string;
+  date: string;
+  status: string;
+  weight: number;
+}
+
 const Avaliacoes = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClass, setSelectedClass] = useState<string>("");
+  const [isNovaAvaliacaoOpen, setIsNovaAvaliacaoOpen] = useState(false);
+  const [isVerNotasOpen, setIsVerNotasOpen] = useState(false);
+  const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
+
+  const handleVerNotas = (exam: Exam) => {
+    setSelectedExam(exam);
+    setIsVerNotasOpen(true);
+  };
 
   return (
     <DashboardLayout>
@@ -147,7 +167,7 @@ const Avaliacoes = () => {
               <Download className="h-4 w-4 mr-2" />
               Exportar Pautas
             </Button>
-            <Button>
+            <Button onClick={() => setIsNovaAvaliacaoOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Nova Avaliação
             </Button>
@@ -283,12 +303,22 @@ const Avaliacoes = () => {
                     </div>
                     <div className="flex gap-2 mt-4">
                       {exam.status === "completed" ? (
-                        <Button variant="outline" size="sm" className="flex-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => handleVerNotas(exam)}
+                        >
                           <FileText className="h-4 w-4 mr-1" />
                           Ver Notas
                         </Button>
                       ) : exam.status === "grading" ? (
-                        <Button variant="default" size="sm" className="flex-1">
+                        <Button 
+                          variant="default" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => handleVerNotas(exam)}
+                        >
                           <CheckCircle2 className="h-4 w-4 mr-1" />
                           Lançar Notas
                         </Button>
@@ -407,6 +437,18 @@ const Avaliacoes = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Modals */}
+        <NovaAvaliacaoModal
+          open={isNovaAvaliacaoOpen}
+          onOpenChange={setIsNovaAvaliacaoOpen}
+        />
+
+        <VerNotasModal
+          open={isVerNotasOpen}
+          onOpenChange={setIsVerNotasOpen}
+          exam={selectedExam}
+        />
       </div>
     </DashboardLayout>
   );

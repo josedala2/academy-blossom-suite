@@ -10,6 +10,7 @@ import {
   Trash2,
   Mail,
   Phone,
+  UserPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +40,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import NovaMatriculaModal from "@/components/modals/NovaMatriculaModal";
+import { useToast } from "@/hooks/use-toast";
+
+interface Student {
+  id: number;
+  name: string;
+  number: string;
+  class: string;
+  guardian: string;
+  phone: string;
+  status: string;
+  payments: string;
+}
 
 const students = [
   {
@@ -107,6 +121,7 @@ const Estudantes = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClass, setSelectedClass] = useState<string>("");
   const [selectedStatus, setSelectedStatus] = useState<string>("");
+  const [isMatriculaModalOpen, setIsMatriculaModalOpen] = useState(false);
 
   const filteredStudents = students.filter((student) => {
     const matchesSearch =
@@ -135,12 +150,18 @@ const Estudantes = () => {
               <Download className="h-4 w-4 mr-2" />
               Exportar
             </Button>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
+            <Button onClick={() => setIsMatriculaModalOpen(true)}>
+              <UserPlus className="h-4 w-4 mr-2" />
               Nova Matrícula
             </Button>
           </div>
         </div>
+
+        {/* Modal Nova Matrícula */}
+        <NovaMatriculaModal
+          open={isMatriculaModalOpen}
+          onOpenChange={setIsMatriculaModalOpen}
+        />
 
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-4">

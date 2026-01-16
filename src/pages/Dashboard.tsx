@@ -16,6 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import NovaMatriculaModal from "@/components/modals/NovaMatriculaModal";
+import RegistarPagamentoModal from "@/components/modals/RegistarPagamentoModal";
 
 const stats = [
   {
@@ -74,10 +75,13 @@ const pendingPayments = [
 const Dashboard = () => {
   const navigate = useNavigate();
   const [isMatriculaModalOpen, setIsMatriculaModalOpen] = useState(false);
+  const [isPagamentoModalOpen, setIsPagamentoModalOpen] = useState(false);
 
-  const handleQuickAction = (href: string, isModal?: boolean) => {
-    if (isModal) {
+  const handleQuickAction = (href: string, modalType?: string) => {
+    if (modalType === "matricula") {
       setIsMatriculaModalOpen(true);
+    } else if (modalType === "pagamento") {
+      setIsPagamentoModalOpen(true);
     } else {
       navigate(href);
     }
@@ -307,16 +311,16 @@ const Dashboard = () => {
             <CardContent>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { label: "Nova Matrícula", icon: Users, href: "/dashboard/estudantes", isModal: true },
-                  { label: "Lançar Notas", icon: GraduationCap, href: "/dashboard/avaliacoes", isModal: false },
-                  { label: "Registar Pagamento", icon: CreditCard, href: "/dashboard/propinas", isModal: false },
-                  { label: "Enviar Comunicado", icon: Calendar, href: "/dashboard/comunicados", isModal: false },
+                  { label: "Nova Matrícula", icon: Users, href: "/dashboard/estudantes", modalType: "matricula" },
+                  { label: "Lançar Notas", icon: GraduationCap, href: "/dashboard/avaliacoes", modalType: undefined },
+                  { label: "Registar Pagamento", icon: CreditCard, href: "/dashboard/propinas", modalType: "pagamento" },
+                  { label: "Enviar Comunicado", icon: Calendar, href: "/dashboard/comunicados", modalType: undefined },
                 ].map((action, index) => (
                   <Button
                     key={index}
                     variant="outline"
                     className="h-auto py-4 flex-col gap-2 hover:border-primary hover:text-primary transition-colors"
-                    onClick={() => handleQuickAction(action.href, action.isModal)}
+                    onClick={() => handleQuickAction(action.href, action.modalType)}
                   >
                     <action.icon className="h-6 w-6" />
                     <span className="text-sm">{action.label}</span>
@@ -331,6 +335,11 @@ const Dashboard = () => {
       <NovaMatriculaModal
         open={isMatriculaModalOpen}
         onOpenChange={setIsMatriculaModalOpen}
+      />
+
+      <RegistarPagamentoModal
+        open={isPagamentoModalOpen}
+        onOpenChange={setIsPagamentoModalOpen}
       />
     </DashboardLayout>
   );

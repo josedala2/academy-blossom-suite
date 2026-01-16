@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Download,
   FileText,
@@ -7,7 +8,7 @@ import {
   BarChart3,
   TrendingUp,
   Calendar,
-  PieChart,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,7 +19,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import { toast } from "sonner";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 
 const reportCategories = [
   {
@@ -26,11 +32,11 @@ const reportCategories = [
     icon: GraduationCap,
     color: "primary",
     reports: [
-      { name: "Pauta Geral por Turma", description: "Notas de todos os estudantes por turma" },
-      { name: "Desempenho por Disciplina", description: "Médias e estatísticas por disciplina" },
-      { name: "Ranking de Estudantes", description: "Classificação por média geral" },
-      { name: "Frequência Mensal", description: "Relatório de presenças e faltas" },
-      { name: "Boletim Individual", description: "Boletim de notas por estudante" },
+      { id: "pauta-turma", name: "Pauta Geral por Turma", description: "Notas de todos os estudantes por turma" },
+      { id: "desempenho-disciplina", name: "Desempenho por Disciplina", description: "Médias e estatísticas por disciplina" },
+      { id: "ranking-estudantes", name: "Ranking de Estudantes", description: "Classificação por média geral" },
+      { id: "frequencia-mensal", name: "Frequência Mensal", description: "Relatório de presenças e faltas" },
+      { id: "boletim-individual", name: "Boletim Individual", description: "Boletim de notas por estudante" },
     ],
   },
   {
@@ -38,11 +44,11 @@ const reportCategories = [
     icon: CreditCard,
     color: "secondary",
     reports: [
-      { name: "Propinas Recebidas", description: "Receitas mensais por turma" },
-      { name: "Propinas em Atraso", description: "Lista de devedores" },
-      { name: "Resumo Financeiro", description: "Balanço de receitas e despesas" },
-      { name: "Projecção de Receitas", description: "Estimativa de cobranças" },
-      { name: "Despesas por Categoria", description: "Análise de custos operacionais" },
+      { id: "propinas-recebidas", name: "Propinas Recebidas", description: "Receitas mensais por turma" },
+      { id: "propinas-atraso", name: "Propinas em Atraso", description: "Lista de devedores" },
+      { id: "resumo-financeiro", name: "Resumo Financeiro", description: "Balanço de receitas e despesas" },
+      { id: "projecao-receitas", name: "Projecção de Receitas", description: "Estimativa de cobranças" },
+      { id: "despesas-categoria", name: "Despesas por Categoria", description: "Análise de custos operacionais" },
     ],
   },
   {
@@ -50,11 +56,11 @@ const reportCategories = [
     icon: Users,
     color: "accent",
     reports: [
-      { name: "Lista de Estudantes", description: "Listagem completa por turma" },
-      { name: "Estatísticas por Género", description: "Distribuição por género" },
-      { name: "Estudantes por Categoria", description: "Bolsistas, RTE, etc." },
-      { name: "Novos Matriculados", description: "Matrículas do período" },
-      { name: "Transferências", description: "Entradas e saídas" },
+      { id: "lista-estudantes", name: "Lista de Estudantes", description: "Listagem completa por turma" },
+      { id: "estatisticas-genero", name: "Estatísticas por Género", description: "Distribuição por género" },
+      { id: "estudantes-categoria", name: "Estudantes por Categoria", description: "Bolsistas, RTE, etc." },
+      { id: "novos-matriculados", name: "Novos Matriculados", description: "Matrículas do período" },
+      { id: "transferencias", name: "Transferências", description: "Entradas e saídas" },
     ],
   },
   {
@@ -62,23 +68,267 @@ const reportCategories = [
     icon: TrendingUp,
     color: "primary",
     reports: [
-      { name: "Dashboard Executivo", description: "Resumo para Direção" },
-      { name: "Indicadores de Desempenho", description: "KPIs da escola" },
-      { name: "Comparativo Anual", description: "Evolução ano a ano" },
-      { name: "Taxa de Aprovação", description: "Análise de resultados" },
-      { name: "Previsões e Tendências", description: "Análise preditiva" },
+      { id: "dashboard-executivo", name: "Dashboard Executivo", description: "Resumo para Direção" },
+      { id: "indicadores-desempenho", name: "Indicadores de Desempenho", description: "KPIs da escola" },
+      { id: "comparativo-anual", name: "Comparativo Anual", description: "Evolução ano a ano" },
+      { id: "taxa-aprovacao", name: "Taxa de Aprovação", description: "Análise de resultados" },
+      { id: "previsoes-tendencias", name: "Previsões e Tendências", description: "Análise preditiva" },
     ],
   },
 ];
 
 const recentReports = [
-  { name: "Pauta 10ª A - Janeiro 2026", date: "2026-01-15", type: "PDF" },
-  { name: "Relatório Financeiro - Dezembro 2025", date: "2026-01-10", type: "Excel" },
-  { name: "Lista de Devedores", date: "2026-01-08", type: "PDF" },
-  { name: "Frequência Mensal - Dezembro", date: "2025-12-30", type: "PDF" },
+  { id: 1, name: "Pauta 10ª A - Janeiro 2026", date: "2026-01-15", type: "PDF" },
+  { id: 2, name: "Relatório Financeiro - Dezembro 2025", date: "2026-01-10", type: "Excel" },
+  { id: 3, name: "Lista de Devedores", date: "2026-01-08", type: "PDF" },
+  { id: 4, name: "Frequência Mensal - Dezembro", date: "2025-12-30", type: "PDF" },
+];
+
+// Sample data for reports
+const sampleStudentData = [
+  { numero: "2024001", nome: "João Silva", turma: "10ª A", media: 14.5, estado: "Aprovado" },
+  { numero: "2024002", nome: "Ana Ferreira", turma: "10ª A", media: 17.2, estado: "Aprovado" },
+  { numero: "2024003", nome: "Carlos Santos", turma: "10ª A", media: 12.8, estado: "Aprovado" },
+  { numero: "2024004", nome: "Maria Neto", turma: "10ª A", media: 15.6, estado: "Aprovado" },
+  { numero: "2024005", nome: "Pedro Mendes", turma: "10ª A", media: 9.2, estado: "Reprovado" },
+  { numero: "2024006", nome: "Luísa Costa", turma: "11ª A", media: 16.1, estado: "Aprovado" },
+  { numero: "2024007", nome: "Ricardo Alves", turma: "11ª A", media: 13.4, estado: "Aprovado" },
+  { numero: "2024008", nome: "Teresa Martins", turma: "11ª A", media: 11.0, estado: "Aprovado" },
+];
+
+const sampleFinancialData = [
+  { estudante: "João Silva", turma: "10ª A", valor: "17.500 Kz", estado: "Pago", data: "2026-01-08" },
+  { estudante: "Ana Ferreira", turma: "10ª A", valor: "17.500 Kz", estado: "Pendente", data: "-" },
+  { estudante: "Carlos Santos", turma: "11ª B", valor: "17.500 Kz", estado: "Atraso", data: "-" },
+  { estudante: "Maria Neto", turma: "9ª C", valor: "15.000 Kz", estado: "Pago", data: "2026-01-05" },
+  { estudante: "Pedro Costa", turma: "12ª A", valor: "20.000 Kz", estado: "Pago", data: "2026-01-10" },
 ];
 
 const Relatorios = () => {
+  const [selectedYear, setSelectedYear] = useState("2026");
+  const [selectedTrimester, setSelectedTrimester] = useState("1tri");
+  const [quickReportType, setQuickReportType] = useState("");
+  const [quickReportClass, setQuickReportClass] = useState("");
+  const [quickReportFormat, setQuickReportFormat] = useState("");
+  const [generatingReport, setGeneratingReport] = useState<string | null>(null);
+  const [isQuickGenerating, setIsQuickGenerating] = useState(false);
+
+  const generatePDF = (title: string, data: any[], columns: string[]) => {
+    const doc = new jsPDF();
+
+    // Header
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text(title, 105, 20, { align: "center" });
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100);
+    doc.text(`Ano Lectivo: ${selectedYear} | Período: ${selectedTrimester === "anual" ? "Anual" : selectedTrimester.replace("tri", "º Trimestre")}`, 105, 28, { align: "center" });
+    doc.text(`Gerado em: ${new Date().toLocaleDateString("pt-AO")}`, 105, 34, { align: "center" });
+
+    doc.setTextColor(0);
+
+    autoTable(doc, {
+      startY: 42,
+      head: [columns],
+      body: data.map(row => columns.map(col => {
+        const key = col.toLowerCase().replace(/\s+/g, "").replace("nº", "numero");
+        return row[key] || row[col] || "-";
+      })),
+      theme: "striped",
+      headStyles: { fillColor: [59, 130, 246] },
+      styles: { fontSize: 9 },
+    });
+
+    return doc;
+  };
+
+  const generateExcel = (title: string, data: any[]) => {
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Dados");
+    return wb;
+  };
+
+  const handleReportDownload = async (reportId: string, reportName: string) => {
+    setGeneratingReport(reportId);
+
+    await new Promise(resolve => setTimeout(resolve, 1200));
+
+    let doc: jsPDF;
+    const fileName = `${reportId}_${new Date().toISOString().split("T")[0]}`;
+
+    switch (reportId) {
+      case "pauta-turma":
+      case "ranking-estudantes":
+      case "boletim-individual":
+        doc = generatePDF(reportName, sampleStudentData, ["Nº", "Nome", "Turma", "Média", "Estado"]);
+        doc.save(`${fileName}.pdf`);
+        break;
+
+      case "desempenho-disciplina":
+        const disciplineData = [
+          { disciplina: "Matemática", media: "13.5", aprovados: "85%", reprovados: "15%" },
+          { disciplina: "Português", media: "14.2", aprovados: "88%", reprovados: "12%" },
+          { disciplina: "Física", media: "12.8", aprovados: "82%", reprovados: "18%" },
+          { disciplina: "Química", media: "13.1", aprovados: "84%", reprovados: "16%" },
+          { disciplina: "Biologia", media: "14.8", aprovados: "91%", reprovados: "9%" },
+        ];
+        doc = generatePDF(reportName, disciplineData, ["Disciplina", "Média", "Aprovados", "Reprovados"]);
+        doc.save(`${fileName}.pdf`);
+        break;
+
+      case "frequencia-mensal":
+        const frequencyData = [
+          { estudante: "João Silva", turma: "10ª A", presencas: "18", faltas: "2", percentagem: "90%" },
+          { estudante: "Ana Ferreira", turma: "10ª A", presencas: "20", faltas: "0", percentagem: "100%" },
+          { estudante: "Carlos Santos", turma: "10ª A", presencas: "15", faltas: "5", percentagem: "75%" },
+        ];
+        doc = generatePDF(reportName, frequencyData, ["Estudante", "Turma", "Presenças", "Faltas", "Percentagem"]);
+        doc.save(`${fileName}.pdf`);
+        break;
+
+      case "propinas-recebidas":
+      case "propinas-atraso":
+      case "resumo-financeiro":
+        doc = generatePDF(reportName, sampleFinancialData, ["Estudante", "Turma", "Valor", "Estado", "Data"]);
+        doc.save(`${fileName}.pdf`);
+        break;
+
+      case "projecao-receitas":
+      case "despesas-categoria":
+        const financialProjection = [
+          { mes: "Janeiro", previsto: "15.000.000 Kz", realizado: "12.540.000 Kz", diferenca: "-2.460.000 Kz" },
+          { mes: "Fevereiro", previsto: "15.000.000 Kz", realizado: "-", diferenca: "-" },
+          { mes: "Março", previsto: "15.000.000 Kz", realizado: "-", diferenca: "-" },
+        ];
+        doc = generatePDF(reportName, financialProjection, ["Mês", "Previsto", "Realizado", "Diferença"]);
+        doc.save(`${fileName}.pdf`);
+        break;
+
+      case "lista-estudantes":
+      case "novos-matriculados":
+      case "transferencias":
+        doc = generatePDF(reportName, sampleStudentData, ["Nº", "Nome", "Turma", "Média", "Estado"]);
+        doc.save(`${fileName}.pdf`);
+        break;
+
+      case "estatisticas-genero":
+        const genderData = [
+          { turma: "10ª A", masculino: "18", feminino: "22", total: "40" },
+          { turma: "10ª B", masculino: "20", feminino: "18", total: "38" },
+          { turma: "11ª A", masculino: "15", feminino: "20", total: "35" },
+          { turma: "11ª B", masculino: "17", feminino: "19", total: "36" },
+        ];
+        doc = generatePDF(reportName, genderData, ["Turma", "Masculino", "Feminino", "Total"]);
+        doc.save(`${fileName}.pdf`);
+        break;
+
+      case "estudantes-categoria":
+        const categoryData = [
+          { categoria: "Regular", quantidade: "680", percentagem: "80.3%" },
+          { categoria: "Bolseiro", quantidade: "95", percentagem: "11.2%" },
+          { categoria: "RTE", quantidade: "45", percentagem: "5.3%" },
+          { categoria: "Funcionário", quantidade: "27", percentagem: "3.2%" },
+        ];
+        doc = generatePDF(reportName, categoryData, ["Categoria", "Quantidade", "Percentagem"]);
+        doc.save(`${fileName}.pdf`);
+        break;
+
+      case "dashboard-executivo":
+      case "indicadores-desempenho":
+      case "comparativo-anual":
+      case "taxa-aprovacao":
+      case "previsoes-tendencias":
+        const kpiData = [
+          { indicador: "Taxa de Aprovação", valor: "87%", meta: "90%", variacao: "+5%" },
+          { indicador: "Taxa de Cobrança", valor: "87%", meta: "95%", variacao: "+8%" },
+          { indicador: "Média Geral", valor: "14.2", meta: "14.0", variacao: "+0.2" },
+          { indicador: "Frequência Média", valor: "92%", meta: "95%", variacao: "-1%" },
+          { indicador: "Satisfação Encarregados", valor: "4.2/5", meta: "4.5/5", variacao: "+0.3" },
+        ];
+        doc = generatePDF(reportName, kpiData, ["Indicador", "Valor", "Meta", "Variação"]);
+        doc.save(`${fileName}.pdf`);
+        break;
+
+      default:
+        doc = generatePDF(reportName, sampleStudentData, ["Nº", "Nome", "Turma", "Média", "Estado"]);
+        doc.save(`${fileName}.pdf`);
+    }
+
+    toast.success(`Relatório "${reportName}" gerado com sucesso!`);
+    setGeneratingReport(null);
+  };
+
+  const handleRecentReportDownload = async (report: typeof recentReports[0]) => {
+    setGeneratingReport(`recent-${report.id}`);
+
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    if (report.type === "PDF") {
+      const doc = generatePDF(report.name, sampleStudentData, ["Nº", "Nome", "Turma", "Média", "Estado"]);
+      doc.save(`${report.name.replace(/\s+/g, "_")}.pdf`);
+    } else {
+      const wb = generateExcel(report.name, sampleStudentData);
+      XLSX.writeFile(wb, `${report.name.replace(/\s+/g, "_")}.xlsx`);
+    }
+
+    toast.success(`Relatório "${report.name}" baixado!`);
+    setGeneratingReport(null);
+  };
+
+  const handleQuickGenerate = async () => {
+    if (!quickReportType || !quickReportClass || !quickReportFormat) {
+      toast.error("Preencha todos os campos para gerar o relatório");
+      return;
+    }
+
+    setIsQuickGenerating(true);
+
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    const reportTypes: Record<string, string> = {
+      pauta: "Pauta de Notas",
+      freq: "Relatório de Frequência",
+      fin: "Relatório Financeiro",
+      list: "Lista de Estudantes",
+    };
+
+    const turmas: Record<string, string> = {
+      all: "Todas as Turmas",
+      "10a": "10ª A",
+      "10b": "10ª B",
+      "11a": "11ª A",
+    };
+
+    const reportName = `${reportTypes[quickReportType]} - ${turmas[quickReportClass]}`;
+    const fileName = `relatorio_${quickReportType}_${quickReportClass}_${new Date().toISOString().split("T")[0]}`;
+
+    if (quickReportFormat === "pdf") {
+      const doc = generatePDF(reportName, sampleStudentData, ["Nº", "Nome", "Turma", "Média", "Estado"]);
+      doc.save(`${fileName}.pdf`);
+    } else if (quickReportFormat === "excel") {
+      const wb = generateExcel(reportName, sampleStudentData);
+      XLSX.writeFile(wb, `${fileName}.xlsx`);
+    } else {
+      // CSV
+      const csvContent = sampleStudentData.map(row =>
+        Object.values(row).join(",")
+      ).join("\n");
+      const blob = new Blob([`Nº,Nome,Turma,Média,Estado\n${csvContent}`], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${fileName}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    toast.success(`Relatório "${reportName}" gerado com sucesso!`);
+    setIsQuickGenerating(false);
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -93,7 +343,7 @@ const Relatorios = () => {
             </p>
           </div>
           <div className="flex gap-3">
-            <Select defaultValue="2026">
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
               <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>
@@ -103,7 +353,7 @@ const Relatorios = () => {
                 <SelectItem value="2024">2024</SelectItem>
               </SelectContent>
             </Select>
-            <Select defaultValue="1tri">
+            <Select value={selectedTrimester} onValueChange={setSelectedTrimester}>
               <SelectTrigger className="w-40">
                 <SelectValue />
               </SelectTrigger>
@@ -188,12 +438,12 @@ const Relatorios = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="grid gap-3 md:grid-cols-2">
-                    {category.reports.map((report, rIndex) => (
+                    {category.reports.map((report) => (
                       <div
-                        key={rIndex}
-                        className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors group cursor-pointer"
+                        key={report.id}
+                        className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors group"
                       >
-                        <div>
+                        <div className="flex-1">
                           <p className="font-medium text-sm">{report.name}</p>
                           <p className="text-xs text-muted-foreground">
                             {report.description}
@@ -203,8 +453,14 @@ const Relatorios = () => {
                           variant="ghost"
                           size="icon"
                           className="opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => handleReportDownload(report.id, report.name)}
+                          disabled={generatingReport === report.id}
                         >
-                          <Download className="h-4 w-4" />
+                          {generatingReport === report.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Download className="h-4 w-4" />
+                          )}
                         </Button>
                       </div>
                     ))}
@@ -223,9 +479,9 @@ const Relatorios = () => {
                 <CardDescription>Últimos relatórios gerados</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {recentReports.map((report, index) => (
+                {recentReports.map((report) => (
                   <div
-                    key={index}
+                    key={report.id}
                     className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
                   >
                     <div className="flex items-center gap-3">
@@ -235,12 +491,24 @@ const Relatorios = () => {
                       <div>
                         <p className="text-sm font-medium">{report.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {new Date(report.date).toLocaleDateString("pt-AO")} • {report.type}
+                          {new Date(report.date).toLocaleDateString("pt-AO")} •{" "}
+                          <Badge variant="secondary" className="text-xs px-1 py-0">
+                            {report.type}
+                          </Badge>
                         </p>
                       </div>
                     </div>
-                    <Button variant="ghost" size="icon">
-                      <Download className="h-4 w-4" />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRecentReportDownload(report)}
+                      disabled={generatingReport === `recent-${report.id}`}
+                    >
+                      {generatingReport === `recent-${report.id}` ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Download className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                 ))}
@@ -253,7 +521,7 @@ const Relatorios = () => {
                 <CardTitle className="text-base">Gerar Relatório Rápido</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Select>
+                <Select value={quickReportType} onValueChange={setQuickReportType}>
                   <SelectTrigger>
                     <SelectValue placeholder="Tipo de Relatório" />
                   </SelectTrigger>
@@ -264,7 +532,7 @@ const Relatorios = () => {
                     <SelectItem value="list">Lista de Estudantes</SelectItem>
                   </SelectContent>
                 </Select>
-                <Select>
+                <Select value={quickReportClass} onValueChange={setQuickReportClass}>
                   <SelectTrigger>
                     <SelectValue placeholder="Turma" />
                   </SelectTrigger>
@@ -275,7 +543,7 @@ const Relatorios = () => {
                     <SelectItem value="11a">11ª A</SelectItem>
                   </SelectContent>
                 </Select>
-                <Select>
+                <Select value={quickReportFormat} onValueChange={setQuickReportFormat}>
                   <SelectTrigger>
                     <SelectValue placeholder="Formato" />
                   </SelectTrigger>
@@ -285,9 +553,22 @@ const Relatorios = () => {
                     <SelectItem value="csv">CSV</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button className="w-full">
-                  <FileText className="h-4 w-4 mr-2" />
-                  Gerar Relatório
+                <Button
+                  className="w-full"
+                  onClick={handleQuickGenerate}
+                  disabled={isQuickGenerating}
+                >
+                  {isQuickGenerating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      A gerar...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="h-4 w-4 mr-2" />
+                      Gerar Relatório
+                    </>
+                  )}
                 </Button>
               </CardContent>
             </Card>

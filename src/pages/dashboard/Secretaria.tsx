@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Users,
   UserPlus,
@@ -19,6 +19,7 @@ import {
   FileBarChart,
   UserCheck,
   Settings,
+  Keyboard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +28,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 // Stats data
 const stats = [
@@ -36,7 +46,7 @@ const stats = [
   { label: "Atendimentos Realizados", value: 47, icon: Users, color: "text-green-600", bgColor: "bg-green-500/10" },
 ];
 
-// Quick navigation modules
+// Quick navigation modules with keyboard shortcuts
 const modulosSecretaria = [
   {
     titulo: "Pré-Registos",
@@ -47,6 +57,7 @@ const modulosSecretaria = [
     borderCor: "border-primary/20",
     rota: "/dashboard/secretaria/pre-registos",
     badge: 12,
+    atalho: "1",
   },
   {
     titulo: "Visitantes",
@@ -57,6 +68,7 @@ const modulosSecretaria = [
     borderCor: "border-secondary/20",
     rota: "/dashboard/secretaria/visitantes",
     badge: 3,
+    atalho: "2",
   },
   {
     titulo: "Estudantes",
@@ -66,6 +78,7 @@ const modulosSecretaria = [
     bgCor: "bg-blue-500/10",
     borderCor: "border-blue-500/20",
     rota: "/dashboard/secretaria/estudantes",
+    atalho: "3",
   },
   {
     titulo: "Encarregados",
@@ -75,6 +88,7 @@ const modulosSecretaria = [
     bgCor: "bg-green-500/10",
     borderCor: "border-green-500/20",
     rota: "/dashboard/secretaria/encarregados",
+    atalho: "4",
   },
   {
     titulo: "Documentos",
@@ -85,6 +99,7 @@ const modulosSecretaria = [
     borderCor: "border-accent/20",
     rota: "/dashboard/secretaria/documentos",
     badge: 5,
+    atalho: "5",
   },
   {
     titulo: "Processos",
@@ -95,6 +110,7 @@ const modulosSecretaria = [
     borderCor: "border-orange-500/20",
     rota: "/dashboard/secretaria/processos",
     badge: 8,
+    atalho: "6",
   },
   {
     titulo: "Templates",
@@ -104,6 +120,7 @@ const modulosSecretaria = [
     bgCor: "bg-purple-500/10",
     borderCor: "border-purple-500/20",
     rota: "/dashboard/secretaria/templates",
+    atalho: "7",
   },
   {
     titulo: "Relatórios",
@@ -113,6 +130,7 @@ const modulosSecretaria = [
     bgCor: "bg-indigo-500/10",
     borderCor: "border-indigo-500/20",
     rota: "/dashboard/secretaria/relatorios",
+    atalho: "8",
   },
 ];
 
@@ -163,6 +181,49 @@ const getEstadoBadge = (estado: string) => {
 const Secretaria = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
+  // Keyboard shortcuts handler
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Ignore if user is typing in an input
+      if (
+        event.target instanceof HTMLInputElement ||
+        event.target instanceof HTMLTextAreaElement ||
+        event.target instanceof HTMLSelectElement
+      ) {
+        return;
+      }
+
+      // Alt + number for module navigation
+      if (event.altKey && !event.ctrlKey && !event.metaKey) {
+        const key = event.key;
+        const modulo = modulosSecretaria.find((m) => m.atalho === key);
+        if (modulo) {
+          event.preventDefault();
+          navigate(modulo.rota);
+          toast.success(`A navegar para ${modulo.titulo}`, {
+            description: `Atalho: Alt + ${modulo.atalho}`,
+            duration: 2000,
+          });
+        }
+      }
+
+      // Alt + H to show shortcuts help
+      if (event.altKey && event.key.toLowerCase() === "h") {
+        event.preventDefault();
+        setShowShortcuts(true);
+      }
+
+      // Escape to close shortcuts dialog
+      if (event.key === "Escape") {
+        setShowShortcuts(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [navigate]);
 
   return (
     <DashboardLayout>
@@ -179,6 +240,52 @@ const Secretaria = () => {
             </p>
           </div>
           <div className="flex gap-3">
+            <Dialog open={showShortcuts} onOpenChange={setShowShortcuts}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="icon" title="Atalhos de Teclado (Alt+H)">
+                  <Keyboard className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Keyboard className="h-5 w-5" />
+                    Atalhos de Teclado
+                  </DialogTitle>
+                  <DialogDescription>
+                    Use estes atalhos para navegar rapidamente entre os módulos
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 mt-4">
+                  <div className="grid gap-2">
+                    {modulosSecretaria.map((modulo) => (
+                      <div
+                        key={modulo.atalho}
+                        className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`h-8 w-8 rounded-md ${modulo.bgCor} flex items-center justify-center`}>
+                            <modulo.icon className={`h-4 w-4 ${modulo.cor}`} />
+                          </div>
+                          <span className="font-medium text-sm">{modulo.titulo}</span>
+                        </div>
+                        <kbd className="px-2 py-1 text-xs font-mono bg-muted rounded border">
+                          Alt + {modulo.atalho}
+                        </kbd>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="pt-2 border-t">
+                    <div className="flex items-center justify-between p-2 text-muted-foreground">
+                      <span className="text-sm">Mostrar esta ajuda</span>
+                      <kbd className="px-2 py-1 text-xs font-mono bg-muted rounded border">
+                        Alt + H
+                      </kbd>
+                    </div>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
             <Button variant="outline" onClick={() => navigate("/dashboard/secretaria/relatorios")}>
               <BarChart3 className="h-4 w-4 mr-2" />
               Relatórios
@@ -230,7 +337,12 @@ const Secretaria = () => {
                       </Badge>
                     )}
                   </div>
-                  <h3 className="font-semibold text-foreground mb-1">{modulo.titulo}</h3>
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="font-semibold text-foreground">{modulo.titulo}</h3>
+                    <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-muted/80 rounded border text-muted-foreground">
+                      Alt+{modulo.atalho}
+                    </kbd>
+                  </div>
                   <p className="text-sm text-muted-foreground">{modulo.descricao}</p>
                 </CardContent>
               </Card>

@@ -23,6 +23,7 @@ import SecretariaEncarregados from "./pages/dashboard/secretaria/Encarregados";
 import SecretariaDocumentos from "./pages/dashboard/secretaria/Documentos";
 import SecretariaTemplates from "./pages/dashboard/secretaria/Templates";
 import SecretariaProcessos from "./pages/dashboard/secretaria/Processos";
+import SecretariaRelatorios from "./pages/dashboard/secretaria/Relatorios";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -54,6 +55,7 @@ const App = () => (
           <Route path="/dashboard/secretaria/documentos" element={<SecretariaDocumentos />} />
           <Route path="/dashboard/secretaria/templates" element={<SecretariaTemplates />} />
           <Route path="/dashboard/secretaria/processos" element={<SecretariaProcessos />} />
+          <Route path="/dashboard/secretaria/relatorios" element={<SecretariaRelatorios />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

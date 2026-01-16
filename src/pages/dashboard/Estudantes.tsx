@@ -11,6 +11,8 @@ import {
   Mail,
   Phone,
   UserPlus,
+  FileSpreadsheet,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +48,9 @@ import EditarEstudanteModal from "@/components/modals/EditarEstudanteModal";
 import EnviarEmailEstudanteModal from "@/components/modals/EnviarEmailEstudanteModal";
 import ConfirmarEliminarEstudanteModal from "@/components/modals/ConfirmarEliminarEstudanteModal";
 import { useToast } from "@/hooks/use-toast";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface Student {
   id: number;
@@ -177,6 +182,81 @@ const Estudantes = () => {
     });
   };
 
+  const exportToExcel = () => {
+    const exportData = filteredStudents.map((student) => ({
+      "Nº Matrícula": student.number,
+      "Nome": student.name,
+      "Turma": student.class,
+      "Encarregado": student.guardian,
+      "Telefone": student.phone,
+      "Estado": student.status === "active" ? "Activo" : "Inactivo",
+      "Propinas": student.payments === "ok" ? "Em dia" : student.payments === "pending" ? "Pendente" : "Em atraso",
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Estudantes");
+    
+    // Set column widths
+    ws["!cols"] = [
+      { wch: 12 }, // Nº Matrícula
+      { wch: 30 }, // Nome
+      { wch: 10 }, // Turma
+      { wch: 25 }, // Encarregado
+      { wch: 15 }, // Telefone
+      { wch: 10 }, // Estado
+      { wch: 12 }, // Propinas
+    ];
+
+    XLSX.writeFile(wb, `estudantes_${new Date().toISOString().split("T")[0]}.xlsx`);
+    
+    toast({
+      title: "Exportação concluída!",
+      description: `${filteredStudents.length} estudantes exportados para Excel.`,
+    });
+  };
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    
+    // Title
+    doc.setFontSize(18);
+    doc.text("Lista de Estudantes", 14, 22);
+    
+    // Subtitle with date
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Gerado em: ${new Date().toLocaleDateString("pt-AO")}`, 14, 30);
+    doc.text(`Total: ${filteredStudents.length} estudantes`, 14, 36);
+
+    // Table data
+    const tableData = filteredStudents.map((student) => [
+      student.number,
+      student.name,
+      student.class,
+      student.guardian,
+      student.phone,
+      student.status === "active" ? "Activo" : "Inactivo",
+      student.payments === "ok" ? "Em dia" : student.payments === "pending" ? "Pendente" : "Atraso",
+    ]);
+
+    autoTable(doc, {
+      head: [["Nº", "Nome", "Turma", "Encarregado", "Telefone", "Estado", "Propinas"]],
+      body: tableData,
+      startY: 42,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [59, 130, 246] },
+      alternateRowStyles: { fillColor: [245, 247, 250] },
+    });
+
+    doc.save(`estudantes_${new Date().toISOString().split("T")[0]}.pdf`);
+    
+    toast({
+      title: "Exportação concluída!",
+      description: `${filteredStudents.length} estudantes exportados para PDF.`,
+    });
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -191,10 +271,24 @@ const Estudantes = () => {
             </p>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Exportar
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <Download className="h-4 w-4 mr-2" />
+                  Exportar
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={exportToExcel}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Exportar para Excel
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportToPDF}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Exportar para PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button onClick={() => setIsMatriculaModalOpen(true)}>
               <UserPlus className="h-4 w-4 mr-2" />
               Nova Matrícula

@@ -6,6 +6,7 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
+  Edit,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,8 +20,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import CriarHorarioModal from "@/components/modals/CriarHorarioModal";
+import EditarAulaModal from "@/components/modals/EditarAulaModal";
 import { useToast } from "@/hooks/use-toast";
-const schedule = {
+
+interface Lesson {
+  time: string;
+  subject: string;
+  teacher: string;
+  room: string;
+}
+
+type ScheduleType = {
+  [key: string]: Lesson[];
+};
+
+const initialSchedule: ScheduleType = {
   "Segunda": [
     { time: "07:30 - 08:15", subject: "Matemática", teacher: "Prof. António", room: "Sala 101" },
     { time: "08:15 - 09:00", subject: "Matemática", teacher: "Prof. António", room: "Sala 101" },
@@ -67,12 +81,12 @@ const subjectColors: Record<string, string> = {
   "Matemática": "bg-primary/10 text-primary border-primary/20",
   "Português": "bg-secondary/10 text-secondary border-secondary/20",
   "Inglês": "bg-accent/10 text-accent border-accent/20",
-  "Física": "bg-blue-100 text-blue-700 border-blue-200",
-  "Química": "bg-purple-100 text-purple-700 border-purple-200",
-  "Biologia": "bg-green-100 text-green-700 border-green-200",
-  "História": "bg-amber-100 text-amber-700 border-amber-200",
-  "Geografia": "bg-teal-100 text-teal-700 border-teal-200",
-  "Ed. Física": "bg-rose-100 text-rose-700 border-rose-200",
+  "Física": "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800",
+  "Química": "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800",
+  "Biologia": "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800",
+  "História": "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800",
+  "Geografia": "bg-teal-100 text-teal-700 border-teal-200 dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-800",
+  "Ed. Física": "bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800",
 };
 
 const days = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
@@ -82,12 +96,54 @@ const Horarios = () => {
   const [selectedClass, setSelectedClass] = useState("10ª A");
   const [view, setView] = useState<"week" | "day">("week");
   const [isCriarModalOpen, setIsCriarModalOpen] = useState(false);
+  const [isEditarAulaModalOpen, setIsEditarAulaModalOpen] = useState(false);
+  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
+  const [selectedDay, setSelectedDay] = useState("");
+  const [schedule, setSchedule] = useState<ScheduleType>(initialSchedule);
 
   const handleSaveSchedule = (scheduleData: { turma: string; semestre: string; entries: any[] }) => {
     console.log("Novo horário criado:", scheduleData);
     toast({
       title: "Horário criado com sucesso!",
       description: `Horário da turma ${scheduleData.turma} foi guardado.`,
+    });
+  };
+
+  const handleEditLesson = (day: string, lesson: Lesson) => {
+    setSelectedDay(day);
+    setSelectedLesson(lesson);
+    setIsEditarAulaModalOpen(true);
+  };
+
+  const handleSaveLesson = (day: string, originalTime: string, updatedLesson: Lesson) => {
+    setSchedule((prev) => {
+      const newSchedule = { ...prev };
+      const dayLessons = [...newSchedule[day]];
+      const index = dayLessons.findIndex((l) => l.time === originalTime);
+      if (index !== -1) {
+        dayLessons[index] = updatedLesson;
+        newSchedule[day] = dayLessons;
+      }
+      return newSchedule;
+    });
+  };
+
+  const handleDeleteLesson = (day: string, time: string) => {
+    setSchedule((prev) => {
+      const newSchedule = { ...prev };
+      const dayLessons = [...newSchedule[day]];
+      const index = dayLessons.findIndex((l) => l.time === time);
+      if (index !== -1) {
+        // Replace with empty slot
+        dayLessons[index] = {
+          time,
+          subject: "Livre",
+          teacher: "-",
+          room: "-",
+        };
+        newSchedule[day] = dayLessons;
+      }
+      return newSchedule;
     });
   };
   return (
@@ -120,6 +176,16 @@ const Horarios = () => {
           isOpen={isCriarModalOpen}
           onClose={() => setIsCriarModalOpen(false)}
           onSave={handleSaveSchedule}
+        />
+
+        {/* Edit Lesson Modal */}
+        <EditarAulaModal
+          isOpen={isEditarAulaModalOpen}
+          onClose={() => setIsEditarAulaModalOpen(false)}
+          lesson={selectedLesson}
+          day={selectedDay}
+          onSave={handleSaveLesson}
+          onDelete={handleDeleteLesson}
         />
 
         {/* Controls */}
@@ -211,15 +277,22 @@ const Horarios = () => {
                       {slot.time}
                     </div>
                     {days.map((day) => {
-                      const daySchedule = schedule[day as keyof typeof schedule];
+                      const daySchedule = schedule[day];
                       const lesson = daySchedule[slotIndex];
+                      const isClickable = lesson.subject !== "Livre";
                       return (
                         <div
                           key={day}
-                          className={`p-3 rounded-lg border text-sm ${
-                            subjectColors[lesson.subject] || "bg-gray-100 text-gray-700"
-                          }`}
+                          onClick={() => isClickable && handleEditLesson(day, lesson)}
+                          className={`p-3 rounded-lg border text-sm relative group transition-all ${
+                            subjectColors[lesson.subject] || "bg-muted/30 text-muted-foreground border-dashed"
+                          } ${isClickable ? "cursor-pointer hover:ring-2 hover:ring-primary/50 hover:shadow-md" : ""}`}
                         >
+                          {isClickable && (
+                            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Edit className="h-3 w-3" />
+                            </div>
+                          )}
                           <p className="font-medium">{lesson.subject}</p>
                           <p className="text-xs opacity-80">{lesson.teacher}</p>
                           <p className="text-xs opacity-60">{lesson.room}</p>

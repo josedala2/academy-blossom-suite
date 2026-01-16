@@ -70,13 +70,13 @@
     --shadow-glow-accent: 0 0 20px hsl(27 98% 47% / 0.3);
 
     /* Sidebar */
-    --sidebar-background: 210 29% 12%;
+    --sidebar-background: 0 0% 0%;
     --sidebar-foreground: 0 0% 95%;
     --sidebar-primary: 122 39% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 25% 20%;
+    --sidebar-accent: 0 0% 10%;
     --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 210 25% 22%;
+    --sidebar-border: 0 0% 15%;
     --sidebar-ring: 122 39% 45%;
   }
 

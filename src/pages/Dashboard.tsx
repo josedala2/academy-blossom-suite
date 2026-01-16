@@ -257,7 +257,7 @@ const Dashboard = () => {
                   </div>
                 </div>
               ))}
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full" onClick={() => navigate("/dashboard/horarios")}>
                 Ver Calendário Completo
               </Button>
             </CardContent>

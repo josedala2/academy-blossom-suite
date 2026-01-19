@@ -27,7 +27,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { 
   FileText, Download, Printer, Users, Loader2, Eye, ChevronLeft, ChevronRight, 
-  Settings, Upload, X, Palette, RotateCcw, Save, Plus, Trash2, CheckCircle, MessageSquare, Edit3
+  Settings, Upload, X, Palette, RotateCcw, Save, Plus, Trash2, CheckCircle, MessageSquare, Edit3,
+  Sparkles, Copy, CheckSquare
 } from "lucide-react";
 import { 
   Collapsible, 
@@ -109,6 +110,18 @@ for (let i = 3; i <= 8; i++) {
   ];
 }
 
+// Predefined observation templates
+const observationTemplates = [
+  { id: "excellent", label: "Excelente desempenho", text: "Excelente desempenho académico. Demonstra grande dedicação e interesse pelos estudos." },
+  { id: "good", label: "Bom desempenho", text: "Bom desempenho ao longo do período. Continuar com o mesmo empenho." },
+  { id: "improve", label: "Precisa melhorar", text: "Necessita melhorar o aproveitamento escolar. Recomenda-se maior dedicação aos estudos." },
+  { id: "participation", label: "Melhorar participação", text: "Precisa melhorar a participação nas aulas e interação com os colegas." },
+  { id: "behavior", label: "Comportamento exemplar", text: "Comportamento exemplar em sala de aula. É um modelo para os colegas." },
+  { id: "attention", label: "Requer atenção", text: "Requer atenção especial. Sugere-se acompanhamento regular com os encarregados de educação." },
+  { id: "progress", label: "Em progresso", text: "Demonstra progressos significativos em relação ao período anterior. Continuar o bom trabalho." },
+  { id: "homework", label: "Trabalhos de casa", text: "Deve prestar mais atenção à realização dos trabalhos de casa e actividades extra-classe." },
+];
+
 export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -125,6 +138,11 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
   // Observations state per student
   const [observacoes, setObservacoes] = useState<Record<string, string>>({});
   const [observacoesExpanded, setObservacoesExpanded] = useState(false);
+  
+  // Bulk observation state
+  const [bulkObservation, setBulkObservation] = useState("");
+  const [selectedForBulk, setSelectedForBulk] = useState<string[]>([]);
+  const [showBulkSection, setShowBulkSection] = useState(false);
   
   // Use the custom hook for settings
   const {
@@ -827,8 +845,137 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
                 Adicione observações individuais que aparecerão no boletim de cada estudante.
               </p>
             </div>
+
+            {/* Templates Section */}
+            <Collapsible open={showBulkSection} onOpenChange={setShowBulkSection}>
+              <CollapsibleTrigger asChild>
+                <Button variant="outline" size="sm" className="w-full justify-between">
+                  <span className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4" />
+                    Templates e Aplicação em Massa
+                  </span>
+                  <ChevronRight className={`h-4 w-4 transition-transform ${showBulkSection ? 'rotate-90' : ''}`} />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-3 space-y-3">
+                {/* Observation Templates */}
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Sparkles className="h-3 w-3" />
+                    Modelos de Observação Pré-definidos
+                  </Label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {observationTemplates.map((template) => (
+                      <Button
+                        key={template.id}
+                        variant="secondary"
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={() => setBulkObservation(template.text)}
+                        title={template.text}
+                      >
+                        {template.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Bulk Observation Input */}
+                <div className="space-y-2 p-3 rounded-lg border bg-muted/30">
+                  <Label className="text-sm font-medium">Observação em Massa</Label>
+                  <Textarea
+                    placeholder="Escreva ou selecione um template acima para aplicar a múltiplos estudantes..."
+                    value={bulkObservation}
+                    onChange={(e) => setBulkObservation(e.target.value)}
+                    className="h-16 resize-none text-sm"
+                    maxLength={500}
+                  />
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground">
+                      {bulkObservation.length}/500 caracteres
+                    </p>
+                    {bulkObservation && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-xs"
+                        onClick={() => setBulkObservation("")}
+                      >
+                        <X className="h-3 w-3 mr-1" />
+                        Limpar
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Student Selection for Bulk */}
+                  <div className="space-y-2 pt-2 border-t">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs text-muted-foreground">Selecionar estudantes para aplicar:</Label>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-xs"
+                          onClick={() => setSelectedForBulk(estudantesSelecionados)}
+                        >
+                          <CheckSquare className="h-3 w-3 mr-1" />
+                          Todos
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-xs"
+                          onClick={() => setSelectedForBulk([])}
+                        >
+                          Nenhum
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto">
+                      {selectedStudentsData.map((estudante) => (
+                        <Button
+                          key={estudante.id}
+                          variant={selectedForBulk.includes(estudante.id) ? "default" : "outline"}
+                          size="sm"
+                          className="h-6 text-xs"
+                          onClick={() => {
+                            if (selectedForBulk.includes(estudante.id)) {
+                              setSelectedForBulk(selectedForBulk.filter(id => id !== estudante.id));
+                            } else {
+                              setSelectedForBulk([...selectedForBulk, estudante.id]);
+                            }
+                          }}
+                        >
+                          {estudante.nome.split(' ')[0]}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Apply Button */}
+                  <Button
+                    className="w-full mt-2"
+                    size="sm"
+                    disabled={!bulkObservation.trim() || selectedForBulk.length === 0}
+                    onClick={() => {
+                      const newObs = { ...observacoes };
+                      selectedForBulk.forEach(id => {
+                        newObs[id] = bulkObservation;
+                      });
+                      setObservacoes(newObs);
+                      setBulkObservation("");
+                      setSelectedForBulk([]);
+                      setShowBulkSection(false);
+                    }}
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Aplicar a {selectedForBulk.length} estudante{selectedForBulk.length !== 1 ? 's' : ''}
+                  </Button>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
             
-            <ScrollArea className="h-[350px] pr-2">
+            <ScrollArea className="h-[250px] pr-2">
               <div className="space-y-3">
                 {selectedStudentsData.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
@@ -855,6 +1002,26 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
                           </Badge>
                         )}
                       </div>
+                      
+                      {/* Quick Template Buttons */}
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {observationTemplates.slice(0, 4).map((template) => (
+                          <Button
+                            key={template.id}
+                            variant="ghost"
+                            size="sm"
+                            className="h-5 text-[10px] px-1.5 text-muted-foreground hover:text-foreground"
+                            onClick={() => setObservacoes(prev => ({
+                              ...prev,
+                              [estudante.id]: template.text
+                            }))}
+                            title={template.text}
+                          >
+                            {template.label}
+                          </Button>
+                        ))}
+                      </div>
+                      
                       <Textarea
                         placeholder="Ex: Excelente desempenho em Matemática. Precisa melhorar a participação nas aulas de Português."
                         value={observacoes[estudante.id] || ""}
@@ -862,7 +1029,7 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
                           ...prev,
                           [estudante.id]: e.target.value
                         }))}
-                        className="h-20 resize-none text-sm"
+                        className="h-16 resize-none text-sm"
                         maxLength={500}
                       />
                       <div className="flex justify-between mt-1">

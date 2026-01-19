@@ -508,13 +508,7 @@ const Propinas = () => {
                   variant="outline" 
                   className="w-full" 
                   size="sm"
-                  onClick={() => {
-                    setSelectedStatus("all");
-                    toast({
-                      title: "Todas as Transacções",
-                      description: "A mostrar todas as transacções na tabela principal.",
-                    });
-                  }}
+                  onClick={() => navigate("/dashboard/propinas/historico")}
                 >
                   Ver Todas
                 </Button>

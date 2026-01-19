@@ -11,6 +11,7 @@ import Professores from "./pages/dashboard/Professores";
 import Turmas from "./pages/dashboard/Turmas";
 import Avaliacoes from "./pages/dashboard/Avaliacoes";
 import Propinas from "./pages/dashboard/Propinas";
+import HistoricoTransacoes from "./pages/dashboard/HistoricoTransacoes";
 import Horarios from "./pages/dashboard/Horarios";
 import Comunicados from "./pages/dashboard/Comunicados";
 import Relatorios from "./pages/dashboard/Relatorios";
@@ -43,6 +44,7 @@ const App = () => (
           <Route path="/dashboard/turmas" element={<Turmas />} />
           <Route path="/dashboard/avaliacoes" element={<Avaliacoes />} />
           <Route path="/dashboard/propinas" element={<Propinas />} />
+          <Route path="/dashboard/propinas/historico" element={<HistoricoTransacoes />} />
           <Route path="/dashboard/horarios" element={<Horarios />} />
           <Route path="/dashboard/comunicados" element={<Comunicados />} />
           <Route path="/dashboard/relatorios" element={<Relatorios />} />

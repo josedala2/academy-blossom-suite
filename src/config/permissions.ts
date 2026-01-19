@@ -111,6 +111,12 @@ export const navigationConfig: NavSection[] = [
         icon: BarChart3,
         allowedRoles: ["admin", "director_pedagogico", "secretario"],
       },
+      {
+        label: "Rel. Pedagógicos",
+        href: "/dashboard/relatorios-pedagogicos",
+        icon: ClipboardCheck,
+        allowedRoles: ["admin", "director_pedagogico"],
+      },
     ],
   },
   {
@@ -146,6 +152,7 @@ export const routePermissions: Record<string, UserRole[]> = {
   "/dashboard/horarios": ["admin", "director_pedagogico", "secretario", "professor", "estudante"],
   "/dashboard/comunicados": ["admin", "director_pedagogico", "secretario", "professor"],
   "/dashboard/relatorios": ["admin", "director_pedagogico", "secretario"],
+  "/dashboard/relatorios-pedagogicos": ["admin", "director_pedagogico"],
   "/dashboard/configuracoes": ["admin"],
   "/dashboard/secretaria": ["admin", "secretario"],
   "/dashboard/secretaria/pre-registos": ["admin", "secretario"],

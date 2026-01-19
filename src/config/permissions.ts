@@ -11,6 +11,7 @@ import {
   Settings,
   Building2,
   LucideIcon,
+  Video,
 } from "lucide-react";
 
 export interface NavItem {
@@ -75,6 +76,12 @@ export const navigationConfig: NavSection[] = [
         href: "/dashboard/horarios",
         icon: Clock,
         allowedRoles: ["admin", "secretario", "professor"],
+      },
+      {
+        label: "E-Learning",
+        href: "/dashboard/professores?tab=elearning",
+        icon: Video,
+        allowedRoles: ["professor"],
       },
     ],
   },

@@ -27,8 +27,13 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { 
   FileText, Download, Printer, Users, Loader2, Eye, ChevronLeft, ChevronRight, 
-  Settings, Upload, X, Palette, RotateCcw, Save, Plus, Trash2, CheckCircle
+  Settings, Upload, X, Palette, RotateCcw, Save, Plus, Trash2, CheckCircle, MessageSquare, Edit3
 } from "lucide-react";
+import { 
+  Collapsible, 
+  CollapsibleContent, 
+  CollapsibleTrigger 
+} from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { useBoletimSettings, colorPresets } from "@/hooks/useBoletimSettings";
 import jsPDF from "jspdf";
@@ -114,8 +119,12 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
   const [estudantesSelecionados, setEstudantesSelecionados] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [activeTab, setActiveTab] = useState<"selecao" | "personalizacao" | "preview">("selecao");
+  const [activeTab, setActiveTab] = useState<"selecao" | "observacoes" | "personalizacao" | "preview">("selecao");
   const [previewIndex, setPreviewIndex] = useState(0);
+  
+  // Observations state per student
+  const [observacoes, setObservacoes] = useState<Record<string, string>>({});
+  const [observacoesExpanded, setObservacoesExpanded] = useState(false);
   
   // Use the custom hook for settings
   const {
@@ -209,6 +218,12 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
     } else {
       setEstudantesSelecionados(estudantesSelecionados.filter(e => e !== id));
       setSelectAll(false);
+      // Clear observation when student is deselected
+      setObservacoes(prev => {
+        const newObs = { ...prev };
+        delete newObs[id];
+        return newObs;
+      });
     }
   };
 
@@ -314,6 +329,20 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
     doc.setFont("helvetica", "bold");
     doc.text(`Média Geral: ${overallAverage.toFixed(1)}`, 14, finalY);
     doc.text(`Situação Final: ${overallAverage >= 10 ? "APROVADO" : "REPROVADO"}`, 14, finalY + 8);
+    
+    // Student observation
+    const studentObservation = observacoes[estudante.id];
+    let observationEndY = finalY + 8;
+    if (studentObservation && studentObservation.trim()) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text("Observações:", 14, finalY + 20);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      const splitObservation = doc.splitTextToSize(studentObservation.trim(), pageWidth - 28);
+      doc.text(splitObservation, 14, finalY + 27);
+      observationEndY = finalY + 27 + (splitObservation.length * 4);
+    }
     
     // Footer
     const footerY = doc.internal.pageSize.getHeight() - 50;
@@ -464,6 +493,18 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
     doc.text(`Média Geral: ${overallAverage.toFixed(1)}`, 14, finalY);
     doc.text(`Situação Final: ${overallAverage >= 10 ? "APROVADO" : "REPROVADO"}`, 14, finalY + 8);
     
+    // Student observation
+    const studentObservation = observacoes[estudante.id];
+    if (studentObservation && studentObservation.trim()) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text("Observações:", 14, finalY + 20);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      const splitObservation = doc.splitTextToSize(studentObservation.trim(), pageWidth - 28);
+      doc.text(splitObservation, 14, finalY + 27);
+    }
+    
     // Footer
     const footerY = doc.internal.pageSize.getHeight() - 50;
     
@@ -590,6 +631,7 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
       setPeriodoSelecionado("");
       setEstudantesSelecionados([]);
       setSelectAll(false);
+      setObservacoes({});
     } catch (error) {
       console.error("Erro ao gerar boletins:", error);
       toast({
@@ -612,6 +654,7 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
     const overallAverage = grades.reduce((sum, g) => sum + g.media, 0) / grades.length;
     const isApproved = overallAverage >= 10;
     const enabledSignatures = settings.signatures.filter(s => s.enabled);
+    const studentObservation = observacoes[estudante.id];
 
     return (
       <Card className="border-2 border-primary/20 bg-card shadow-lg">
@@ -694,6 +737,17 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
             </div>
           </div>
 
+          {/* Observation */}
+          {studentObservation && studentObservation.trim() && (
+            <div className="p-4 border-t">
+              <h4 className="font-bold text-sm mb-2 text-muted-foreground uppercase flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Observações
+              </h4>
+              <p className="text-sm text-foreground whitespace-pre-wrap">{studentObservation}</p>
+            </div>
+          )}
+
           {/* Footer */}
           <div className="p-4 border-t text-xs text-muted-foreground">
             {settings.showGenerationDate && (
@@ -732,11 +786,20 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "selecao" | "personalizacao" | "preview")} className="mt-2">
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "selecao" | "observacoes" | "personalizacao" | "preview")} className="mt-2">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="selecao">
               <Users className="h-4 w-4 mr-2" />
               Seleção
+            </TabsTrigger>
+            <TabsTrigger value="observacoes" disabled={estudantesSelecionados.length === 0}>
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Observações
+              {Object.keys(observacoes).filter(k => observacoes[k]?.trim()).length > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 min-w-5 text-xs">
+                  {Object.keys(observacoes).filter(k => observacoes[k]?.trim()).length}
+                </Badge>
+              )}
             </TabsTrigger>
             <TabsTrigger value="personalizacao">
               <Settings className="h-4 w-4 mr-2" />
@@ -747,6 +810,87 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
               Pré-visualização
             </TabsTrigger>
           </TabsList>
+
+          {/* Observações Tab */}
+          <TabsContent value="observacoes" className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2">
+                  <Edit3 className="h-4 w-4" />
+                  Observações Personalizadas por Estudante
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  {Object.keys(observacoes).filter(k => observacoes[k]?.trim()).length} de {estudantesSelecionados.length} com observações
+                </p>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Adicione observações individuais que aparecerão no boletim de cada estudante.
+              </p>
+            </div>
+            
+            <ScrollArea className="h-[350px] pr-2">
+              <div className="space-y-3">
+                {selectedStudentsData.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Users className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                    <p>Selecione estudantes na aba "Seleção" para adicionar observações.</p>
+                  </div>
+                ) : (
+                  selectedStudentsData.map((estudante) => (
+                    <div key={estudante.id} className="p-3 rounded-lg border bg-card">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                          <span className="text-xs font-bold text-primary">
+                            {estudante.nome.split(' ').map(n => n[0]).slice(0, 2).join('')}
+                          </span>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">{estudante.nome}</p>
+                          <p className="text-xs text-muted-foreground">Nº {estudante.numero}</p>
+                        </div>
+                        {observacoes[estudante.id]?.trim() && (
+                          <Badge variant="secondary" className="text-xs">
+                            <MessageSquare className="h-3 w-3 mr-1" />
+                            Obs.
+                          </Badge>
+                        )}
+                      </div>
+                      <Textarea
+                        placeholder="Ex: Excelente desempenho em Matemática. Precisa melhorar a participação nas aulas de Português."
+                        value={observacoes[estudante.id] || ""}
+                        onChange={(e) => setObservacoes(prev => ({
+                          ...prev,
+                          [estudante.id]: e.target.value
+                        }))}
+                        className="h-20 resize-none text-sm"
+                        maxLength={500}
+                      />
+                      <div className="flex justify-between mt-1">
+                        <p className="text-xs text-muted-foreground">
+                          {(observacoes[estudante.id] || "").length}/500 caracteres
+                        </p>
+                        {observacoes[estudante.id]?.trim() && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 text-xs text-destructive hover:text-destructive"
+                            onClick={() => setObservacoes(prev => {
+                              const newObs = { ...prev };
+                              delete newObs[estudante.id];
+                              return newObs;
+                            })}
+                          >
+                            <X className="h-3 w-3 mr-1" />
+                            Limpar
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+          </TabsContent>
 
           {/* Personalização Tab */}
           <TabsContent value="personalizacao" className="space-y-4 mt-4">

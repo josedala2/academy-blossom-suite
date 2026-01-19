@@ -9,6 +9,7 @@ import {
   BookOpen,
   Users,
   MapPin,
+  GraduationCap,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -92,6 +93,36 @@ const Dashboard = () => {
             </Button>
           </div>
         </div>
+
+        {/* Student Portal Banner */}
+        {user?.role === "estudante" && (
+          <Card className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
+            <CardContent className="py-6">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="h-14 w-14 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+                    <GraduationCap className="h-8 w-8" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold">Portal do Estudante</h3>
+                    <p className="text-primary-foreground/80 text-sm">
+                      Aceda ao seu horário, pagamentos, exames e notas num só lugar
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  variant="secondary" 
+                  size="lg"
+                  onClick={() => navigate("/dashboard/portal-estudante")}
+                  className="w-full sm:w-auto"
+                >
+                  Aceder ao Portal
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">

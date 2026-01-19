@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Perfil from "./pages/dashboard/Perfil";
+import PortalEstudante from "./pages/dashboard/PortalEstudante";
 import Estudantes from "./pages/dashboard/Estudantes";
 import Professores from "./pages/dashboard/Professores";
 import Turmas from "./pages/dashboard/Turmas";
@@ -53,6 +54,11 @@ const App = () => (
             <Route path="/dashboard/perfil" element={
               <ProtectedRoute allowedRoles={routePermissions["/dashboard/perfil"]}>
                 <Perfil />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/portal-estudante" element={
+              <ProtectedRoute allowedRoles={routePermissions["/dashboard/portal-estudante"]}>
+                <PortalEstudante />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/estudantes" element={

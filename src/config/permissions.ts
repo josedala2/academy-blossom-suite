@@ -35,6 +35,12 @@ export const navigationConfig: NavSection[] = [
         icon: BarChart3,
         allowedRoles: ["admin", "secretario", "professor", "estudante"],
       },
+      {
+        label: "Meu Portal",
+        href: "/dashboard/portal-estudante",
+        icon: GraduationCap,
+        allowedRoles: ["estudante"],
+      },
     ],
   },
   {
@@ -62,13 +68,13 @@ export const navigationConfig: NavSection[] = [
         label: "Avaliações",
         href: "/dashboard/avaliacoes",
         icon: ClipboardCheck,
-        allowedRoles: ["admin", "secretario", "professor", "estudante"],
+        allowedRoles: ["admin", "secretario", "professor"],
       },
       {
         label: "Horários",
         href: "/dashboard/horarios",
         icon: Clock,
-        allowedRoles: ["admin", "secretario", "professor", "estudante"],
+        allowedRoles: ["admin", "secretario", "professor"],
       },
     ],
   },
@@ -123,6 +129,7 @@ export const navigationConfig: NavSection[] = [
 export const routePermissions: Record<string, UserRole[]> = {
   "/dashboard": ["admin", "secretario", "professor", "estudante"],
   "/dashboard/perfil": ["admin", "secretario", "professor", "estudante"],
+  "/dashboard/portal-estudante": ["estudante"],
   "/dashboard/estudantes": ["admin", "secretario", "professor"],
   "/dashboard/professores": ["admin", "secretario"],
   "/dashboard/turmas": ["admin", "secretario", "professor"],

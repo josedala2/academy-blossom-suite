@@ -85,13 +85,23 @@ const weeklySchedule = [
   ]},
 ];
 
+// Payment methods available
+const paymentMethods = {
+  mobile: { label: "Pagamento Móvel (Multicaixa Express)", icon: "📱" },
+  transferencia: { label: "Transferência Bancária", icon: "🏦" },
+  deposito: { label: "Depósito Bancário", icon: "💵" },
+  referencia: { label: "Referência Multicaixa", icon: "🔢" },
+  pos: { label: "Terminal POS", icon: "💳" },
+  numerario: { label: "Numerário", icon: "💰" },
+};
+
 // Payments data
 const payments = [
-  { id: 1, month: "Janeiro 2026", amount: "35.000 Kz", status: "paid", date: "05 Jan 2026", receipt: "REC-2026-001" },
-  { id: 2, month: "Fevereiro 2026", amount: "35.000 Kz", status: "pending", dueDate: "05 Fev 2026", receipt: null },
-  { id: 3, month: "Dezembro 2025", amount: "35.000 Kz", status: "paid", date: "03 Dez 2025", receipt: "REC-2025-012" },
-  { id: 4, month: "Novembro 2025", amount: "35.000 Kz", status: "paid", date: "04 Nov 2025", receipt: "REC-2025-011" },
-  { id: 5, month: "Outubro 2025", amount: "35.000 Kz", status: "paid", date: "02 Out 2025", receipt: "REC-2025-010" },
+  { id: 1, month: "Janeiro 2026", amount: "35.000 Kz", status: "paid", date: "05 Jan 2026", receipt: "REC-2026-001", method: "deposito" as keyof typeof paymentMethods },
+  { id: 2, month: "Fevereiro 2026", amount: "35.000 Kz", status: "pending", dueDate: "05 Fev 2026", receipt: null, method: null },
+  { id: 3, month: "Dezembro 2025", amount: "35.000 Kz", status: "paid", date: "03 Dez 2025", receipt: "REC-2025-012", method: "transferencia" as keyof typeof paymentMethods },
+  { id: 4, month: "Novembro 2025", amount: "35.000 Kz", status: "paid", date: "04 Nov 2025", receipt: "REC-2025-011", method: "mobile" as keyof typeof paymentMethods },
+  { id: 5, month: "Outubro 2025", amount: "35.000 Kz", status: "paid", date: "02 Out 2025", receipt: "REC-2025-010", method: "referencia" as keyof typeof paymentMethods },
 ];
 
 // Scheduled exams
@@ -213,7 +223,8 @@ const PortalEstudante = () => {
     doc.setFont("helvetica", "normal");
     doc.text(`Data do Pagamento: ${payment.date}`, 20, 195);
     doc.text("Estado: PAGO", 20, 203);
-    doc.text("Método: Depósito Bancário", 20, 211);
+    const methodLabel = payment.method ? paymentMethods[payment.method]?.label : "Não especificado";
+    doc.text(`Método: ${methodLabel}`, 20, 211);
     
     // Footer note
     doc.setFontSize(9);
@@ -478,6 +489,12 @@ const PortalEstudante = () => {
                               : `Vence em ${payment.dueDate}`
                             }
                           </p>
+                          {payment.status === "paid" && payment.method && (
+                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                              <span>{paymentMethods[payment.method].icon}</span>
+                              <span>{paymentMethods[payment.method].label}</span>
+                            </p>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-4">

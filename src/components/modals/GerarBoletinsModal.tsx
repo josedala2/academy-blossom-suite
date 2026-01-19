@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -18,29 +19,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { 
   FileText, Download, Printer, Users, Loader2, Eye, ChevronLeft, ChevronRight, 
-  Settings, Upload, Image, X, Palette, RotateCcw 
+  Settings, Upload, X, Palette, RotateCcw, Save, Plus, Trash2, CheckCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useBoletimSettings, colorPresets } from "@/hooks/useBoletimSettings";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-
-// Preset color options
-const colorPresets = [
-  { name: "Verde Institucional", value: "#2E7D32", rgb: [46, 125, 50] },
-  { name: "Azul Académico", value: "#1565C0", rgb: [21, 101, 192] },
-  { name: "Azul Marinho", value: "#0D47A1", rgb: [13, 71, 161] },
-  { name: "Bordô", value: "#880E4F", rgb: [136, 14, 79] },
-  { name: "Roxo Elegante", value: "#4A148C", rgb: [74, 20, 140] },
-  { name: "Cinza Profissional", value: "#37474F", rgb: [55, 71, 79] },
-  { name: "Dourado", value: "#F57F17", rgb: [245, 127, 23] },
-  { name: "Verde Escuro", value: "#1B5E20", rgb: [27, 94, 32] },
-];
 
 interface GerarBoletinsModalProps {
   open: boolean;
@@ -114,6 +106,9 @@ for (let i = 3; i <= 8; i++) {
 
 export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalProps) {
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Selection state
   const [turmaSelecionada, setTurmaSelecionada] = useState("");
   const [periodoSelecionado, setPeriodoSelecionado] = useState("");
   const [estudantesSelecionados, setEstudantesSelecionados] = useState<string[]>([]);
@@ -122,13 +117,22 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
   const [activeTab, setActiveTab] = useState<"selecao" | "personalizacao" | "preview">("selecao");
   const [previewIndex, setPreviewIndex] = useState(0);
   
-  // Customization states
-  const [schoolName, setSchoolName] = useState("Sistema de Gestão Escolar");
-  const [headerColor, setHeaderColor] = useState(colorPresets[0].value);
-  const [headerColorRgb, setHeaderColorRgb] = useState<number[]>(colorPresets[0].rgb);
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const [logoBase64, setLogoBase64] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // Use the custom hook for settings
+  const {
+    settings,
+    logoUrl,
+    isDirty,
+    updateSettings,
+    saveSettings,
+    resetSettings,
+    handleColorSelect,
+    handleCustomColorChange,
+    handleLogoUpload,
+    handleRemoveLogo,
+    updateSignature,
+    addSignature,
+    removeSignature,
+  } = useBoletimSettings();
 
   // Get selected students data for preview
   const selectedStudentsData = useMemo(() => {
@@ -141,71 +145,53 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
 
   const canShowPreview = turmaSelecionada && periodoSelecionado && estudantesSelecionados.length > 0;
 
-  // Handle color selection
-  const handleColorSelect = (preset: typeof colorPresets[0]) => {
-    setHeaderColor(preset.value);
-    setHeaderColorRgb(preset.rgb);
-  };
-
-  const handleCustomColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const hex = e.target.value;
-    setHeaderColor(hex);
-    // Convert hex to RGB
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    setHeaderColorRgb([r, g, b]);
-  };
-
-  // Handle logo upload
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUploadEvent = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      toast({
-        title: "Ficheiro muito grande",
-        description: "O logotipo deve ter no máximo 2MB",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!file.type.startsWith("image/")) {
-      toast({
-        title: "Formato inválido",
-        description: "Por favor, selecione uma imagem (PNG, JPG, SVG)",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string;
-      setLogoUrl(URL.createObjectURL(file));
-      setLogoBase64(base64);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleRemoveLogo = () => {
-    setLogoUrl(null);
-    setLogoBase64(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+    const success = await handleLogoUpload(file);
+    if (!success) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast({
+          title: "Ficheiro muito grande",
+          description: "O logotipo deve ter no máximo 2MB",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Formato inválido",
+          description: "Por favor, selecione uma imagem (PNG, JPG, SVG)",
+          variant: "destructive",
+        });
+      }
     }
   };
 
-  const handleResetCustomization = () => {
-    setSchoolName("Sistema de Gestão Escolar");
-    setHeaderColor(colorPresets[0].value);
-    setHeaderColorRgb(colorPresets[0].rgb);
-    setLogoUrl(null);
-    setLogoBase64(null);
+  const handleSaveSettings = () => {
+    const success = saveSettings();
+    if (success) {
+      toast({
+        title: "Configurações guardadas",
+        description: "As personalizações do boletim foram guardadas com sucesso",
+      });
+    } else {
+      toast({
+        title: "Erro ao guardar",
+        description: "Não foi possível guardar as configurações",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleResetSettings = () => {
+    resetSettings();
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+    toast({
+      title: "Configurações repostas",
+      description: "As personalizações foram repostas para os valores predefinidos",
+    });
   };
 
   const handleSelectAll = (checked: boolean) => {
@@ -231,14 +217,14 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
     const pageWidth = doc.internal.pageSize.getWidth();
     
     // Header with custom color
-    doc.setFillColor(headerColorRgb[0], headerColorRgb[1], headerColorRgb[2]);
+    doc.setFillColor(settings.headerColorRgb[0], settings.headerColorRgb[1], settings.headerColorRgb[2]);
     doc.rect(0, 0, pageWidth, 45, "F");
     
     // Add logo if available
     let textStartY = 15;
-    if (logoBase64) {
+    if (settings.logoBase64) {
       try {
-        doc.addImage(logoBase64, 'PNG', 14, 8, 25, 25);
+        doc.addImage(settings.logoBase64, 'PNG', 14, 8, 25, 25);
         textStartY = 15;
       } catch (error) {
         console.log("Logo could not be added to PDF");
@@ -252,7 +238,7 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
     
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
-    doc.text(schoolName, pageWidth / 2, textStartY + 10, { align: "center" });
+    doc.text(settings.schoolName, pageWidth / 2, textStartY + 10, { align: "center" });
     doc.text(`Ano Lectivo ${periodo.ano}`, pageWidth / 2, textStartY + 17, { align: "center" });
     
     // Student info
@@ -295,7 +281,7 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
       body: tableData,
       theme: "grid",
       headStyles: {
-        fillColor: [headerColorRgb[0], headerColorRgb[1], headerColorRgb[2]],
+        fillColor: [settings.headerColorRgb[0], settings.headerColorRgb[1], settings.headerColorRgb[2]],
         textColor: 255,
         fontStyle: "bold",
         halign: "center"
@@ -330,22 +316,48 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
     doc.text(`Situação Final: ${overallAverage >= 10 ? "APROVADO" : "REPROVADO"}`, 14, finalY + 8);
     
     // Footer
-    const footerY = doc.internal.pageSize.getHeight() - 30;
+    const footerY = doc.internal.pageSize.getHeight() - 50;
     
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Documento gerado em: ${new Date().toLocaleDateString("pt-AO")} às ${new Date().toLocaleTimeString("pt-AO")}`, 14, footerY);
+    // Generation date
+    if (settings.showGenerationDate) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Documento gerado em: ${new Date().toLocaleDateString("pt-AO")} às ${new Date().toLocaleTimeString("pt-AO")}`, 14, footerY);
+    }
     
-    // Signature lines
-    doc.setDrawColor(0, 0, 0);
-    doc.line(14, footerY + 15, 80, footerY + 15);
-    doc.line(130, footerY + 15, 196, footerY + 15);
+    // Custom footer text
+    if (settings.footerText) {
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
+      doc.text(settings.footerText, pageWidth / 2, footerY + 8, { align: "center", maxWidth: pageWidth - 28 });
+    }
     
-    doc.setFontSize(8);
-    doc.setTextColor(0, 0, 0);
-    doc.text("Director Pedagógico", 47, footerY + 20, { align: "center" });
-    doc.text("Encarregado de Educação", 163, footerY + 20, { align: "center" });
+    // Signature lines - dynamically positioned based on enabled signatures
+    const enabledSignatures = settings.signatures.filter(s => s.enabled);
+    if (enabledSignatures.length > 0) {
+      const signatureY = footerY + 20;
+      const signatureWidth = 60;
+      const totalWidth = enabledSignatures.length * signatureWidth + (enabledSignatures.length - 1) * 20;
+      let startX = (pageWidth - totalWidth) / 2;
+      
+      doc.setDrawColor(0, 0, 0);
+      doc.setFontSize(8);
+      doc.setTextColor(0, 0, 0);
+      
+      enabledSignatures.forEach((sig, index) => {
+        const centerX = startX + signatureWidth / 2;
+        doc.line(startX, signatureY, startX + signatureWidth, signatureY);
+        doc.setFont("helvetica", "bold");
+        doc.text(sig.label, centerX, signatureY + 5, { align: "center" });
+        if (sig.name) {
+          doc.setFont("helvetica", "normal");
+          doc.text(sig.name, centerX, signatureY + 10, { align: "center" });
+        }
+        startX += signatureWidth + 20;
+      });
+    }
     
     return doc;
   };
@@ -355,14 +367,14 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
     const pageWidth = doc.internal.pageSize.getWidth();
     
     // Header with custom color
-    doc.setFillColor(headerColorRgb[0], headerColorRgb[1], headerColorRgb[2]);
+    doc.setFillColor(settings.headerColorRgb[0], settings.headerColorRgb[1], settings.headerColorRgb[2]);
     doc.rect(0, 0, pageWidth, 45, "F");
     
     // Add logo if available
     let textStartY = 15;
-    if (logoBase64) {
+    if (settings.logoBase64) {
       try {
-        doc.addImage(logoBase64, 'PNG', 14, 8, 25, 25);
+        doc.addImage(settings.logoBase64, 'PNG', 14, 8, 25, 25);
       } catch (error) {
         console.log("Logo could not be added to PDF");
       }
@@ -375,7 +387,7 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
     
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
-    doc.text(schoolName, pageWidth / 2, textStartY + 10, { align: "center" });
+    doc.text(settings.schoolName, pageWidth / 2, textStartY + 10, { align: "center" });
     doc.text(`Ano Lectivo ${periodo.ano}`, pageWidth / 2, textStartY + 17, { align: "center" });
     
     // Student info
@@ -418,7 +430,7 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
       body: tableData,
       theme: "grid",
       headStyles: {
-        fillColor: [headerColorRgb[0], headerColorRgb[1], headerColorRgb[2]],
+        fillColor: [settings.headerColorRgb[0], settings.headerColorRgb[1], settings.headerColorRgb[2]],
         textColor: 255,
         fontStyle: "bold",
         halign: "center"
@@ -453,22 +465,48 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
     doc.text(`Situação Final: ${overallAverage >= 10 ? "APROVADO" : "REPROVADO"}`, 14, finalY + 8);
     
     // Footer
-    const footerY = doc.internal.pageSize.getHeight() - 30;
+    const footerY = doc.internal.pageSize.getHeight() - 50;
     
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Documento gerado em: ${new Date().toLocaleDateString("pt-AO")} às ${new Date().toLocaleTimeString("pt-AO")}`, 14, footerY);
+    // Generation date
+    if (settings.showGenerationDate) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Documento gerado em: ${new Date().toLocaleDateString("pt-AO")} às ${new Date().toLocaleTimeString("pt-AO")}`, 14, footerY);
+    }
     
-    // Signature lines
-    doc.setDrawColor(0, 0, 0);
-    doc.line(14, footerY + 15, 80, footerY + 15);
-    doc.line(130, footerY + 15, 196, footerY + 15);
+    // Custom footer text
+    if (settings.footerText) {
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
+      doc.text(settings.footerText, pageWidth / 2, footerY + 8, { align: "center", maxWidth: pageWidth - 28 });
+    }
     
-    doc.setFontSize(8);
-    doc.setTextColor(0, 0, 0);
-    doc.text("Director Pedagógico", 47, footerY + 20, { align: "center" });
-    doc.text("Encarregado de Educação", 163, footerY + 20, { align: "center" });
+    // Signature lines - dynamically positioned based on enabled signatures
+    const enabledSignatures = settings.signatures.filter(s => s.enabled);
+    if (enabledSignatures.length > 0) {
+      const signatureY = footerY + 20;
+      const signatureWidth = 60;
+      const totalWidth = enabledSignatures.length * signatureWidth + (enabledSignatures.length - 1) * 20;
+      let startX = (pageWidth - totalWidth) / 2;
+      
+      doc.setDrawColor(0, 0, 0);
+      doc.setFontSize(8);
+      doc.setTextColor(0, 0, 0);
+      
+      enabledSignatures.forEach((sig, index) => {
+        const centerX = startX + signatureWidth / 2;
+        doc.line(startX, signatureY, startX + signatureWidth, signatureY);
+        doc.setFont("helvetica", "bold");
+        doc.text(sig.label, centerX, signatureY + 5, { align: "center" });
+        if (sig.name) {
+          doc.setFont("helvetica", "normal");
+          doc.text(sig.name, centerX, signatureY + 10, { align: "center" });
+        }
+        startX += signatureWidth + 20;
+      });
+    }
   };
 
   const handleGenerate = async (action: 'download' | 'print') => {
@@ -573,6 +611,7 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
     const grades = mockGradesData[estudante.id] || mockGradesData["1"];
     const overallAverage = grades.reduce((sum, g) => sum + g.media, 0) / grades.length;
     const isApproved = overallAverage >= 10;
+    const enabledSignatures = settings.signatures.filter(s => s.enabled);
 
     return (
       <Card className="border-2 border-primary/20 bg-card shadow-lg">
@@ -580,7 +619,7 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
           {/* Header with custom color and logo */}
           <div 
             className="p-4 rounded-t-lg flex items-center gap-4"
-            style={{ backgroundColor: headerColor }}
+            style={{ backgroundColor: settings.headerColor }}
           >
             {logoUrl && (
               <img 
@@ -591,7 +630,7 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
             )}
             <div className="flex-1 text-center text-white">
               <h3 className="text-lg font-bold">BOLETIM DE NOTAS</h3>
-              <p className="text-sm opacity-90">{schoolName}</p>
+              <p className="text-sm opacity-90">{settings.schoolName}</p>
               <p className="text-sm opacity-90">Ano Lectivo {periodo.ano}</p>
             </div>
             {logoUrl && <div className="w-12" />} {/* Spacer for centering */}
@@ -613,7 +652,7 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
           <div className="p-4">
             <div className="overflow-hidden rounded-lg border">
               <table className="w-full text-sm">
-                <thead style={{ backgroundColor: headerColor }}>
+                <thead style={{ backgroundColor: settings.headerColor }}>
                   <tr>
                     <th className="px-3 py-2 text-left font-medium text-white">Disciplina</th>
                     <th className="px-2 py-2 text-center font-medium text-white">1º Trim.</th>
@@ -657,17 +696,23 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
 
           {/* Footer */}
           <div className="p-4 border-t text-xs text-muted-foreground">
-            <p>Documento gerado em: {new Date().toLocaleDateString("pt-AO")} às {new Date().toLocaleTimeString("pt-AO")}</p>
-            <div className="flex justify-between mt-4 pt-4">
-              <div className="text-center flex-1">
-                <div className="border-t border-foreground/30 w-32 mx-auto mb-1"></div>
-                <p>Director Pedagógico</p>
+            {settings.showGenerationDate && (
+              <p>Documento gerado em: {new Date().toLocaleDateString("pt-AO")} às {new Date().toLocaleTimeString("pt-AO")}</p>
+            )}
+            {settings.footerText && (
+              <p className="mt-2 italic text-center">{settings.footerText}</p>
+            )}
+            {enabledSignatures.length > 0 && (
+              <div className="flex justify-around mt-6 pt-4">
+                {enabledSignatures.map((sig, index) => (
+                  <div key={index} className="text-center flex-1">
+                    <div className="border-t border-foreground/30 w-24 mx-auto mb-1"></div>
+                    <p className="font-medium">{sig.label}</p>
+                    {sig.name && <p className="text-xs">{sig.name}</p>}
+                  </div>
+                ))}
               </div>
-              <div className="text-center flex-1">
-                <div className="border-t border-foreground/30 w-32 mx-auto mb-1"></div>
-                <p>Encarregado de Educação</p>
-              </div>
-            </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -676,7 +721,7 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh]">
+      <DialogContent className="sm:max-w-[750px] max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
@@ -705,14 +750,14 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
 
           {/* Personalização Tab */}
           <TabsContent value="personalizacao" className="space-y-4 mt-4">
-            <ScrollArea className="h-[350px] pr-4">
+            <ScrollArea className="h-[420px] pr-4">
               {/* School Name */}
               <div className="space-y-2 mb-4">
                 <Label htmlFor="schoolName">Nome da Instituição</Label>
                 <Input
                   id="schoolName"
-                  value={schoolName}
-                  onChange={(e) => setSchoolName(e.target.value)}
+                  value={settings.schoolName}
+                  onChange={(e) => updateSettings({ schoolName: e.target.value })}
                   placeholder="Nome da escola"
                 />
               </div>
@@ -726,7 +771,7 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={handleLogoUpload}
+                    onChange={handleLogoUploadEvent}
                   />
                   {logoUrl ? (
                     <div className="relative">
@@ -762,7 +807,7 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
               </div>
 
               {/* Header Color */}
-              <div className="space-y-3">
+              <div className="space-y-3 mb-6">
                 <Label className="flex items-center gap-2">
                   <Palette className="h-4 w-4" />
                   Cor do Cabeçalho
@@ -776,7 +821,7 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
                       type="button"
                       onClick={() => handleColorSelect(preset)}
                       className={`h-10 rounded-lg border-2 transition-all ${
-                        headerColor === preset.value 
+                        settings.headerColor === preset.value 
                           ? "border-foreground ring-2 ring-offset-2 ring-primary" 
                           : "border-transparent hover:border-muted-foreground/50"
                       }`}
@@ -793,13 +838,13 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
                     <input
                       id="customColor"
                       type="color"
-                      value={headerColor}
-                      onChange={handleCustomColorChange}
+                      value={settings.headerColor}
+                      onChange={(e) => handleCustomColorChange(e.target.value)}
                       className="w-10 h-10 rounded cursor-pointer border-0"
                     />
                     <Input
-                      value={headerColor.toUpperCase()}
-                      onChange={handleCustomColorChange}
+                      value={settings.headerColor.toUpperCase()}
+                      onChange={(e) => handleCustomColorChange(e.target.value)}
                       className="w-24 font-mono text-sm"
                       maxLength={7}
                     />
@@ -807,11 +852,112 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
                 </div>
               </div>
 
-              {/* Reset Button */}
-              <div className="pt-4 border-t mt-4">
-                <Button variant="outline" size="sm" onClick={handleResetCustomization}>
+              <Separator className="my-4" />
+
+              {/* Signatures Section */}
+              <div className="space-y-3 mb-6">
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Campos de Assinatura
+                  </Label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={addSignature}
+                    disabled={settings.signatures.length >= 4}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Adicionar
+                  </Button>
+                </div>
+
+                <div className="space-y-3">
+                  {settings.signatures.map((sig, index) => (
+                    <div key={index} className="flex items-start gap-3 p-3 rounded-lg border bg-muted/30">
+                      <Switch
+                        checked={sig.enabled}
+                        onCheckedChange={(checked) => updateSignature(index, { enabled: checked })}
+                      />
+                      <div className="flex-1 space-y-2">
+                        <Input
+                          placeholder="Título (ex: Director Pedagógico)"
+                          value={sig.label}
+                          onChange={(e) => updateSignature(index, { label: e.target.value })}
+                          className="h-8"
+                        />
+                        <Input
+                          placeholder="Nome (opcional)"
+                          value={sig.name}
+                          onChange={(e) => updateSignature(index, { name: e.target.value })}
+                          className="h-8"
+                        />
+                      </div>
+                      {settings.signatures.length > 1 && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => removeSignature(index)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Separator className="my-4" />
+
+              {/* Footer Section */}
+              <div className="space-y-3 mb-4">
+                <Label className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Rodapé
+                </Label>
+                
+                <div className="flex items-center gap-2 mb-3">
+                  <Switch
+                    id="showDate"
+                    checked={settings.showGenerationDate}
+                    onCheckedChange={(checked) => updateSettings({ showGenerationDate: checked })}
+                  />
+                  <Label htmlFor="showDate" className="text-sm font-normal cursor-pointer">
+                    Mostrar data de geração do documento
+                  </Label>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="footerText" className="text-sm text-muted-foreground">Texto personalizado do rodapé</Label>
+                  <Textarea
+                    id="footerText"
+                    placeholder="Ex: Este documento não tem validade sem o selo da instituição."
+                    value={settings.footerText}
+                    onChange={(e) => updateSettings({ footerText: e.target.value })}
+                    className="h-20 resize-none"
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between pt-4 border-t">
+                <Button variant="outline" size="sm" onClick={handleResetSettings}>
                   <RotateCcw className="h-4 w-4 mr-2" />
                   Repor Predefinições
+                </Button>
+                <Button size="sm" onClick={handleSaveSettings} disabled={!isDirty}>
+                  {isDirty ? (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Guardar Configurações
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Configurações Guardadas
+                    </>
+                  )}
                 </Button>
               </div>
             </ScrollArea>

@@ -30,7 +30,27 @@ import {
   FolderOpen,
   Settings,
   ClipboardList,
+  TrendingUp,
+  TrendingDown,
+  AlertTriangle,
+  Trophy,
+  Target,
 } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  Legend,
+} from "recharts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -1180,25 +1200,317 @@ const ELearning = () => {
           </TabsContent>
 
           {/* Stats Tab */}
-          <TabsContent value="stats" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
-                  Estatísticas de Acesso
-                </CardTitle>
-                <CardDescription>
-                  Acompanhe o acesso dos estudantes aos conteúdos
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12 text-muted-foreground">
-                  <BarChart3 className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                  <p>As estatísticas serão mostradas aqui</p>
-                  <p className="text-sm">quando houver dados de acesso dos estudantes</p>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="stats" className="space-y-6">
+            {/* Quiz Stats Mock Data */}
+            {(() => {
+              const quizStats = {
+                totalAttempts: 156,
+                uniqueStudents: 42,
+                avgScore: 72.5,
+                passRate: 78,
+                avgTimeMinutes: 12.3,
+                totalQuizzes: modules.reduce((acc, m) => acc + m.lessons.filter(l => l.quiz).length, 0),
+              };
+
+              const scoreDistribution = [
+                { range: "0-20%", count: 5, fill: "hsl(var(--destructive))" },
+                { range: "21-40%", count: 12, fill: "hsl(0 84% 60%)" },
+                { range: "41-60%", count: 28, fill: "hsl(38 92% 50%)" },
+                { range: "61-80%", count: 65, fill: "hsl(142 76% 36%)" },
+                { range: "81-100%", count: 46, fill: "hsl(var(--primary))" },
+              ];
+
+              const mostMissedQuestions = [
+                { question: "Qual é o resultado de 8 + 4 × 2?", quiz: "Quiz - Números e Operações", errorRate: 45 },
+                { question: "O número zero é considerado um número natural.", quiz: "Quiz - Números e Operações", errorRate: 38 },
+                { question: "Qual a fórmula do discriminante?", quiz: "Quiz - Equações 2º Grau", errorRate: 35 },
+                { question: "Quantos graus tem um triângulo?", quiz: "Quiz - Triângulos", errorRate: 28 },
+                { question: "Qual é a 2ª Lei de Newton?", quiz: "Quiz - Leis de Newton", errorRate: 25 },
+              ];
+
+              const weeklyAttempts = [
+                { day: "Seg", tentativas: 18, aprovados: 14 },
+                { day: "Ter", tentativas: 25, aprovados: 20 },
+                { day: "Qua", tentativas: 32, aprovados: 26 },
+                { day: "Qui", tentativas: 28, aprovados: 22 },
+                { day: "Sex", tentativas: 35, aprovados: 28 },
+                { day: "Sáb", tentativas: 12, aprovados: 10 },
+                { day: "Dom", tentativas: 6, aprovados: 5 },
+              ];
+
+              const quizPerformance = [
+                { name: "Números e Operações", tentativas: 45, mediaNotas: 75, taxaAprovacao: 82 },
+                { name: "Equações 1º Grau", tentativas: 38, mediaNotas: 68, taxaAprovacao: 74 },
+                { name: "Equações 2º Grau", tentativas: 32, mediaNotas: 62, taxaAprovacao: 65 },
+                { name: "Triângulos", tentativas: 25, mediaNotas: 78, taxaAprovacao: 85 },
+                { name: "Leis de Newton", tentativas: 16, mediaNotas: 71, taxaAprovacao: 75 },
+              ];
+
+              const COLORS = ["hsl(var(--primary))", "hsl(142 76% 36%)", "hsl(38 92% 50%)", "hsl(0 84% 60%)", "hsl(var(--destructive))"];
+
+              return (
+                <>
+                  {/* Overview Stats */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <ClipboardList className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-2xl font-bold">{quizStats.totalQuizzes}</p>
+                            <p className="text-xs text-muted-foreground">Quizzes</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                            <Users className="h-5 w-5 text-blue-500" />
+                          </div>
+                          <div>
+                            <p className="text-2xl font-bold">{quizStats.totalAttempts}</p>
+                            <p className="text-xs text-muted-foreground">Tentativas</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                            <Target className="h-5 w-5 text-purple-500" />
+                          </div>
+                          <div>
+                            <p className="text-2xl font-bold">{quizStats.avgScore}%</p>
+                            <p className="text-xs text-muted-foreground">Média Notas</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                            <Trophy className="h-5 w-5 text-green-500" />
+                          </div>
+                          <div>
+                            <p className="text-2xl font-bold">{quizStats.passRate}%</p>
+                            <p className="text-xs text-muted-foreground">Taxa Aprovação</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                            <Clock className="h-5 w-5 text-orange-500" />
+                          </div>
+                          <div>
+                            <p className="text-2xl font-bold">{quizStats.avgTimeMinutes}</p>
+                            <p className="text-xs text-muted-foreground">Min. Médios</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+                            <Users className="h-5 w-5 text-cyan-500" />
+                          </div>
+                          <div>
+                            <p className="text-2xl font-bold">{quizStats.uniqueStudents}</p>
+                            <p className="text-xs text-muted-foreground">Estudantes</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Charts Row */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Weekly Attempts Chart */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <TrendingUp className="h-4 w-4 text-primary" />
+                          Tentativas por Dia da Semana
+                        </CardTitle>
+                        <CardDescription>Tentativas vs aprovações nos últimos 7 dias</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="h-[250px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={weeklyAttempts}>
+                              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                              <XAxis dataKey="day" className="text-xs" />
+                              <YAxis className="text-xs" />
+                              <Tooltip
+                                contentStyle={{
+                                  backgroundColor: "hsl(var(--background))",
+                                  border: "1px solid hsl(var(--border))",
+                                  borderRadius: "8px",
+                                }}
+                              />
+                              <Legend />
+                              <Bar dataKey="tentativas" name="Tentativas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                              <Bar dataKey="aprovados" name="Aprovados" fill="hsl(142 76% 36%)" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Score Distribution */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <BarChart3 className="h-4 w-4 text-primary" />
+                          Distribuição de Notas
+                        </CardTitle>
+                        <CardDescription>Distribuição das notas por faixa percentual</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="h-[250px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={scoreDistribution} layout="vertical">
+                              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                              <XAxis type="number" className="text-xs" />
+                              <YAxis dataKey="range" type="category" className="text-xs" width={60} />
+                              <Tooltip
+                                contentStyle={{
+                                  backgroundColor: "hsl(var(--background))",
+                                  border: "1px solid hsl(var(--border))",
+                                  borderRadius: "8px",
+                                }}
+                              />
+                              <Bar dataKey="count" name="Estudantes" radius={[0, 4, 4, 0]}>
+                                {scoreDistribution.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={entry.fill} />
+                                ))}
+                              </Bar>
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Quiz Performance Table */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <ClipboardList className="h-4 w-4 text-primary" />
+                        Desempenho por Quiz
+                      </CardTitle>
+                      <CardDescription>Métricas detalhadas de cada quiz</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="border-b">
+                              <th className="text-left py-3 px-4 font-medium text-sm">Quiz</th>
+                              <th className="text-center py-3 px-4 font-medium text-sm">Tentativas</th>
+                              <th className="text-center py-3 px-4 font-medium text-sm">Média Notas</th>
+                              <th className="text-center py-3 px-4 font-medium text-sm">Taxa Aprovação</th>
+                              <th className="text-center py-3 px-4 font-medium text-sm">Tendência</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {quizPerformance.map((quiz, index) => (
+                              <tr key={index} className="border-b last:border-0 hover:bg-muted/50">
+                                <td className="py-3 px-4">
+                                  <div className="flex items-center gap-2">
+                                    <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                                      <ClipboardList className="h-4 w-4 text-primary" />
+                                    </div>
+                                    <span className="font-medium text-sm">{quiz.name}</span>
+                                  </div>
+                                </td>
+                                <td className="text-center py-3 px-4">
+                                  <Badge variant="secondary">{quiz.tentativas}</Badge>
+                                </td>
+                                <td className="text-center py-3 px-4">
+                                  <span className={`font-medium ${quiz.mediaNotas >= 60 ? "text-green-600" : "text-destructive"}`}>
+                                    {quiz.mediaNotas}%
+                                  </span>
+                                </td>
+                                <td className="text-center py-3 px-4">
+                                  <div className="flex items-center justify-center gap-2">
+                                    <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
+                                      <div
+                                        className={`h-full rounded-full ${quiz.taxaAprovacao >= 70 ? "bg-green-500" : quiz.taxaAprovacao >= 50 ? "bg-orange-500" : "bg-destructive"}`}
+                                        style={{ width: `${quiz.taxaAprovacao}%` }}
+                                      />
+                                    </div>
+                                    <span className="text-sm">{quiz.taxaAprovacao}%</span>
+                                  </div>
+                                </td>
+                                <td className="text-center py-3 px-4">
+                                  {quiz.taxaAprovacao >= 75 ? (
+                                    <TrendingUp className="h-4 w-4 text-green-500 mx-auto" />
+                                  ) : quiz.taxaAprovacao >= 60 ? (
+                                    <TrendingUp className="h-4 w-4 text-orange-500 mx-auto" />
+                                  ) : (
+                                    <TrendingDown className="h-4 w-4 text-destructive mx-auto" />
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Most Missed Questions */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-orange-500" />
+                        Questões Mais Erradas
+                      </CardTitle>
+                      <CardDescription>Questões que os estudantes mais erram - considere revisar o conteúdo</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {mostMissedQuestions.map((item, index) => (
+                          <div key={index} className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
+                            <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${
+                              item.errorRate >= 40 ? "bg-destructive/10 text-destructive" : 
+                              item.errorRate >= 30 ? "bg-orange-500/10 text-orange-500" : 
+                              "bg-yellow-500/10 text-yellow-600"
+                            }`}>
+                              <span className="font-bold text-sm">{index + 1}</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">{item.question}</p>
+                              <p className="text-xs text-muted-foreground">{item.quiz}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className={`font-bold ${
+                                item.errorRate >= 40 ? "text-destructive" : 
+                                item.errorRate >= 30 ? "text-orange-500" : 
+                                "text-yellow-600"
+                              }`}>
+                                {item.errorRate}%
+                              </p>
+                              <p className="text-xs text-muted-foreground">taxa de erro</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </>
+              );
+            })()}
           </TabsContent>
         </Tabs>
       </div>

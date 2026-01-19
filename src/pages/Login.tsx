@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, ArrowRight, User, UserCog, GraduationCap, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import logoSGE from "@/assets/logo-sge.png";
 
 // Demo users for quick login
@@ -50,15 +52,33 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
+  const { toast } = useToast();
+
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/dashboard";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate login - replace with actual auth
-    setTimeout(() => {
-      setIsLoading(false);
-      navigate("/dashboard");
-    }, 1000);
+
+    const success = await login(email, password);
+
+    if (success) {
+      toast({
+        title: "Login efectuado com sucesso",
+        description: "Bem-vindo ao Sistema de Gestão Escolar",
+      });
+      navigate(from, { replace: true });
+    } else {
+      toast({
+        title: "Erro no login",
+        description: "Email ou palavra-passe incorrectos",
+        variant: "destructive",
+      });
+    }
+
+    setIsLoading(false);
   };
 
   const handleDemoLogin = (demoUser: typeof demoUsers[0]) => {

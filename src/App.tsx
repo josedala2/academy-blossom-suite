@@ -3,6 +3,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { routePermissions } from "@/config/permissions";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -31,37 +34,122 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/dashboard/estudantes" element={<Estudantes />} />
-          <Route path="/dashboard/professores" element={<Professores />} />
-          <Route path="/dashboard/turmas" element={<Turmas />} />
-          <Route path="/dashboard/avaliacoes" element={<Avaliacoes />} />
-          <Route path="/dashboard/propinas" element={<Propinas />} />
-          <Route path="/dashboard/propinas/historico" element={<HistoricoTransacoes />} />
-          <Route path="/dashboard/horarios" element={<Horarios />} />
-          <Route path="/dashboard/comunicados" element={<Comunicados />} />
-          <Route path="/dashboard/relatorios" element={<Relatorios />} />
-          <Route path="/dashboard/configuracoes" element={<Configuracoes />} />
-          <Route path="/dashboard/secretaria" element={<Secretaria />} />
-          <Route path="/dashboard/secretaria/pre-registos" element={<PreRegistos />} />
-          <Route path="/dashboard/secretaria/visitantes" element={<Visitantes />} />
-          <Route path="/dashboard/secretaria/estudantes" element={<SecretariaEstudantes />} />
-          <Route path="/dashboard/secretaria/encarregados" element={<SecretariaEncarregados />} />
-          <Route path="/dashboard/secretaria/documentos" element={<SecretariaDocumentos />} />
-          <Route path="/dashboard/secretaria/templates" element={<SecretariaTemplates />} />
-          <Route path="/dashboard/secretaria/processos" element={<SecretariaProcessos />} />
-          <Route path="/dashboard/secretaria/relatorios" element={<SecretariaRelatorios />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            
+            {/* Protected Dashboard Routes */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute allowedRoles={routePermissions["/dashboard"]}>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/estudantes" element={
+              <ProtectedRoute allowedRoles={routePermissions["/dashboard/estudantes"]}>
+                <Estudantes />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/professores" element={
+              <ProtectedRoute allowedRoles={routePermissions["/dashboard/professores"]}>
+                <Professores />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/turmas" element={
+              <ProtectedRoute allowedRoles={routePermissions["/dashboard/turmas"]}>
+                <Turmas />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/avaliacoes" element={
+              <ProtectedRoute allowedRoles={routePermissions["/dashboard/avaliacoes"]}>
+                <Avaliacoes />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/propinas" element={
+              <ProtectedRoute allowedRoles={routePermissions["/dashboard/propinas"]}>
+                <Propinas />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/propinas/historico" element={
+              <ProtectedRoute allowedRoles={routePermissions["/dashboard/propinas/historico"]}>
+                <HistoricoTransacoes />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/horarios" element={
+              <ProtectedRoute allowedRoles={routePermissions["/dashboard/horarios"]}>
+                <Horarios />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/comunicados" element={
+              <ProtectedRoute allowedRoles={routePermissions["/dashboard/comunicados"]}>
+                <Comunicados />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/relatorios" element={
+              <ProtectedRoute allowedRoles={routePermissions["/dashboard/relatorios"]}>
+                <Relatorios />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/configuracoes" element={
+              <ProtectedRoute allowedRoles={routePermissions["/dashboard/configuracoes"]}>
+                <Configuracoes />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/secretaria" element={
+              <ProtectedRoute allowedRoles={routePermissions["/dashboard/secretaria"]}>
+                <Secretaria />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/secretaria/pre-registos" element={
+              <ProtectedRoute allowedRoles={routePermissions["/dashboard/secretaria/pre-registos"]}>
+                <PreRegistos />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/secretaria/visitantes" element={
+              <ProtectedRoute allowedRoles={routePermissions["/dashboard/secretaria/visitantes"]}>
+                <Visitantes />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/secretaria/estudantes" element={
+              <ProtectedRoute allowedRoles={routePermissions["/dashboard/secretaria/estudantes"]}>
+                <SecretariaEstudantes />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/secretaria/encarregados" element={
+              <ProtectedRoute allowedRoles={routePermissions["/dashboard/secretaria/encarregados"]}>
+                <SecretariaEncarregados />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/secretaria/documentos" element={
+              <ProtectedRoute allowedRoles={routePermissions["/dashboard/secretaria/documentos"]}>
+                <SecretariaDocumentos />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/secretaria/templates" element={
+              <ProtectedRoute allowedRoles={routePermissions["/dashboard/secretaria/templates"]}>
+                <SecretariaTemplates />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/secretaria/processos" element={
+              <ProtectedRoute allowedRoles={routePermissions["/dashboard/secretaria/processos"]}>
+                <SecretariaProcessos />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/secretaria/relatorios" element={
+              <ProtectedRoute allowedRoles={routePermissions["/dashboard/secretaria/relatorios"]}>
+                <SecretariaRelatorios />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

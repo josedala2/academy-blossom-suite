@@ -43,6 +43,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
+import jsPDF from "jspdf";
 
 // Student enrollment data
 const studentData = {
@@ -132,9 +133,107 @@ const PortalEstudante = () => {
   const [suspendReason, setSuspendReason] = useState("");
 
   const handleDownloadReceipt = (receiptId: string) => {
+    const payment = payments.find(p => p.receipt === receiptId);
+    if (!payment) return;
+
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    // Header
+    doc.setFillColor(34, 139, 34);
+    doc.rect(0, 0, pageWidth, 40, "F");
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(22);
+    doc.setFont("helvetica", "bold");
+    doc.text("SGE - Sistema de Gestão Escolar", pageWidth / 2, 18, { align: "center" });
+    
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "normal");
+    doc.text("Recibo de Pagamento", pageWidth / 2, 30, { align: "center" });
+    
+    // Receipt number and date
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Recibo Nº: ${receiptId}`, 20, 55);
+    doc.text(`Data de Emissão: ${new Date().toLocaleDateString("pt-AO")}`, pageWidth - 20, 55, { align: "right" });
+    
+    // Divider
+    doc.setDrawColor(200, 200, 200);
+    doc.line(20, 62, pageWidth - 20, 62);
+    
+    // Student info section
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text("DADOS DO ESTUDANTE", 20, 75);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text(`Nome: ${studentData.name}`, 20, 85);
+    doc.text(`Nº Estudante: ${studentData.studentId}`, 20, 93);
+    doc.text(`Turma: ${studentData.class}`, 20, 101);
+    doc.text(`Curso: ${studentData.course}`, 20, 109);
+    doc.text(`Ano Lectivo: ${studentData.academicYear}`, 20, 117);
+    
+    // Payment details section
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text("DETALHES DO PAGAMENTO", 20, 135);
+    
+    // Payment table
+    doc.setDrawColor(200, 200, 200);
+    doc.setFillColor(245, 245, 245);
+    doc.rect(20, 142, pageWidth - 40, 12, "FD");
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("Descrição", 25, 150);
+    doc.text("Mês Referência", 90, 150);
+    doc.text("Valor", pageWidth - 25, 150, { align: "right" });
+    
+    doc.setFont("helvetica", "normal");
+    doc.rect(20, 154, pageWidth - 40, 12, "D");
+    doc.text("Propina Mensal", 25, 162);
+    doc.text(payment.month, 90, 162);
+    doc.text(payment.amount, pageWidth - 25, 162, { align: "right" });
+    
+    // Total
+    doc.setFillColor(34, 139, 34);
+    doc.rect(20, 166, pageWidth - 40, 14, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("TOTAL PAGO:", 25, 175);
+    doc.text(payment.amount, pageWidth - 25, 175, { align: "right" });
+    
+    // Payment confirmation
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Data do Pagamento: ${payment.date}`, 20, 195);
+    doc.text("Estado: PAGO", 20, 203);
+    doc.text("Método: Depósito Bancário", 20, 211);
+    
+    // Footer note
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+    doc.text("Este documento é válido como comprovativo de pagamento.", pageWidth / 2, 235, { align: "center" });
+    doc.text("Conserve este recibo para efeitos de comprovação.", pageWidth / 2, 243, { align: "center" });
+    
+    // Signature area
+    doc.setDrawColor(0, 0, 0);
+    doc.line(pageWidth / 2 - 40, 270, pageWidth / 2 + 40, 270);
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    doc.text("Assinatura e Carimbo", pageWidth / 2, 278, { align: "center" });
+    
+    // Save PDF
+    doc.save(`Recibo_${receiptId}_${studentData.name.replace(/\s+/g, "_")}.pdf`);
+    
     toast({
-      title: "A descarregar recibo",
-      description: `Recibo ${receiptId} será descarregado em breve`,
+      title: "Recibo descarregado",
+      description: `Recibo ${receiptId} foi descarregado com sucesso`,
     });
   };
 

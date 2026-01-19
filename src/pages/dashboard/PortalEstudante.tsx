@@ -24,6 +24,7 @@ import {
   File,
   Image,
   FileAudio,
+  Layers,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -51,6 +52,7 @@ import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useELearningTracking } from "@/contexts/ELearningTrackingContext";
+import StudentModuleViewer from "@/components/elearning/StudentModuleViewer";
 import jsPDF from "jspdf";
 
 // Student enrollment data
@@ -568,234 +570,267 @@ const PortalEstudante = () => {
 
           {/* E-Learning Tab */}
           <TabsContent value="elearning">
-            <div className="space-y-6">
-              {/* Upcoming Classes */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Video className="h-5 w-5" />
-                    Aulas Online
-                  </CardTitle>
-                  <CardDescription>
-                    Aceda às suas aulas online e materiais de apoio
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {onlineClasses.filter(c => c.status === "scheduled").length > 0 && (
-                      <div className="space-y-3">
-                        <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                          <Clock className="h-4 w-4" />
-                          Próximas Aulas
-                        </h4>
-                        {onlineClasses.filter(c => c.status === "scheduled").map((aula) => {
-                          const platform = platformConfig[aula.platform];
-                          return (
-                            <div
-                              key={aula.id}
-                              className="p-4 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors"
-                            >
-                              <div className="flex items-start gap-4">
-                                <div className={`h-12 w-12 rounded-lg ${platform.color} flex items-center justify-center text-white text-xl`}>
-                                  {platform.icon}
-                                </div>
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <p className="font-medium">{aula.title}</p>
-                                    <Badge variant="outline">{aula.subject}</Badge>
-                                    <Badge variant="secondary" className="bg-primary/10 text-primary">
-                                      {platform.name}
-                                    </Badge>
-                                  </div>
-                                  <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
-                                    <span className="flex items-center gap-1">
-                                      <Calendar className="h-3 w-3" />
-                                      {new Date(aula.date).toLocaleDateString("pt-AO")}
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                      <Clock className="h-3 w-3" />
-                                      {aula.time} ({aula.duration} min)
-                                    </span>
-                                    <span>{aula.teacher}</span>
-                                  </div>
-                                  
-                                  {/* Materials */}
-                                  {aula.materials.length > 0 && (
-                                    <div className="mt-3 flex flex-wrap gap-2">
-                                      {aula.materials.map((material) => (
-                                        <Button
-                                          key={material.id}
-                                          variant="ghost"
-                                          size="sm"
-                                          className="h-7 text-xs gap-1"
-                                          onClick={() => handleMaterialDownload(aula, material.name)}
-                                        >
-                                          {material.type === "pdf" && <FileText className="h-3 w-3" />}
-                                          {material.type === "video" && <FileVideo className="h-3 w-3" />}
-                                          {material.type === "audio" && <FileAudio className="h-3 w-3" />}
-                                          {material.type === "image" && <Image className="h-3 w-3" />}
-                                          {!["pdf", "video", "audio", "image"].includes(material.type) && <File className="h-3 w-3" />}
-                                          {material.name}
-                                          <Download className="h-3 w-3 ml-1" />
-                                        </Button>
-                                      ))}
+            <Tabs defaultValue="modules" className="space-y-4">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="modules" className="gap-2">
+                  <Layers className="h-4 w-4" />
+                  <span className="hidden sm:inline">Módulos</span>
+                </TabsTrigger>
+                <TabsTrigger value="live" className="gap-2">
+                  <Video className="h-4 w-4" />
+                  <span className="hidden sm:inline">Aulas Online</span>
+                </TabsTrigger>
+                <TabsTrigger value="materials" className="gap-2">
+                  <FileText className="h-4 w-4" />
+                  <span className="hidden sm:inline">Materiais</span>
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Modules Tab */}
+              <TabsContent value="modules">
+                <StudentModuleViewer
+                  studentId={studentData.studentId}
+                  studentName={studentData.name}
+                  onContentAccess={(lessonId, contentId) => {
+                    console.log("Content accessed:", lessonId, contentId);
+                  }}
+                />
+              </TabsContent>
+
+              {/* Live Classes Tab */}
+              <TabsContent value="live">
+                <div className="space-y-6">
+                  {/* Upcoming Classes */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Video className="h-5 w-5" />
+                        Aulas Online ao Vivo
+                      </CardTitle>
+                      <CardDescription>
+                        Aceda às suas aulas online com os professores
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {onlineClasses.filter(c => c.status === "scheduled").length > 0 && (
+                          <div className="space-y-3">
+                            <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                              <Clock className="h-4 w-4" />
+                              Próximas Aulas
+                            </h4>
+                            {onlineClasses.filter(c => c.status === "scheduled").map((aula) => {
+                              const platform = platformConfig[aula.platform];
+                              return (
+                                <div
+                                  key={aula.id}
+                                  className="p-4 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors"
+                                >
+                                  <div className="flex items-start gap-4">
+                                    <div className={`h-12 w-12 rounded-lg ${platform.color} flex items-center justify-center text-white text-xl`}>
+                                      {platform.icon}
                                     </div>
-                                  )}
-                                </div>
-                                <div className="flex flex-col gap-2">
-                                  <Button
-                                    size="sm"
-                                    onClick={() => handleClassAccess(aula)}
-                                  >
-                                    <Play className="h-4 w-4 mr-1" />
-                                    Entrar
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {/* Completed Classes */}
-                    {onlineClasses.filter(c => c.status === "completed").length > 0 && (
-                      <div className="space-y-3 pt-4 border-t">
-                        <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                          <CheckCircle className="h-4 w-4" />
-                          Aulas Anteriores
-                        </h4>
-                        {onlineClasses.filter(c => c.status === "completed").map((aula) => {
-                          const platform = platformConfig[aula.platform];
-                          return (
-                            <div
-                              key={aula.id}
-                              className="p-4 rounded-lg border bg-muted/20"
-                            >
-                              <div className="flex items-start gap-4">
-                                <div className={`h-10 w-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground text-lg`}>
-                                  {platform.icon}
-                                </div>
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <p className="font-medium text-muted-foreground">{aula.title}</p>
-                                    <Badge variant="outline" className="opacity-70">{aula.subject}</Badge>
-                                    <Badge variant="secondary" className="opacity-70">Concluída</Badge>
-                                  </div>
-                                  <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
-                                    <span className="flex items-center gap-1">
-                                      <Calendar className="h-3 w-3" />
-                                      {new Date(aula.date).toLocaleDateString("pt-AO")}
-                                    </span>
-                                    <span>{aula.teacher}</span>
-                                  </div>
-                                  
-                                  {/* Materials */}
-                                  {aula.materials.length > 0 && (
-                                    <div className="mt-3 flex flex-wrap gap-2">
-                                      {aula.materials.map((material) => (
-                                        <Button
-                                          key={material.id}
-                                          variant="ghost"
-                                          size="sm"
-                                          className="h-7 text-xs gap-1"
-                                          onClick={() => {
-                                            toast({
-                                              title: "Download iniciado",
-                                              description: `A descarregar ${material.name}`,
-                                            });
-                                          }}
-                                        >
-                                          {material.type === "pdf" && <FileText className="h-3 w-3" />}
-                                          {material.type === "video" && <FileVideo className="h-3 w-3" />}
-                                          {material.type === "audio" && <FileAudio className="h-3 w-3" />}
-                                          {material.type === "image" && <Image className="h-3 w-3" />}
-                                          {!["pdf", "video", "audio", "image"].includes(material.type) && <File className="h-3 w-3" />}
-                                          {material.name}
-                                          <Download className="h-3 w-3 ml-1" />
-                                        </Button>
-                                      ))}
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <p className="font-medium">{aula.title}</p>
+                                        <Badge variant="outline">{aula.subject}</Badge>
+                                        <Badge variant="secondary" className="bg-primary/10 text-primary">
+                                          {platform.name}
+                                        </Badge>
+                                      </div>
+                                      <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
+                                        <span className="flex items-center gap-1">
+                                          <Calendar className="h-3 w-3" />
+                                          {new Date(aula.date).toLocaleDateString("pt-AO")}
+                                        </span>
+                                        <span className="flex items-center gap-1">
+                                          <Clock className="h-3 w-3" />
+                                          {aula.time} ({aula.duration} min)
+                                        </span>
+                                        <span>{aula.teacher}</span>
+                                      </div>
+                                      
+                                      {/* Materials */}
+                                      {aula.materials.length > 0 && (
+                                        <div className="mt-3 flex flex-wrap gap-2">
+                                          {aula.materials.map((material) => (
+                                            <Button
+                                              key={material.id}
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-7 text-xs gap-1"
+                                              onClick={() => handleMaterialDownload(aula, material.name)}
+                                            >
+                                              {material.type === "pdf" && <FileText className="h-3 w-3" />}
+                                              {material.type === "video" && <FileVideo className="h-3 w-3" />}
+                                              {material.type === "audio" && <FileAudio className="h-3 w-3" />}
+                                              {material.type === "image" && <Image className="h-3 w-3" />}
+                                              {!["pdf", "video", "audio", "image"].includes(material.type) && <File className="h-3 w-3" />}
+                                              {material.name}
+                                              <Download className="h-3 w-3 ml-1" />
+                                            </Button>
+                                          ))}
+                                        </div>
+                                      )}
                                     </div>
-                                  )}
+                                    <div className="flex flex-col gap-2">
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handleClassAccess(aula)}
+                                      >
+                                        <Play className="h-4 w-4 mr-1" />
+                                        Entrar
+                                      </Button>
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
+                              );
+                            })}
+                          </div>
+                        )}
 
-                    {onlineClasses.length === 0 && (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <Video className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p>Nenhuma aula online disponível de momento</p>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                        {/* Completed Classes */}
+                        {onlineClasses.filter(c => c.status === "completed").length > 0 && (
+                          <div className="space-y-3 pt-4 border-t">
+                            <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                              <CheckCircle className="h-4 w-4" />
+                              Aulas Anteriores
+                            </h4>
+                            {onlineClasses.filter(c => c.status === "completed").map((aula) => {
+                              const platform = platformConfig[aula.platform];
+                              return (
+                                <div
+                                  key={aula.id}
+                                  className="p-4 rounded-lg border bg-muted/20"
+                                >
+                                  <div className="flex items-start gap-4">
+                                    <div className={`h-10 w-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground text-lg`}>
+                                      {platform.icon}
+                                    </div>
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <p className="font-medium text-muted-foreground">{aula.title}</p>
+                                        <Badge variant="outline" className="opacity-70">{aula.subject}</Badge>
+                                        <Badge variant="secondary" className="opacity-70">Concluída</Badge>
+                                      </div>
+                                      <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
+                                        <span className="flex items-center gap-1">
+                                          <Calendar className="h-3 w-3" />
+                                          {new Date(aula.date).toLocaleDateString("pt-AO")}
+                                        </span>
+                                        <span>{aula.teacher}</span>
+                                      </div>
+                                      
+                                      {/* Materials */}
+                                      {aula.materials.length > 0 && (
+                                        <div className="mt-3 flex flex-wrap gap-2">
+                                          {aula.materials.map((material) => (
+                                            <Button
+                                              key={material.id}
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-7 text-xs gap-1"
+                                              onClick={() => {
+                                                toast({
+                                                  title: "Download iniciado",
+                                                  description: `A descarregar ${material.name}`,
+                                                });
+                                              }}
+                                            >
+                                              {material.type === "pdf" && <FileText className="h-3 w-3" />}
+                                              {material.type === "video" && <FileVideo className="h-3 w-3" />}
+                                              {material.type === "audio" && <FileAudio className="h-3 w-3" />}
+                                              {material.type === "image" && <Image className="h-3 w-3" />}
+                                              {!["pdf", "video", "audio", "image"].includes(material.type) && <File className="h-3 w-3" />}
+                                              {material.name}
+                                              <Download className="h-3 w-3 ml-1" />
+                                            </Button>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
 
-              {/* All Materials */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Materiais de Apoio
-                  </CardTitle>
-                  <CardDescription>
-                    Todos os materiais disponibilizados pelos professores
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {onlineClasses.flatMap(c => c.materials.map(m => ({...m, subject: c.subject, teacher: c.teacher}))).map((material) => (
-                      <div 
-                        key={material.id} 
-                        className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors"
-                      >
-                        <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
-                          material.type === "pdf" ? "bg-red-100 text-red-600" :
-                          material.type === "video" ? "bg-blue-100 text-blue-600" :
-                          material.type === "audio" ? "bg-purple-100 text-purple-600" :
-                          material.type === "image" ? "bg-green-100 text-green-600" :
-                          "bg-gray-100 text-gray-600"
-                        }`}>
-                          {material.type === "pdf" && <FileText className="h-5 w-5" />}
-                          {material.type === "video" && <FileVideo className="h-5 w-5" />}
-                          {material.type === "audio" && <FileAudio className="h-5 w-5" />}
-                          {material.type === "image" && <Image className="h-5 w-5" />}
-                          {!["pdf", "video", "audio", "image"].includes(material.type) && <File className="h-5 w-5" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{material.name}</p>
-                          <p className="text-xs text-muted-foreground">{material.subject} • {material.size}</p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="shrink-0"
-                          onClick={() => {
-                            toast({
-                              title: "Download iniciado",
-                              description: `A descarregar ${material.name}`,
-                            });
-                          }}
+                        {onlineClasses.length === 0 && (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <Video className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                            <p>Nenhuma aula online disponível de momento</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+
+              {/* Materials Tab */}
+              <TabsContent value="materials">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      Materiais de Apoio
+                    </CardTitle>
+                    <CardDescription>
+                      Todos os materiais disponibilizados pelos professores
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {onlineClasses.flatMap(c => c.materials.map(m => ({...m, subject: c.subject, teacher: c.teacher}))).map((material) => (
+                        <div 
+                          key={material.id} 
+                          className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors"
                         >
-                          <Download className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                    
-                    {onlineClasses.flatMap(c => c.materials).length === 0 && (
-                      <div className="col-span-2 text-center py-8 text-muted-foreground">
-                        <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p>Nenhum material disponível de momento</p>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                          <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
+                            material.type === "pdf" ? "bg-red-100 text-red-600" :
+                            material.type === "video" ? "bg-blue-100 text-blue-600" :
+                            material.type === "audio" ? "bg-purple-100 text-purple-600" :
+                            material.type === "image" ? "bg-green-100 text-green-600" :
+                            "bg-gray-100 text-gray-600"
+                          }`}>
+                            {material.type === "pdf" && <FileText className="h-5 w-5" />}
+                            {material.type === "video" && <FileVideo className="h-5 w-5" />}
+                            {material.type === "audio" && <FileAudio className="h-5 w-5" />}
+                            {material.type === "image" && <Image className="h-5 w-5" />}
+                            {!["pdf", "video", "audio", "image"].includes(material.type) && <File className="h-5 w-5" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{material.name}</p>
+                            <p className="text-xs text-muted-foreground">{material.subject} • {material.size}</p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="shrink-0"
+                            onClick={() => {
+                              toast({
+                                title: "Download iniciado",
+                                description: `A descarregar ${material.name}`,
+                              });
+                            }}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                      
+                      {onlineClasses.flatMap(c => c.materials).length === 0 && (
+                        <div className="col-span-2 text-center py-8 text-muted-foreground">
+                          <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                          <p>Nenhum material disponível de momento</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
           {/* Payments Tab */}

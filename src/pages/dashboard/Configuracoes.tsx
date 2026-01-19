@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   Settings,
   User,
@@ -10,6 +10,9 @@ import {
   Calendar,
   Shield,
   Save,
+  Upload,
+  X,
+  Image as ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,12 +29,105 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
 const Configuracoes = () => {
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [smsNotifications, setSmsNotifications] = useState(false);
   const [twoFactor, setTwoFactor] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleFileSelect = (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Formato inválido",
+        description: "Por favor seleccione um ficheiro de imagem (PNG, JPG, SVG)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Ficheiro muito grande",
+        description: "O tamanho máximo permitido é 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLogoFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setLogoPreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    toast({
+      title: "Logotipo carregado",
+      description: "Clique em 'Guardar Logotipo' para aplicar as alterações",
+    });
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setLogoPreview(null);
+    setLogoFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    toast({
+      title: "Logotipo removido",
+      description: "O logotipo foi removido com sucesso",
+    });
+  };
+
+  const handleSaveLogo = () => {
+    if (!logoFile) {
+      toast({
+        title: "Nenhum logotipo seleccionado",
+        description: "Por favor seleccione um logotipo primeiro",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Here you would upload to storage
+    toast({
+      title: "Logotipo guardado",
+      description: "O logotipo foi actualizado com sucesso",
+    });
+  };
 
   return (
     <DashboardLayout>
@@ -127,14 +223,80 @@ const Configuracoes = () => {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label>Logotipo</Label>
-                    <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
-                      <p className="text-muted-foreground text-sm">
-                        Arraste uma imagem ou clique para selecionar
-                      </p>
-                      <Button variant="outline" className="mt-2">
-                        Selecionar Ficheiro
-                      </Button>
-                    </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleFileInputChange}
+                    />
+                    
+                    {logoPreview ? (
+                      <div className="space-y-4">
+                        <div className="relative border rounded-lg p-4 bg-muted/30">
+                          <div className="flex items-center justify-center">
+                            <img 
+                              src={logoPreview} 
+                              alt="Preview do logotipo" 
+                              className="max-h-32 max-w-full object-contain"
+                            />
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute top-2 right-2 h-8 w-8 rounded-full bg-destructive/10 hover:bg-destructive/20"
+                            onClick={handleRemoveLogo}
+                          >
+                            <X className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            className="flex-1"
+                            onClick={() => fileInputRef.current?.click()}
+                          >
+                            <Upload className="h-4 w-4 mr-2" />
+                            Alterar
+                          </Button>
+                          <Button 
+                            className="flex-1"
+                            onClick={handleSaveLogo}
+                          >
+                            <Save className="h-4 w-4 mr-2" />
+                            Guardar Logotipo
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div 
+                        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
+                          isDragging 
+                            ? "border-primary bg-primary/5" 
+                            : "border-border hover:border-primary/50 hover:bg-muted/30"
+                        }`}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                            <ImageIcon className="h-6 w-6 text-primary" />
+                          </div>
+                          <p className="text-muted-foreground text-sm">
+                            Arraste uma imagem ou clique para selecionar
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            PNG, JPG ou SVG (máx. 5MB)
+                          </p>
+                          <Button variant="outline" className="mt-2">
+                            <Upload className="h-4 w-4 mr-2" />
+                            Selecionar Ficheiro
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>Cor Principal</Label>

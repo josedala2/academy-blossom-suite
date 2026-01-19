@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from "react";
 
-export type UserRole = "admin" | "secretario" | "professor" | "estudante";
+export type UserRole = "admin" | "director_pedagogico" | "secretario" | "professor" | "estudante";
 
 export interface User {
   id: string;
@@ -29,6 +29,15 @@ const demoUsersDB: Record<string, { password: string; user: User }> = {
       name: "Carlos Mendes",
       email: "admin@escola.ao",
       role: "admin",
+    },
+  },
+  "director@escola.ao": {
+    password: "director123",
+    user: {
+      id: "5",
+      name: "António Ferreira",
+      email: "director@escola.ao",
+      role: "director_pedagogico",
     },
   },
   "secretario@escola.ao": {
@@ -62,7 +71,8 @@ const demoUsersDB: Record<string, { password: string; user: User }> = {
 
 // Role hierarchy for permission checks
 const roleHierarchy: Record<UserRole, number> = {
-  admin: 4,
+  admin: 5,
+  director_pedagogico: 4,
   secretario: 3,
   professor: 2,
   estudante: 1,
@@ -121,6 +131,7 @@ export function useAuth() {
 // Role display names
 export const roleNames: Record<UserRole, string> = {
   admin: "Administrador",
+  director_pedagogico: "Director Pedagógico",
   secretario: "Secretário",
   professor: "Professor",
   estudante: "Estudante",
@@ -129,6 +140,7 @@ export const roleNames: Record<UserRole, string> = {
 // Role colors for UI
 export const roleColors: Record<UserRole, string> = {
   admin: "bg-red-100 text-red-800",
+  director_pedagogico: "bg-indigo-100 text-indigo-800",
   secretario: "bg-blue-100 text-blue-800",
   professor: "bg-green-100 text-green-800",
   estudante: "bg-purple-100 text-purple-800",

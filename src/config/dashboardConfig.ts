@@ -97,6 +97,56 @@ const adminConfig: DashboardConfig = {
   showPendingPayments: true,
 };
 
+// Director Pedagógico Dashboard Configuration
+const directorPedagogicoConfig: DashboardConfig = {
+  welcomeMessage: "Painel do Director Pedagógico",
+  subtitle: "Supervisão e gestão de toda a actividade pedagógica",
+  stats: [
+    {
+      title: "Total Estudantes",
+      value: "1,234",
+      change: "+12%",
+      trend: "up",
+      icon: Users,
+      color: "primary",
+    },
+    {
+      title: "Professores",
+      value: "48",
+      change: "+3",
+      trend: "up",
+      icon: GraduationCap,
+      color: "secondary",
+    },
+    {
+      title: "Turmas Activas",
+      value: "32",
+      change: "0",
+      trend: "neutral",
+      icon: BookOpen,
+      color: "accent",
+    },
+    {
+      title: "Avaliações Pendentes",
+      value: "18",
+      change: "-5",
+      trend: "down",
+      icon: ClipboardCheck,
+      color: "primary",
+    },
+  ],
+  quickActions: [
+    { label: "Ver Estudantes", icon: Users, href: "/dashboard/estudantes" },
+    { label: "Gerir Professores", icon: GraduationCap, href: "/dashboard/professores" },
+    { label: "Ver Avaliações", icon: ClipboardCheck, href: "/dashboard/avaliacoes" },
+    { label: "Relatórios", icon: TrendingUp, href: "/dashboard/relatorios" },
+  ],
+  showRecentStudents: true,
+  showUpcomingEvents: true,
+  showPendingPayments: false,
+  showAttendance: true,
+};
+
 // Secretary Dashboard Configuration
 const secretarioConfig: DashboardConfig = {
   welcomeMessage: "Painel da Secretaria",
@@ -251,6 +301,7 @@ const estudanteConfig: DashboardConfig = {
 
 export const dashboardConfigs: Record<UserRole, DashboardConfig> = {
   admin: adminConfig,
+  director_pedagogico: directorPedagogicoConfig,
   secretario: secretarioConfig,
   professor: professorConfig,
   estudante: estudanteConfig,

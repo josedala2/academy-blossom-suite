@@ -1,11 +1,48 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, ArrowRight, User, UserCog, GraduationCap, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent } from "@/components/ui/card";
 import logoSGE from "@/assets/logo-sge.png";
+
+// Demo users for quick login
+const demoUsers = [
+  {
+    name: "Administrador",
+    email: "admin@escola.ao",
+    password: "admin123",
+    role: "Administrador",
+    icon: UserCog,
+    color: "text-red-600 bg-red-50 border-red-200 hover:bg-red-100",
+  },
+  {
+    name: "Secretário",
+    email: "secretario@escola.ao",
+    password: "secretario123",
+    role: "Secretaria",
+    icon: User,
+    color: "text-blue-600 bg-blue-50 border-blue-200 hover:bg-blue-100",
+  },
+  {
+    name: "Professor",
+    email: "professor@escola.ao",
+    password: "professor123",
+    role: "Professor",
+    icon: BookOpen,
+    color: "text-green-600 bg-green-50 border-green-200 hover:bg-green-100",
+  },
+  {
+    name: "Estudante",
+    email: "estudante@escola.ao",
+    password: "estudante123",
+    role: "Estudante",
+    icon: GraduationCap,
+    color: "text-purple-600 bg-purple-50 border-purple-200 hover:bg-purple-100",
+  },
+];
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -24,11 +61,16 @@ const Login = () => {
     }, 1000);
   };
 
+  const handleDemoLogin = (demoUser: typeof demoUsers[0]) => {
+    setEmail(demoUser.email);
+    setPassword(demoUser.password);
+  };
+
   return (
     <div className="min-h-screen flex">
       {/* Left side - Form */}
       <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-md space-y-8">
+        <div className="w-full max-w-md space-y-6">
           {/* Logo */}
           <div className="text-center">
             <Link to="/">
@@ -41,6 +83,33 @@ const Login = () => {
               Introduza as suas credenciais para aceder ao sistema
             </p>
           </div>
+
+          {/* Demo Users Section */}
+          <Card className="border-dashed border-2 border-muted">
+            <CardContent className="p-4">
+              <p className="text-sm text-muted-foreground mb-3 text-center font-medium">
+                👆 Clique para preencher automaticamente
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {demoUsers.map((user) => {
+                  const IconComponent = user.icon;
+                  return (
+                    <Button
+                      key={user.email}
+                      type="button"
+                      variant="outline"
+                      className={`h-auto py-3 px-3 flex flex-col items-center gap-1 transition-all ${user.color}`}
+                      onClick={() => handleDemoLogin(user)}
+                    >
+                      <IconComponent className="h-5 w-5" />
+                      <span className="text-xs font-medium">{user.name}</span>
+                      <span className="text-[10px] opacity-70">{user.role}</span>
+                    </Button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">

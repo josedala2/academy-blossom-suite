@@ -204,7 +204,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/dashboard/perfil")}>
                   <User className="h-4 w-4 mr-2" />
                   Perfil
                 </DropdownMenuItem>

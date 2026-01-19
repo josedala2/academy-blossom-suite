@@ -45,6 +45,7 @@ export interface DashboardConfig {
   showMyGrades?: boolean;
   showMySchedule?: boolean;
   showAttendance?: boolean;
+  showStudentPortalLink?: boolean;
 }
 
 // Admin Dashboard Configuration
@@ -196,10 +197,10 @@ const professorConfig: DashboardConfig = {
   showAttendance: true,
 };
 
-// Student Dashboard Configuration
+// Student Dashboard Configuration - Redirects to Portal
 const estudanteConfig: DashboardConfig = {
-  welcomeMessage: "Meu Painel",
-  subtitle: "Acompanhe suas notas, horários e actividades",
+  welcomeMessage: "Portal do Estudante",
+  subtitle: "Aceda ao seu portal para ver horário, pagamentos, exames e notas",
   stats: [
     {
       title: "Média Geral",
@@ -210,41 +211,42 @@ const estudanteConfig: DashboardConfig = {
       color: "primary",
     },
     {
-      title: "Disciplinas",
-      value: "8",
+      title: "Propinas em Dia",
+      value: "4/5",
       change: "",
       trend: "neutral",
-      icon: BookMarked,
+      icon: CreditCard,
       color: "secondary",
+    },
+    {
+      title: "Exames Próximos",
+      value: "4",
+      change: "",
+      trend: "neutral",
+      icon: ClipboardCheck,
+      color: "accent",
     },
     {
       title: "Presenças",
       value: "95%",
       change: "+2%",
       trend: "up",
-      icon: ClipboardCheck,
-      color: "accent",
-    },
-    {
-      title: "Próximos Testes",
-      value: "3",
-      change: "",
-      trend: "neutral",
       icon: Calendar,
       color: "primary",
     },
   ],
   quickActions: [
-    { label: "Ver Notas", icon: ClipboardCheck, href: "/dashboard/avaliacoes" },
-    { label: "Meu Horário", icon: Calendar, href: "/dashboard/horarios" },
-    { label: "Comunicados", icon: Bell, href: "/dashboard/comunicados" },
-    { label: "Material Didáctico", icon: BookOpen, href: "/dashboard/turmas" },
+    { label: "Meu Portal", icon: GraduationCap, href: "/dashboard/portal-estudante" },
+    { label: "Ver Horário", icon: Calendar, href: "/dashboard/portal-estudante" },
+    { label: "Pagamentos", icon: CreditCard, href: "/dashboard/portal-estudante" },
+    { label: "Minhas Notas", icon: Award, href: "/dashboard/portal-estudante" },
   ],
   showRecentStudents: false,
   showUpcomingEvents: true,
   showPendingPayments: false,
-  showMyGrades: true,
-  showMySchedule: true,
+  showMyGrades: false,
+  showMySchedule: false,
+  showStudentPortalLink: true,
 };
 
 export const dashboardConfigs: Record<UserRole, DashboardConfig> = {

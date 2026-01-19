@@ -11,6 +11,7 @@ import {
   BookOpen,
   FileSpreadsheet,
   FileText,
+  Video,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,7 @@ import EditarProfessorModal from "@/components/modals/EditarProfessorModal";
 import EnviarEmailProfessorModal from "@/components/modals/EnviarEmailProfessorModal";
 import NovoProfessorModal from "@/components/modals/NovoProfessorModal";
 import VerHorarioProfessorModal from "@/components/modals/VerHorarioProfessorModal";
+import ELearningModal from "@/components/modals/ELearningModal";
 import { useToast } from "@/hooks/use-toast";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -120,6 +122,7 @@ const Professores = () => {
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [isNovoModalOpen, setIsNovoModalOpen] = useState(false);
   const [isHorarioModalOpen, setIsHorarioModalOpen] = useState(false);
+  const [isELearningModalOpen, setIsELearningModalOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
 
   const filteredTeachers = teachers.filter((teacher) => {
@@ -203,6 +206,11 @@ const Professores = () => {
   const handleVerHorario = (teacher: Teacher) => {
     setSelectedTeacher(teacher);
     setIsHorarioModalOpen(true);
+  };
+
+  const handleELearning = (teacher: Teacher) => {
+    setSelectedTeacher(teacher);
+    setIsELearningModalOpen(true);
   };
 
   const handleSaveTeacher = (data: {
@@ -447,14 +455,25 @@ const Professores = () => {
                   >
                     {teacher.status === "active" ? "Activo" : "Inactivo"}
                   </Badge>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => handleVerHorario(teacher)}
-                  >
-                    <BookOpen className="h-4 w-4 mr-1" />
-                    Ver Horário
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleELearning(teacher)}
+                      className="text-primary"
+                    >
+                      <Video className="h-4 w-4 mr-1" />
+                      E-Learning
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleVerHorario(teacher)}
+                    >
+                      <BookOpen className="h-4 w-4 mr-1" />
+                      Horário
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -492,6 +511,12 @@ const Professores = () => {
       <VerHorarioProfessorModal
         isOpen={isHorarioModalOpen}
         onClose={() => setIsHorarioModalOpen(false)}
+        teacher={selectedTeacher}
+      />
+
+      <ELearningModal
+        isOpen={isELearningModalOpen}
+        onClose={() => setIsELearningModalOpen(false)}
         teacher={selectedTeacher}
       />
     </DashboardLayout>

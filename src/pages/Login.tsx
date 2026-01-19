@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock, ArrowRight, User, UserCog, GraduationCap, BookOpen } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, ArrowRight, User, UserCog, GraduationCap, BookOpen, ClipboardCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +19,14 @@ const demoUsers = [
     role: "Administrador",
     icon: UserCog,
     color: "text-red-600 bg-red-50 border-red-200 hover:bg-red-100",
+  },
+  {
+    name: "Dir. Pedagógico",
+    email: "director@escola.ao",
+    password: "director123",
+    role: "Pedagógico",
+    icon: ClipboardCheck,
+    color: "text-amber-600 bg-amber-50 border-amber-200 hover:bg-amber-100",
   },
   {
     name: "Secretário",
@@ -110,7 +118,7 @@ const Login = () => {
               <p className="text-sm text-muted-foreground mb-3 text-center font-medium">
                 👆 Clique para preencher automaticamente
               </p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                 {demoUsers.map((user) => {
                   const IconComponent = user.icon;
                   return (
@@ -118,12 +126,12 @@ const Login = () => {
                       key={user.email}
                       type="button"
                       variant="outline"
-                      className={`h-auto py-3 px-3 flex flex-col items-center gap-1 transition-all ${user.color}`}
+                      className={`h-auto py-2 px-2 flex flex-col items-center gap-0.5 transition-all ${user.color}`}
                       onClick={() => handleDemoLogin(user)}
                     >
-                      <IconComponent className="h-5 w-5" />
-                      <span className="text-xs font-medium">{user.name}</span>
-                      <span className="text-[10px] opacity-70">{user.role}</span>
+                      <IconComponent className="h-4 w-4" />
+                      <span className="text-[10px] font-medium leading-tight text-center">{user.name}</span>
+                      <span className="text-[9px] opacity-70">{user.role}</span>
                     </Button>
                   );
                 })}

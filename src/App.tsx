@@ -22,6 +22,7 @@ import HistoricoTransacoes from "./pages/dashboard/HistoricoTransacoes";
 import Horarios from "./pages/dashboard/Horarios";
 import Comunicados from "./pages/dashboard/Comunicados";
 import Relatorios from "./pages/dashboard/Relatorios";
+import RelatoriosPedagogicos from "./pages/dashboard/RelatoriosPedagogicos";
 import Configuracoes from "./pages/dashboard/Configuracoes";
 import Secretaria from "./pages/dashboard/Secretaria";
 import PreRegistos from "./pages/dashboard/secretaria/PreRegistos";
@@ -108,6 +109,11 @@ const App = () => (
             <Route path="/dashboard/relatorios" element={
               <ProtectedRoute allowedRoles={routePermissions["/dashboard/relatorios"]}>
                 <Relatorios />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/relatorios-pedagogicos" element={
+              <ProtectedRoute allowedRoles={routePermissions["/dashboard/relatorios-pedagogicos"]}>
+                <RelatoriosPedagogicos />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/configuracoes" element={

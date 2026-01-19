@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   Video,
   Plus,
@@ -13,6 +13,16 @@ import {
   Copy,
   CheckCircle,
   AlertCircle,
+  FileText,
+  Upload,
+  File,
+  Image,
+  FileVideo,
+  FileAudio,
+  Download,
+  X,
+  Paperclip,
+  FolderOpen,
 } from "lucide-react";
 import {
   Dialog,
@@ -36,6 +46,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 
 interface Teacher {
@@ -46,6 +57,15 @@ interface Teacher {
   subjects: string[];
   classes: string[];
   status: string;
+}
+
+interface Material {
+  id: string;
+  name: string;
+  type: "pdf" | "doc" | "image" | "video" | "audio" | "other";
+  size: string;
+  uploadedAt: string;
+  classId?: string;
 }
 
 interface OnlineClass {
@@ -62,6 +82,7 @@ interface OnlineClass {
   status: "scheduled" | "live" | "completed" | "cancelled";
   recordingEnabled: boolean;
   studentsNotified: boolean;
+  materials: Material[];
 }
 
 interface ELearningModalProps {
@@ -77,10 +98,46 @@ const platforms = [
   { id: "custom", name: "Link Personalizado", icon: "🔗", color: "bg-gray-500" },
 ];
 
+const getFileIcon = (type: Material["type"]) => {
+  switch (type) {
+    case "pdf":
+      return <FileText className="h-5 w-5 text-red-500" />;
+    case "doc":
+      return <FileText className="h-5 w-5 text-blue-500" />;
+    case "image":
+      return <Image className="h-5 w-5 text-green-500" />;
+    case "video":
+      return <FileVideo className="h-5 w-5 text-purple-500" />;
+    case "audio":
+      return <FileAudio className="h-5 w-5 text-orange-500" />;
+    default:
+      return <File className="h-5 w-5 text-gray-500" />;
+  }
+};
+
+const getFileType = (fileName: string): Material["type"] => {
+  const ext = fileName.split(".").pop()?.toLowerCase();
+  if (ext === "pdf") return "pdf";
+  if (["doc", "docx", "txt", "odt"].includes(ext || "")) return "doc";
+  if (["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(ext || "")) return "image";
+  if (["mp4", "avi", "mov", "mkv", "webm"].includes(ext || "")) return "video";
+  if (["mp3", "wav", "ogg", "m4a"].includes(ext || "")) return "audio";
+  return "other";
+};
+
+const formatFileSize = (bytes: number): string => {
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+  return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+};
+
 const ELearningModal = ({ isOpen, onClose, teacher }: ELearningModalProps) => {
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const materialFileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState("classes");
-  const [isCreating, setIsCreating] = useState(false);
+  const [selectedClassForMaterials, setSelectedClassForMaterials] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -96,6 +153,9 @@ const ELearningModal = ({ isOpen, onClose, teacher }: ELearningModalProps) => {
     recordingEnabled: false,
     notifyStudents: true,
   });
+
+  // Materials for the class being created
+  const [pendingMaterials, setPendingMaterials] = useState<Material[]>([]);
 
   // Mock online classes for this teacher
   const [onlineClasses, setOnlineClasses] = useState<OnlineClass[]>([
@@ -113,6 +173,10 @@ const ELearningModal = ({ isOpen, onClose, teacher }: ELearningModalProps) => {
       status: "scheduled",
       recordingEnabled: true,
       studentsNotified: true,
+      materials: [
+        { id: "m1", name: "Exercícios_Equações.pdf", type: "pdf", size: "1.2 MB", uploadedAt: "2026-01-18" },
+        { id: "m2", name: "Fórmulas_Resolvente.pdf", type: "pdf", size: "850 KB", uploadedAt: "2026-01-18" },
+      ],
     },
     {
       id: "2",
@@ -128,7 +192,19 @@ const ELearningModal = ({ isOpen, onClose, teacher }: ELearningModalProps) => {
       status: "scheduled",
       recordingEnabled: false,
       studentsNotified: true,
+      materials: [
+        { id: "m3", name: "Resumo_Leis_Newton.pdf", type: "pdf", size: "2.1 MB", uploadedAt: "2026-01-19" },
+        { id: "m4", name: "Vídeo_Experiência.mp4", type: "video", size: "45.3 MB", uploadedAt: "2026-01-19" },
+        { id: "m5", name: "Apresentação_Aula.pptx", type: "doc", size: "5.8 MB", uploadedAt: "2026-01-19" },
+      ],
     },
+  ]);
+
+  // General materials library
+  const [generalMaterials, setGeneralMaterials] = useState<Material[]>([
+    { id: "g1", name: "Programa_Anual_Matemática.pdf", type: "pdf", size: "3.2 MB", uploadedAt: "2026-01-10" },
+    { id: "g2", name: "Tabela_Periódica.png", type: "image", size: "1.5 MB", uploadedAt: "2026-01-05" },
+    { id: "g3", name: "Regras_Ortografia.docx", type: "doc", size: "890 KB", uploadedAt: "2026-01-08" },
   ]);
 
   const handleInputChange = (field: string, value: string | number | boolean) => {
@@ -150,6 +226,97 @@ const ELearningModal = ({ isOpen, onClose, teacher }: ELearningModalProps) => {
         description: "O link da reunião foi gerado automaticamente",
       });
     }
+  };
+
+  const handleFileUpload = (files: FileList | null, forClass: boolean = false) => {
+    if (!files || files.length === 0) return;
+
+    const newMaterials: Material[] = Array.from(files).map((file) => ({
+      id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
+      name: file.name,
+      type: getFileType(file.name),
+      size: formatFileSize(file.size),
+      uploadedAt: new Date().toISOString().split("T")[0],
+    }));
+
+    if (forClass) {
+      setPendingMaterials((prev) => [...prev, ...newMaterials]);
+    } else {
+      setGeneralMaterials((prev) => [...prev, ...newMaterials]);
+    }
+
+    toast({
+      title: "Ficheiros adicionados",
+      description: `${files.length} ficheiro(s) carregado(s) com sucesso`,
+    });
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent, forClass: boolean = false) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handleFileUpload(e.dataTransfer.files, forClass);
+  };
+
+  const handleRemovePendingMaterial = (materialId: string) => {
+    setPendingMaterials((prev) => prev.filter((m) => m.id !== materialId));
+  };
+
+  const handleRemoveGeneralMaterial = (materialId: string) => {
+    setGeneralMaterials((prev) => prev.filter((m) => m.id !== materialId));
+    toast({
+      title: "Material removido",
+      description: "O ficheiro foi removido da biblioteca",
+    });
+  };
+
+  const handleRemoveClassMaterial = (classId: string, materialId: string) => {
+    setOnlineClasses((prev) =>
+      prev.map((c) =>
+        c.id === classId
+          ? { ...c, materials: c.materials.filter((m) => m.id !== materialId) }
+          : c
+      )
+    );
+    toast({
+      title: "Material removido",
+      description: "O ficheiro foi removido da aula",
+    });
+  };
+
+  const handleAddMaterialToClass = (classId: string, files: FileList | null) => {
+    if (!files || files.length === 0) return;
+
+    const newMaterials: Material[] = Array.from(files).map((file) => ({
+      id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
+      name: file.name,
+      type: getFileType(file.name),
+      size: formatFileSize(file.size),
+      uploadedAt: new Date().toISOString().split("T")[0],
+      classId,
+    }));
+
+    setOnlineClasses((prev) =>
+      prev.map((c) =>
+        c.id === classId
+          ? { ...c, materials: [...c.materials, ...newMaterials] }
+          : c
+      )
+    );
+
+    toast({
+      title: "Materiais adicionados",
+      description: `${files.length} ficheiro(s) adicionado(s) à aula`,
+    });
   };
 
   const handleCreateClass = () => {
@@ -185,6 +352,7 @@ const ELearningModal = ({ isOpen, onClose, teacher }: ELearningModalProps) => {
       status: "scheduled",
       recordingEnabled: formData.recordingEnabled,
       studentsNotified: formData.notifyStudents,
+      materials: pendingMaterials,
     };
 
     setOnlineClasses((prev) => [newClass, ...prev]);
@@ -210,7 +378,8 @@ const ELearningModal = ({ isOpen, onClose, teacher }: ELearningModalProps) => {
       recordingEnabled: false,
       notifyStudents: true,
     });
-    setIsCreating(false);
+    setPendingMaterials([]);
+    setActiveTab("classes");
   };
 
   const handleCopyLink = (link: string) => {
@@ -263,20 +432,24 @@ const ELearningModal = ({ isOpen, onClose, teacher }: ELearningModalProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Video className="h-5 w-5 text-primary" />
             E-Learning - {teacher.name}
           </DialogTitle>
           <DialogDescription>
-            Gerir aulas online para as turmas atribuídas
+            Gerir aulas online e materiais de apoio para as turmas atribuídas
           </DialogDescription>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="classes">Minhas Aulas</TabsTrigger>
+            <TabsTrigger value="materials">
+              <FolderOpen className="h-4 w-4 mr-1" />
+              Materiais
+            </TabsTrigger>
             <TabsTrigger value="create">
               <Plus className="h-4 w-4 mr-1" />
               Nova Aula
@@ -305,12 +478,12 @@ const ELearningModal = ({ isOpen, onClose, teacher }: ELearningModalProps) => {
                     <Card key={onlineClass.id}>
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between gap-4">
-                          <div className="flex items-start gap-3">
-                            <div className={`h-10 w-10 rounded-lg ${platform.color} flex items-center justify-center text-lg`}>
+                          <div className="flex items-start gap-3 flex-1">
+                            <div className={`h-10 w-10 rounded-lg ${platform.color} flex items-center justify-center text-lg shrink-0`}>
                               {platform.icon}
                             </div>
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
+                            <div className="space-y-1 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <h4 className="font-medium">{onlineClass.title}</h4>
                                 {getStatusBadge(onlineClass.status)}
                               </div>
@@ -328,7 +501,7 @@ const ELearningModal = ({ isOpen, onClose, teacher }: ELearningModalProps) => {
                                   {onlineClass.class}
                                 </span>
                               </div>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <Badge variant="outline" className="text-xs">
                                   {onlineClass.subject}
                                 </Badge>
@@ -340,10 +513,56 @@ const ELearningModal = ({ isOpen, onClose, teacher }: ELearningModalProps) => {
                                     🔴 Gravação
                                   </Badge>
                                 )}
+                                {onlineClass.materials.length > 0 && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    <Paperclip className="h-3 w-3 mr-1" />
+                                    {onlineClass.materials.length} material(is)
+                                  </Badge>
+                                )}
                               </div>
+
+                              {/* Materials Section */}
+                              {onlineClass.materials.length > 0 && (
+                                <div className="mt-3 pt-3 border-t">
+                                  <p className="text-xs font-medium text-muted-foreground mb-2">
+                                    Materiais de Apoio:
+                                  </p>
+                                  <div className="flex flex-wrap gap-2">
+                                    {onlineClass.materials.map((material) => (
+                                      <div
+                                        key={material.id}
+                                        className="flex items-center gap-2 px-2 py-1 rounded-md bg-muted/50 text-xs group"
+                                      >
+                                        {getFileIcon(material.type)}
+                                        <span className="max-w-[150px] truncate">{material.name}</span>
+                                        <button
+                                          onClick={() => handleRemoveClassMaterial(onlineClass.id, material.id)}
+                                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                          <X className="h-3 w-3 text-destructive" />
+                                        </button>
+                                      </div>
+                                    ))}
+                                    <input
+                                      type="file"
+                                      multiple
+                                      className="hidden"
+                                      id={`add-material-${onlineClass.id}`}
+                                      onChange={(e) => handleAddMaterialToClass(onlineClass.id, e.target.files)}
+                                    />
+                                    <label
+                                      htmlFor={`add-material-${onlineClass.id}`}
+                                      className="flex items-center gap-1 px-2 py-1 rounded-md border border-dashed border-primary/50 text-xs text-primary cursor-pointer hover:bg-primary/5 transition-colors"
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                      Adicionar
+                                    </label>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 shrink-0">
                             <Button
                               variant="ghost"
                               size="icon"
@@ -395,7 +614,126 @@ const ELearningModal = ({ isOpen, onClose, teacher }: ELearningModalProps) => {
                     <p className="font-medium text-sm">Notificação Automática</p>
                     <p className="text-sm text-muted-foreground">
                       Os alunos matriculados nas suas turmas receberão notificações automáticas 
-                      sobre as aulas agendadas, incluindo o link de acesso.
+                      sobre as aulas agendadas, incluindo o link de acesso e materiais de apoio.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Materials Library Tab */}
+          <TabsContent value="materials" className="space-y-4 mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <FolderOpen className="h-5 w-5" />
+                  Biblioteca de Materiais
+                </CardTitle>
+                <CardDescription>
+                  Faça upload de materiais para utilizar nas suas aulas. 
+                  Os alunos só têm acesso aos materiais anexados às aulas das suas turmas.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Upload Area */}
+                <div
+                  className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                    isDragging
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50"
+                  }`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, false)}
+                >
+                  <input
+                    ref={materialFileInputRef}
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => handleFileUpload(e.target.files, false)}
+                  />
+                  <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Arraste ficheiros ou clique para fazer upload
+                  </p>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    PDF, Word, PowerPoint, Imagens, Vídeos, Áudio (máx. 50MB por ficheiro)
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={() => materialFileInputRef.current?.click()}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Seleccionar Ficheiros
+                  </Button>
+                </div>
+
+                {/* Materials List */}
+                {generalMaterials.length > 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">
+                      Ficheiros na Biblioteca ({generalMaterials.length})
+                    </p>
+                    <ScrollArea className="h-[300px]">
+                      <div className="space-y-2">
+                        {generalMaterials.map((material) => (
+                          <div
+                            key={material.id}
+                            className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors group"
+                          >
+                            <div className="flex items-center gap-3">
+                              {getFileIcon(material.type)}
+                              <div>
+                                <p className="font-medium text-sm">{material.name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {material.size} • Carregado em {new Date(material.uploadedAt).toLocaleDateString("pt-AO")}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => handleRemoveGeneralMaterial(material.id)}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <File className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>Nenhum material na biblioteca</p>
+                    <p className="text-sm">Faça upload de ficheiros para começar</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Info about access */}
+            <Card className="bg-primary/5 border-primary/20">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <p className="font-medium text-sm">Acesso Controlado</p>
+                    <p className="text-sm text-muted-foreground">
+                      Os materiais da biblioteca são privados. Para partilhar com alunos, 
+                      anexe-os a uma aula específica - apenas os alunos matriculados nessa turma terão acesso.
                     </p>
                   </div>
                 </div>
@@ -567,6 +905,71 @@ const ELearningModal = ({ isOpen, onClose, teacher }: ELearningModalProps) => {
                 />
               </div>
 
+              {/* Materials Upload */}
+              <div className="space-y-2">
+                <Label>Materiais de Apoio</Label>
+                <div
+                  className={`border-2 border-dashed rounded-lg p-4 transition-colors ${
+                    isDragging
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50"
+                  }`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, true)}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => handleFileUpload(e.target.files, true)}
+                  />
+                  <div className="text-center">
+                    <Paperclip className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Arraste ficheiros ou clique para anexar materiais de apoio
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Anexar Ficheiros
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Pending Materials */}
+                {pendingMaterials.length > 0 && (
+                  <div className="space-y-2 mt-3">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Ficheiros a anexar ({pendingMaterials.length}):
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {pendingMaterials.map((material) => (
+                        <div
+                          key={material.id}
+                          className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted text-sm group"
+                        >
+                          {getFileIcon(material.type)}
+                          <span className="max-w-[200px] truncate">{material.name}</span>
+                          <span className="text-xs text-muted-foreground">{material.size}</span>
+                          <button
+                            onClick={() => handleRemovePendingMaterial(material.id)}
+                            className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="h-4 w-4 text-destructive" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Options */}
               <div className="space-y-4 pt-2">
                 <div className="flex items-center justify-between">
@@ -604,7 +1007,7 @@ const ELearningModal = ({ isOpen, onClose, teacher }: ELearningModalProps) => {
                       <p className="font-medium text-sm">Acesso Restrito</p>
                       <p className="text-sm text-muted-foreground">
                         Apenas os alunos matriculados na turma <strong>{formData.class || "seleccionada"}</strong> terão 
-                        acesso ao link e receberão notificações sobre esta aula.
+                        acesso ao link, materiais de apoio e receberão notificações sobre esta aula.
                       </p>
                     </div>
                   </div>

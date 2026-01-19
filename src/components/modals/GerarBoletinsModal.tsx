@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -21,10 +22,25 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Download, Printer, Users, Loader2, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { 
+  FileText, Download, Printer, Users, Loader2, Eye, ChevronLeft, ChevronRight, 
+  Settings, Upload, Image, X, Palette, RotateCcw 
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+
+// Preset color options
+const colorPresets = [
+  { name: "Verde Institucional", value: "#2E7D32", rgb: [46, 125, 50] },
+  { name: "Azul Académico", value: "#1565C0", rgb: [21, 101, 192] },
+  { name: "Azul Marinho", value: "#0D47A1", rgb: [13, 71, 161] },
+  { name: "Bordô", value: "#880E4F", rgb: [136, 14, 79] },
+  { name: "Roxo Elegante", value: "#4A148C", rgb: [74, 20, 140] },
+  { name: "Cinza Profissional", value: "#37474F", rgb: [55, 71, 79] },
+  { name: "Dourado", value: "#F57F17", rgb: [245, 127, 23] },
+  { name: "Verde Escuro", value: "#1B5E20", rgb: [27, 94, 32] },
+];
 
 interface GerarBoletinsModalProps {
   open: boolean;
@@ -103,8 +119,16 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
   const [estudantesSelecionados, setEstudantesSelecionados] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [activeTab, setActiveTab] = useState<"selecao" | "preview">("selecao");
+  const [activeTab, setActiveTab] = useState<"selecao" | "personalizacao" | "preview">("selecao");
   const [previewIndex, setPreviewIndex] = useState(0);
+  
+  // Customization states
+  const [schoolName, setSchoolName] = useState("Sistema de Gestão Escolar");
+  const [headerColor, setHeaderColor] = useState(colorPresets[0].value);
+  const [headerColorRgb, setHeaderColorRgb] = useState<number[]>(colorPresets[0].rgb);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoBase64, setLogoBase64] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Get selected students data for preview
   const selectedStudentsData = useMemo(() => {
@@ -116,6 +140,73 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
   const currentPeriodo = periodos.find(p => p.id === periodoSelecionado);
 
   const canShowPreview = turmaSelecionada && periodoSelecionado && estudantesSelecionados.length > 0;
+
+  // Handle color selection
+  const handleColorSelect = (preset: typeof colorPresets[0]) => {
+    setHeaderColor(preset.value);
+    setHeaderColorRgb(preset.rgb);
+  };
+
+  const handleCustomColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const hex = e.target.value;
+    setHeaderColor(hex);
+    // Convert hex to RGB
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    setHeaderColorRgb([r, g, b]);
+  };
+
+  // Handle logo upload
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "Ficheiro muito grande",
+        description: "O logotipo deve ter no máximo 2MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Formato inválido",
+        description: "Por favor, selecione uma imagem (PNG, JPG, SVG)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      setLogoUrl(URL.createObjectURL(file));
+      setLogoBase64(base64);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveLogo = () => {
+    setLogoUrl(null);
+    setLogoBase64(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleResetCustomization = () => {
+    setSchoolName("Sistema de Gestão Escolar");
+    setHeaderColor(colorPresets[0].value);
+    setHeaderColorRgb(colorPresets[0].rgb);
+    setLogoUrl(null);
+    setLogoBase64(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const handleSelectAll = (checked: boolean) => {
     setSelectAll(checked);
@@ -139,25 +230,36 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     
-    // Header
-    doc.setFillColor(46, 125, 50);
-    doc.rect(0, 0, pageWidth, 40, "F");
+    // Header with custom color
+    doc.setFillColor(headerColorRgb[0], headerColorRgb[1], headerColorRgb[2]);
+    doc.rect(0, 0, pageWidth, 45, "F");
+    
+    // Add logo if available
+    let textStartY = 15;
+    if (logoBase64) {
+      try {
+        doc.addImage(logoBase64, 'PNG', 14, 8, 25, 25);
+        textStartY = 15;
+      } catch (error) {
+        console.log("Logo could not be added to PDF");
+      }
+    }
     
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(18);
     doc.setFont("helvetica", "bold");
-    doc.text("BOLETIM DE NOTAS", pageWidth / 2, 18, { align: "center" });
+    doc.text("BOLETIM DE NOTAS", pageWidth / 2, textStartY, { align: "center" });
     
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
-    doc.text("Sistema de Gestão Escolar", pageWidth / 2, 28, { align: "center" });
-    doc.text(`Ano Lectivo ${periodo.ano}`, pageWidth / 2, 35, { align: "center" });
+    doc.text(schoolName, pageWidth / 2, textStartY + 10, { align: "center" });
+    doc.text(`Ano Lectivo ${periodo.ano}`, pageWidth / 2, textStartY + 17, { align: "center" });
     
     // Student info
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(11);
     
-    let yPos = 55;
+    let yPos = 60;
     
     doc.setFont("helvetica", "bold");
     doc.text("DADOS DO ESTUDANTE", 14, yPos);
@@ -193,7 +295,7 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
       body: tableData,
       theme: "grid",
       headStyles: {
-        fillColor: [46, 125, 50],
+        fillColor: [headerColorRgb[0], headerColorRgb[1], headerColorRgb[2]],
         textColor: 255,
         fontStyle: "bold",
         halign: "center"
@@ -248,6 +350,127 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
     return doc;
   };
 
+  // Helper function to generate boletim page content (for multi-page PDF)
+  const generateBoletimPage = (doc: jsPDF, estudante: typeof estudantesMock[0], turma: typeof turmas[0], periodo: typeof periodos[0]) => {
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    // Header with custom color
+    doc.setFillColor(headerColorRgb[0], headerColorRgb[1], headerColorRgb[2]);
+    doc.rect(0, 0, pageWidth, 45, "F");
+    
+    // Add logo if available
+    let textStartY = 15;
+    if (logoBase64) {
+      try {
+        doc.addImage(logoBase64, 'PNG', 14, 8, 25, 25);
+      } catch (error) {
+        console.log("Logo could not be added to PDF");
+      }
+    }
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("BOLETIM DE NOTAS", pageWidth / 2, textStartY, { align: "center" });
+    
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    doc.text(schoolName, pageWidth / 2, textStartY + 10, { align: "center" });
+    doc.text(`Ano Lectivo ${periodo.ano}`, pageWidth / 2, textStartY + 17, { align: "center" });
+    
+    // Student info
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(11);
+    
+    let yPos = 60;
+    
+    doc.setFont("helvetica", "bold");
+    doc.text("DADOS DO ESTUDANTE", 14, yPos);
+    yPos += 8;
+    
+    doc.setFont("helvetica", "normal");
+    doc.text(`Nome: ${estudante.nome}`, 14, yPos);
+    yPos += 6;
+    doc.text(`Nº de Matrícula: ${estudante.numero}`, 14, yPos);
+    yPos += 6;
+    doc.text(`Turma: ${turma.nome}`, 14, yPos);
+    yPos += 6;
+    doc.text(`Nível: ${turma.nivel}`, 14, yPos);
+    yPos += 6;
+    doc.text(`Período: ${periodo.nome}`, 14, yPos);
+    yPos += 15;
+    
+    // Grades table
+    const grades = mockGradesData[estudante.id] || mockGradesData["1"];
+    
+    const tableData = grades.map(g => [
+      g.disciplina,
+      g.nota1T.toString(),
+      g.nota2T.toString(),
+      g.nota3T.toString(),
+      g.media.toString(),
+      g.media >= 10 ? "Aprovado" : "Reprovado"
+    ]);
+    
+    autoTable(doc, {
+      startY: yPos,
+      head: [["Disciplina", "1º Trim.", "2º Trim.", "3º Trim.", "Média", "Situação"]],
+      body: tableData,
+      theme: "grid",
+      headStyles: {
+        fillColor: [headerColorRgb[0], headerColorRgb[1], headerColorRgb[2]],
+        textColor: 255,
+        fontStyle: "bold",
+        halign: "center"
+      },
+      columnStyles: {
+        0: { halign: "left" },
+        1: { halign: "center" },
+        2: { halign: "center" },
+        3: { halign: "center" },
+        4: { halign: "center", fontStyle: "bold" },
+        5: { halign: "center" }
+      },
+      didParseCell: (data) => {
+        if (data.column.index === 5 && data.section === "body") {
+          if (data.cell.text[0] === "Reprovado") {
+            data.cell.styles.textColor = [220, 53, 69];
+          } else {
+            data.cell.styles.textColor = [40, 167, 69];
+          }
+        }
+      }
+    });
+    
+    // Calculate overall average
+    const overallAverage = grades.reduce((sum, g) => sum + g.media, 0) / grades.length;
+    
+    // @ts-ignore - autoTable adds this property
+    const finalY = (doc as any).lastAutoTable.finalY + 10;
+    
+    doc.setFont("helvetica", "bold");
+    doc.text(`Média Geral: ${overallAverage.toFixed(1)}`, 14, finalY);
+    doc.text(`Situação Final: ${overallAverage >= 10 ? "APROVADO" : "REPROVADO"}`, 14, finalY + 8);
+    
+    // Footer
+    const footerY = doc.internal.pageSize.getHeight() - 30;
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Documento gerado em: ${new Date().toLocaleDateString("pt-AO")} às ${new Date().toLocaleTimeString("pt-AO")}`, 14, footerY);
+    
+    // Signature lines
+    doc.setDrawColor(0, 0, 0);
+    doc.line(14, footerY + 15, 80, footerY + 15);
+    doc.line(130, footerY + 15, 196, footerY + 15);
+    
+    doc.setFontSize(8);
+    doc.setTextColor(0, 0, 0);
+    doc.text("Director Pedagógico", 47, footerY + 20, { align: "center" });
+    doc.text("Encarregado de Educação", 163, footerY + 20, { align: "center" });
+  };
+
   const handleGenerate = async (action: 'download' | 'print') => {
     if (!turmaSelecionada || !periodoSelecionado) {
       toast({
@@ -292,121 +515,14 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
           }
         }
       } else {
-        // Multiple students - generate combined PDF
+        // Multiple students - generate combined PDF using helper function
         const doc = new jsPDF();
         
         selectedStudents.forEach((estudante, index) => {
           if (index > 0) {
             doc.addPage();
           }
-          
-          const pageWidth = doc.internal.pageSize.getWidth();
-          
-          // Header
-          doc.setFillColor(46, 125, 50);
-          doc.rect(0, 0, pageWidth, 40, "F");
-          
-          doc.setTextColor(255, 255, 255);
-          doc.setFontSize(18);
-          doc.setFont("helvetica", "bold");
-          doc.text("BOLETIM DE NOTAS", pageWidth / 2, 18, { align: "center" });
-          
-          doc.setFontSize(12);
-          doc.setFont("helvetica", "normal");
-          doc.text("Sistema de Gestão Escolar", pageWidth / 2, 28, { align: "center" });
-          doc.text(`Ano Lectivo ${periodo.ano}`, pageWidth / 2, 35, { align: "center" });
-          
-          // Student info
-          doc.setTextColor(0, 0, 0);
-          doc.setFontSize(11);
-          
-          let yPos = 55;
-          
-          doc.setFont("helvetica", "bold");
-          doc.text("DADOS DO ESTUDANTE", 14, yPos);
-          yPos += 8;
-          
-          doc.setFont("helvetica", "normal");
-          doc.text(`Nome: ${estudante.nome}`, 14, yPos);
-          yPos += 6;
-          doc.text(`Nº de Matrícula: ${estudante.numero}`, 14, yPos);
-          yPos += 6;
-          doc.text(`Turma: ${turma.nome}`, 14, yPos);
-          yPos += 6;
-          doc.text(`Nível: ${turma.nivel}`, 14, yPos);
-          yPos += 6;
-          doc.text(`Período: ${periodo.nome}`, 14, yPos);
-          yPos += 15;
-          
-          // Grades table
-          const grades = mockGradesData[estudante.id] || mockGradesData["1"];
-          
-          const tableData = grades.map(g => [
-            g.disciplina,
-            g.nota1T.toString(),
-            g.nota2T.toString(),
-            g.nota3T.toString(),
-            g.media.toString(),
-            g.media >= 10 ? "Aprovado" : "Reprovado"
-          ]);
-          
-          autoTable(doc, {
-            startY: yPos,
-            head: [["Disciplina", "1º Trim.", "2º Trim.", "3º Trim.", "Média", "Situação"]],
-            body: tableData,
-            theme: "grid",
-            headStyles: {
-              fillColor: [46, 125, 50],
-              textColor: 255,
-              fontStyle: "bold",
-              halign: "center"
-            },
-            columnStyles: {
-              0: { halign: "left" },
-              1: { halign: "center" },
-              2: { halign: "center" },
-              3: { halign: "center" },
-              4: { halign: "center", fontStyle: "bold" },
-              5: { halign: "center" }
-            },
-            didParseCell: (data) => {
-              if (data.column.index === 5 && data.section === "body") {
-                if (data.cell.text[0] === "Reprovado") {
-                  data.cell.styles.textColor = [220, 53, 69];
-                } else {
-                  data.cell.styles.textColor = [40, 167, 69];
-                }
-              }
-            }
-          });
-          
-          // Calculate overall average
-          const overallAverage = grades.reduce((sum, g) => sum + g.media, 0) / grades.length;
-          
-          // @ts-ignore - autoTable adds this property
-          const finalY = (doc as any).lastAutoTable.finalY + 10;
-          
-          doc.setFont("helvetica", "bold");
-          doc.text(`Média Geral: ${overallAverage.toFixed(1)}`, 14, finalY);
-          doc.text(`Situação Final: ${overallAverage >= 10 ? "APROVADO" : "REPROVADO"}`, 14, finalY + 8);
-          
-          // Footer
-          const footerY = doc.internal.pageSize.getHeight() - 30;
-          
-          doc.setFont("helvetica", "normal");
-          doc.setFontSize(9);
-          doc.setTextColor(100, 100, 100);
-          doc.text(`Documento gerado em: ${new Date().toLocaleDateString("pt-AO")} às ${new Date().toLocaleTimeString("pt-AO")}`, 14, footerY);
-          
-          // Signature lines
-          doc.setDrawColor(0, 0, 0);
-          doc.line(14, footerY + 15, 80, footerY + 15);
-          doc.line(130, footerY + 15, 196, footerY + 15);
-          
-          doc.setFontSize(8);
-          doc.setTextColor(0, 0, 0);
-          doc.text("Director Pedagógico", 47, footerY + 20, { align: "center" });
-          doc.text("Encarregado de Educação", 163, footerY + 20, { align: "center" });
+          generateBoletimPage(doc, estudante, turma, periodo);
         });
         
         if (action === 'download') {
@@ -461,11 +577,24 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
     return (
       <Card className="border-2 border-primary/20 bg-card shadow-lg">
         <CardContent className="p-0">
-          {/* Header */}
-          <div className="bg-primary text-primary-foreground p-4 rounded-t-lg">
-            <h3 className="text-lg font-bold text-center">BOLETIM DE NOTAS</h3>
-            <p className="text-sm text-center opacity-90">Sistema de Gestão Escolar</p>
-            <p className="text-sm text-center opacity-90">Ano Lectivo {periodo.ano}</p>
+          {/* Header with custom color and logo */}
+          <div 
+            className="p-4 rounded-t-lg flex items-center gap-4"
+            style={{ backgroundColor: headerColor }}
+          >
+            {logoUrl && (
+              <img 
+                src={logoUrl} 
+                alt="Logo" 
+                className="h-12 w-12 object-contain rounded bg-white/20 p-1"
+              />
+            )}
+            <div className="flex-1 text-center text-white">
+              <h3 className="text-lg font-bold">BOLETIM DE NOTAS</h3>
+              <p className="text-sm opacity-90">{schoolName}</p>
+              <p className="text-sm opacity-90">Ano Lectivo {periodo.ano}</p>
+            </div>
+            {logoUrl && <div className="w-12" />} {/* Spacer for centering */}
           </div>
 
           {/* Student Info */}
@@ -484,14 +613,14 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
           <div className="p-4">
             <div className="overflow-hidden rounded-lg border">
               <table className="w-full text-sm">
-                <thead className="bg-primary text-primary-foreground">
+                <thead style={{ backgroundColor: headerColor }}>
                   <tr>
-                    <th className="px-3 py-2 text-left font-medium">Disciplina</th>
-                    <th className="px-2 py-2 text-center font-medium">1º Trim.</th>
-                    <th className="px-2 py-2 text-center font-medium">2º Trim.</th>
-                    <th className="px-2 py-2 text-center font-medium">3º Trim.</th>
-                    <th className="px-2 py-2 text-center font-medium">Média</th>
-                    <th className="px-3 py-2 text-center font-medium">Situação</th>
+                    <th className="px-3 py-2 text-left font-medium text-white">Disciplina</th>
+                    <th className="px-2 py-2 text-center font-medium text-white">1º Trim.</th>
+                    <th className="px-2 py-2 text-center font-medium text-white">2º Trim.</th>
+                    <th className="px-2 py-2 text-center font-medium text-white">3º Trim.</th>
+                    <th className="px-2 py-2 text-center font-medium text-white">Média</th>
+                    <th className="px-3 py-2 text-center font-medium text-white">Situação</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -558,17 +687,135 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "selecao" | "preview")} className="mt-2">
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "selecao" | "personalizacao" | "preview")} className="mt-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="selecao">
               <Users className="h-4 w-4 mr-2" />
               Seleção
+            </TabsTrigger>
+            <TabsTrigger value="personalizacao">
+              <Settings className="h-4 w-4 mr-2" />
+              Personalização
             </TabsTrigger>
             <TabsTrigger value="preview" disabled={!canShowPreview}>
               <Eye className="h-4 w-4 mr-2" />
               Pré-visualização
             </TabsTrigger>
           </TabsList>
+
+          {/* Personalização Tab */}
+          <TabsContent value="personalizacao" className="space-y-4 mt-4">
+            <ScrollArea className="h-[350px] pr-4">
+              {/* School Name */}
+              <div className="space-y-2 mb-4">
+                <Label htmlFor="schoolName">Nome da Instituição</Label>
+                <Input
+                  id="schoolName"
+                  value={schoolName}
+                  onChange={(e) => setSchoolName(e.target.value)}
+                  placeholder="Nome da escola"
+                />
+              </div>
+
+              {/* Logo Upload */}
+              <div className="space-y-2 mb-4">
+                <Label>Logotipo</Label>
+                <div className="flex items-start gap-4">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleLogoUpload}
+                  />
+                  {logoUrl ? (
+                    <div className="relative">
+                      <img 
+                        src={logoUrl} 
+                        alt="Logo preview" 
+                        className="h-20 w-20 object-contain rounded-lg border bg-muted p-2"
+                      />
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6"
+                        onClick={handleRemoveLogo}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      className="h-20 w-20 flex flex-col items-center justify-center gap-1"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="h-5 w-5" />
+                      <span className="text-xs">Carregar</span>
+                    </Button>
+                  )}
+                  <div className="text-xs text-muted-foreground">
+                    <p>Formatos: PNG, JPG, SVG</p>
+                    <p>Tamanho máx: 2MB</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Header Color */}
+              <div className="space-y-3">
+                <Label className="flex items-center gap-2">
+                  <Palette className="h-4 w-4" />
+                  Cor do Cabeçalho
+                </Label>
+                
+                {/* Color Presets */}
+                <div className="grid grid-cols-4 gap-2">
+                  {colorPresets.map((preset) => (
+                    <button
+                      key={preset.value}
+                      type="button"
+                      onClick={() => handleColorSelect(preset)}
+                      className={`h-10 rounded-lg border-2 transition-all ${
+                        headerColor === preset.value 
+                          ? "border-foreground ring-2 ring-offset-2 ring-primary" 
+                          : "border-transparent hover:border-muted-foreground/50"
+                      }`}
+                      style={{ backgroundColor: preset.value }}
+                      title={preset.name}
+                    />
+                  ))}
+                </div>
+
+                {/* Custom Color Picker */}
+                <div className="flex items-center gap-3">
+                  <Label htmlFor="customColor" className="text-sm text-muted-foreground">Cor personalizada:</Label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      id="customColor"
+                      type="color"
+                      value={headerColor}
+                      onChange={handleCustomColorChange}
+                      className="w-10 h-10 rounded cursor-pointer border-0"
+                    />
+                    <Input
+                      value={headerColor.toUpperCase()}
+                      onChange={handleCustomColorChange}
+                      className="w-24 font-mono text-sm"
+                      maxLength={7}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Reset Button */}
+              <div className="pt-4 border-t mt-4">
+                <Button variant="outline" size="sm" onClick={handleResetCustomization}>
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Repor Predefinições
+                </Button>
+              </div>
+            </ScrollArea>
+          </TabsContent>
 
           <TabsContent value="selecao" className="space-y-4 mt-4">
             {/* Turma Selection */}

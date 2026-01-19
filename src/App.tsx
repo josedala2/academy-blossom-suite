@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
+import { ELearningTrackingProvider } from "@/contexts/ELearningTrackingContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { routePermissions } from "@/config/permissions";
 import Index from "./pages/Index";
@@ -39,6 +40,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <NotificationProvider>
+        <ELearningTrackingProvider>
         <TooltipProvider>
           <Toaster />
         <Sonner />
@@ -163,6 +165,7 @@ const App = () => (
           </Routes>
           </BrowserRouter>
         </TooltipProvider>
+        </ELearningTrackingProvider>
       </NotificationProvider>
     </AuthProvider>
   </QueryClientProvider>

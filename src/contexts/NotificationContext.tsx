@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
 import { useAuth } from "./AuthContext";
 
-export type NotificationType = "exam" | "grade" | "payment" | "general";
+export type NotificationType = "exam" | "grade" | "payment" | "general" | "elearning";
 
 export interface Notification {
   id: string;

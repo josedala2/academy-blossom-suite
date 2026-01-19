@@ -1,4 +1,4 @@
-import { Bell, BookOpen, GraduationCap, CreditCard, Info, Check, Trash2, X, Video } from "lucide-react";
+import { Bell, BookOpen, GraduationCap, CreditCard, Info, Check, Trash2, X, Video, AlertTriangle, ClipboardCheck, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { useNotifications, NotificationType } from "@/contexts/NotificationContext";
+import { useNotifications, NotificationType, Notification } from "@/contexts/NotificationContext";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { pt } from "date-fns/locale";
@@ -22,12 +22,19 @@ const getNotificationIcon = (type: NotificationType) => {
       return <CreditCard className="h-4 w-4" />;
     case "elearning":
       return <Video className="h-4 w-4" />;
+    case "grade_delay":
+      return <AlertTriangle className="h-4 w-4" />;
+    case "supervision":
+      return <ClipboardCheck className="h-4 w-4" />;
     default:
       return <Info className="h-4 w-4" />;
   }
 };
 
-const getNotificationColor = (type: NotificationType) => {
+const getNotificationColor = (type: NotificationType, priority?: string) => {
+  if (priority === "high") {
+    return "bg-destructive/10 text-destructive";
+  }
   switch (type) {
     case "exam":
       return "bg-blue-500/10 text-blue-500";
@@ -37,6 +44,10 @@ const getNotificationColor = (type: NotificationType) => {
       return "bg-orange-500/10 text-orange-500";
     case "elearning":
       return "bg-purple-500/10 text-purple-500";
+    case "grade_delay":
+      return "bg-destructive/10 text-destructive";
+    case "supervision":
+      return "bg-primary/10 text-primary";
     default:
       return "bg-muted text-muted-foreground";
   }
@@ -52,14 +63,41 @@ const getNotificationLabel = (type: NotificationType) => {
       return "Pagamento";
     case "elearning":
       return "E-Learning";
+    case "grade_delay":
+      return "Atraso";
+    case "supervision":
+      return "Supervisão";
     default:
       return "Geral";
   }
 };
 
+const getPriorityBadge = (priority?: string) => {
+  if (!priority) return null;
+  
+  switch (priority) {
+    case "high":
+      return (
+        <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+          Urgente
+        </Badge>
+      );
+    case "medium":
+      return (
+        <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-orange-500 text-orange-500">
+          <Clock className="h-2.5 w-2.5 mr-0.5" />
+          Atenção
+        </Badge>
+      );
+    default:
+      return null;
+  }
+};
+
 const NotificationPanel = () => {
-  const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification, clearAll } = useNotifications();
+  const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification, clearAll, getHighPriorityCount } = useNotifications();
   const navigate = useNavigate();
+  const highPriorityCount = getHighPriorityCount();
 
   const handleNotificationClick = (id: string, link?: string) => {
     markAsRead(id);
@@ -68,13 +106,27 @@ const NotificationPanel = () => {
     }
   };
 
+  // Sort notifications by priority (high first) and then by date
+  const sortedNotifications = [...notifications].sort((a, b) => {
+    const priorityOrder = { high: 0, medium: 1, low: 2, undefined: 3 };
+    const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] ?? 3;
+    const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] ?? 3;
+    
+    if (aPriority !== bPriority) {
+      return aPriority - bPriority;
+    }
+    return b.createdAt.getTime() - a.createdAt.getTime();
+  });
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
+            <span className={`absolute -top-0.5 -right-0.5 h-5 w-5 rounded-full text-[10px] font-bold flex items-center justify-center ${
+              highPriorityCount > 0 ? "bg-destructive text-destructive-foreground animate-pulse" : "bg-primary text-primary-foreground"
+            }`}>
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
@@ -88,6 +140,11 @@ const NotificationPanel = () => {
             {unreadCount > 0 && (
               <Badge variant="secondary" className="text-xs">
                 {unreadCount} nova{unreadCount > 1 ? "s" : ""}
+              </Badge>
+            )}
+            {highPriorityCount > 0 && (
+              <Badge variant="destructive" className="text-xs animate-pulse">
+                {highPriorityCount} urgente{highPriorityCount > 1 ? "s" : ""}
               </Badge>
             )}
           </div>
@@ -108,23 +165,34 @@ const NotificationPanel = () => {
           )}
         </div>
 
+        {/* High Priority Alert Banner */}
+        {highPriorityCount > 0 && (
+          <div className="px-4 py-2 bg-destructive/10 border-b border-destructive/20 flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-destructive" />
+            <span className="text-xs text-destructive font-medium">
+              {highPriorityCount} alerta{highPriorityCount > 1 ? "s" : ""} de atraso no lançamento de notas
+            </span>
+          </div>
+        )}
+
         {/* Notifications List */}
         {notifications.length > 0 ? (
           <>
             <ScrollArea className="max-h-[400px]">
               <div className="divide-y">
-                {notifications.map((notification) => (
+                {sortedNotifications.map((notification) => (
                   <div
                     key={notification.id}
                     className={`flex gap-3 p-4 cursor-pointer transition-colors hover:bg-muted/50 ${
                       !notification.read ? "bg-primary/5" : ""
-                    }`}
+                    } ${notification.priority === "high" && !notification.read ? "bg-destructive/5 border-l-2 border-l-destructive" : ""}`}
                     onClick={() => handleNotificationClick(notification.id, notification.link)}
                   >
                     {/* Icon */}
                     <div
                       className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${getNotificationColor(
-                        notification.type
+                        notification.type,
+                        notification.priority
                       )}`}
                     >
                       {getNotificationIcon(notification.type)}
@@ -133,12 +201,20 @@ const NotificationPanel = () => {
                     {/* Content */}
                     <div className="flex-1 min-w-0 space-y-1">
                       <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <p className={`text-sm font-medium line-clamp-1 ${!notification.read ? "text-foreground" : "text-muted-foreground"}`}>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className={`text-sm font-medium line-clamp-1 ${
+                            notification.priority === "high" && !notification.read 
+                              ? "text-destructive" 
+                              : !notification.read 
+                                ? "text-foreground" 
+                                : "text-muted-foreground"
+                          }`}>
                             {notification.title}
                           </p>
                           {!notification.read && (
-                            <span className="h-2 w-2 rounded-full bg-primary shrink-0" />
+                            <span className={`h-2 w-2 rounded-full shrink-0 ${
+                              notification.priority === "high" ? "bg-destructive" : "bg-primary"
+                            }`} />
                           )}
                         </div>
                         <Button
@@ -156,10 +232,18 @@ const NotificationPanel = () => {
                       <p className="text-xs text-muted-foreground line-clamp-2">
                         {notification.message}
                       </p>
-                      <div className="flex items-center gap-2">
+                      {/* Metadata display for grade delays */}
+                      {notification.metadata?.diasAtraso && notification.metadata.diasAtraso > 0 && (
+                        <div className="flex items-center gap-1 text-[10px] text-destructive font-medium">
+                          <Clock className="h-3 w-3" />
+                          {notification.metadata.diasAtraso} dia{notification.metadata.diasAtraso > 1 ? "s" : ""} de atraso
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 flex-wrap">
                         <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                           {getNotificationLabel(notification.type)}
                         </Badge>
+                        {getPriorityBadge(notification.priority)}
                         <span className="text-[10px] text-muted-foreground">
                           {formatDistanceToNow(notification.createdAt, {
                             addSuffix: true,

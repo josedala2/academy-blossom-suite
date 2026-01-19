@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
 import { useAuth } from "./AuthContext";
 
-export type NotificationType = "exam" | "grade" | "payment" | "general" | "elearning";
+export type NotificationType = "exam" | "grade" | "payment" | "general" | "elearning" | "grade_delay" | "supervision";
 
 export interface Notification {
   id: string;
@@ -11,6 +11,15 @@ export interface Notification {
   read: boolean;
   createdAt: Date;
   link?: string;
+  priority?: "low" | "medium" | "high";
+  metadata?: {
+    professorId?: string;
+    professorName?: string;
+    disciplina?: string;
+    turma?: string;
+    prazo?: Date;
+    diasAtraso?: number;
+  };
 }
 
 interface NotificationContextType {
@@ -21,6 +30,7 @@ interface NotificationContextType {
   addNotification: (notification: Omit<Notification, "id" | "read" | "createdAt">) => void;
   deleteNotification: (id: string) => void;
   clearAll: () => void;
+  getHighPriorityCount: () => number;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -74,7 +84,7 @@ const getStudentNotifications = (): Notification[] => [
   },
 ];
 
-// Mock notifications for other roles
+// Mock notifications for admin
 const getAdminNotifications = (): Notification[] => [
   {
     id: "1",
@@ -96,12 +106,109 @@ const getAdminNotifications = (): Notification[] => [
   },
 ];
 
+// Notifications for Director Pedagógico - includes grade delay alerts
+const getDirectorNotifications = (): Notification[] => [
+  {
+    id: "dp1",
+    type: "grade_delay",
+    title: "⚠️ Atraso no Lançamento de Notas",
+    message: "Prof. Carlos Mendes não lançou as notas de Matemática da 10ª Classe A. Prazo expirado há 3 dias.",
+    read: false,
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2),
+    link: "/dashboard/relatorios-pedagogicos",
+    priority: "high",
+    metadata: {
+      professorId: "prof1",
+      professorName: "Carlos Mendes",
+      disciplina: "Matemática",
+      turma: "10ª Classe A",
+      diasAtraso: 3,
+    },
+  },
+  {
+    id: "dp2",
+    type: "grade_delay",
+    title: "⚠️ Atraso no Lançamento de Notas",
+    message: "Profa. Ana Ferreira não lançou as notas de Física da 11ª Classe B. Prazo expirado há 2 dias.",
+    read: false,
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 4),
+    link: "/dashboard/relatorios-pedagogicos",
+    priority: "high",
+    metadata: {
+      professorId: "prof2",
+      professorName: "Ana Ferreira",
+      disciplina: "Física",
+      turma: "11ª Classe B",
+      diasAtraso: 2,
+    },
+  },
+  {
+    id: "dp3",
+    type: "grade_delay",
+    title: "⏰ Prazo Próximo do Vencimento",
+    message: "Prof. Miguel Santos tem 1 dia para lançar notas de Química da 12ª Classe A.",
+    read: false,
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 1),
+    link: "/dashboard/relatorios-pedagogicos",
+    priority: "medium",
+    metadata: {
+      professorId: "prof3",
+      professorName: "Miguel Santos",
+      disciplina: "Química",
+      turma: "12ª Classe A",
+      diasAtraso: -1, // negative means days remaining
+    },
+  },
+  {
+    id: "dp4",
+    type: "supervision",
+    title: "📊 Notas Lançadas",
+    message: "Profa. Maria Silva lançou todas as notas de Português da 10ª Classe B.",
+    read: false,
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 6),
+    link: "/dashboard/relatorios-pedagogicos",
+    priority: "low",
+    metadata: {
+      professorId: "prof4",
+      professorName: "Maria Silva",
+      disciplina: "Português",
+      turma: "10ª Classe B",
+    },
+  },
+  {
+    id: "dp5",
+    type: "supervision",
+    title: "📈 Relatório Semanal Disponível",
+    message: "O relatório de desempenho semanal dos professores está pronto para revisão.",
+    read: true,
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24),
+    link: "/dashboard/relatorios-pedagogicos",
+    priority: "low",
+  },
+  {
+    id: "dp6",
+    type: "grade_delay",
+    title: "⚠️ Múltiplos Atrasos Detectados",
+    message: "Prof. João Baptista tem 3 avaliações com notas por lançar. Atrasos de 1 a 5 dias.",
+    read: true,
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48),
+    link: "/dashboard/relatorios-pedagogicos",
+    priority: "high",
+    metadata: {
+      professorId: "prof5",
+      professorName: "João Baptista",
+      diasAtraso: 5,
+    },
+  },
+];
+
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   
   const getInitialNotifications = useCallback(() => {
     if (!user) return [];
     if (user.role === "estudante") return getStudentNotifications();
+    if (user.role === "director_pedagogico") return getDirectorNotifications();
     return getAdminNotifications();
   }, [user]);
 
@@ -112,6 +219,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   }, [getInitialNotifications]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const getHighPriorityCount = useCallback(() => {
+    return notifications.filter((n) => !n.read && n.priority === "high").length;
+  }, [notifications]);
 
   const markAsRead = useCallback((id: string) => {
     setNotifications((prev) =>
@@ -154,6 +265,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         addNotification,
         deleteNotification,
         clearAll,
+        getHighPriorityCount,
       }}
     >
       {children}

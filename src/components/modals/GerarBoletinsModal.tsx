@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +18,10 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FileText, Download, Printer, Users, Loader2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { FileText, Download, Printer, Users, Loader2, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -100,6 +103,19 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
   const [estudantesSelecionados, setEstudantesSelecionados] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [activeTab, setActiveTab] = useState<"selecao" | "preview">("selecao");
+  const [previewIndex, setPreviewIndex] = useState(0);
+
+  // Get selected students data for preview
+  const selectedStudentsData = useMemo(() => {
+    return estudantesMock.filter(e => estudantesSelecionados.includes(e.id));
+  }, [estudantesSelecionados]);
+
+  const currentPreviewStudent = selectedStudentsData[previewIndex];
+  const currentTurma = turmas.find(t => t.id === turmaSelecionada);
+  const currentPeriodo = periodos.find(p => p.id === periodoSelecionado);
+
+  const canShowPreview = turmaSelecionada && periodoSelecionado && estudantesSelecionados.length > 0;
 
   const handleSelectAll = (checked: boolean) => {
     setSelectAll(checked);
@@ -432,9 +448,106 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
     }
   };
 
+  // Preview component for boletim
+  const BoletimPreview = ({ estudante, turma, periodo }: { 
+    estudante: typeof estudantesMock[0]; 
+    turma: typeof turmas[0]; 
+    periodo: typeof periodos[0] 
+  }) => {
+    const grades = mockGradesData[estudante.id] || mockGradesData["1"];
+    const overallAverage = grades.reduce((sum, g) => sum + g.media, 0) / grades.length;
+    const isApproved = overallAverage >= 10;
+
+    return (
+      <Card className="border-2 border-primary/20 bg-card shadow-lg">
+        <CardContent className="p-0">
+          {/* Header */}
+          <div className="bg-primary text-primary-foreground p-4 rounded-t-lg">
+            <h3 className="text-lg font-bold text-center">BOLETIM DE NOTAS</h3>
+            <p className="text-sm text-center opacity-90">Sistema de Gestão Escolar</p>
+            <p className="text-sm text-center opacity-90">Ano Lectivo {periodo.ano}</p>
+          </div>
+
+          {/* Student Info */}
+          <div className="p-4 border-b">
+            <h4 className="font-bold text-sm mb-2 text-muted-foreground uppercase">Dados do Estudante</h4>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <p><span className="font-medium">Nome:</span> {estudante.nome}</p>
+              <p><span className="font-medium">Nº Matrícula:</span> {estudante.numero}</p>
+              <p><span className="font-medium">Turma:</span> {turma.nome}</p>
+              <p><span className="font-medium">Nível:</span> {turma.nivel}</p>
+              <p className="col-span-2"><span className="font-medium">Período:</span> {periodo.nome}</p>
+            </div>
+          </div>
+
+          {/* Grades Table */}
+          <div className="p-4">
+            <div className="overflow-hidden rounded-lg border">
+              <table className="w-full text-sm">
+                <thead className="bg-primary text-primary-foreground">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-medium">Disciplina</th>
+                    <th className="px-2 py-2 text-center font-medium">1º Trim.</th>
+                    <th className="px-2 py-2 text-center font-medium">2º Trim.</th>
+                    <th className="px-2 py-2 text-center font-medium">3º Trim.</th>
+                    <th className="px-2 py-2 text-center font-medium">Média</th>
+                    <th className="px-3 py-2 text-center font-medium">Situação</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {grades.map((grade, index) => (
+                    <tr key={grade.disciplina} className={index % 2 === 0 ? "bg-muted/30" : "bg-background"}>
+                      <td className="px-3 py-2 font-medium">{grade.disciplina}</td>
+                      <td className="px-2 py-2 text-center">{grade.nota1T}</td>
+                      <td className="px-2 py-2 text-center">{grade.nota2T}</td>
+                      <td className="px-2 py-2 text-center">{grade.nota3T}</td>
+                      <td className="px-2 py-2 text-center font-bold">{grade.media}</td>
+                      <td className="px-3 py-2 text-center">
+                        <Badge variant={grade.media >= 10 ? "default" : "destructive"} className="text-xs">
+                          {grade.media >= 10 ? "Aprovado" : "Reprovado"}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Summary */}
+          <div className="p-4 border-t bg-muted/30">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">Média Geral: <span className="text-lg font-bold">{overallAverage.toFixed(1)}</span></p>
+              </div>
+              <Badge variant={isApproved ? "default" : "destructive"} className="text-sm px-4 py-1">
+                {isApproved ? "APROVADO" : "REPROVADO"}
+              </Badge>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="p-4 border-t text-xs text-muted-foreground">
+            <p>Documento gerado em: {new Date().toLocaleDateString("pt-AO")} às {new Date().toLocaleTimeString("pt-AO")}</p>
+            <div className="flex justify-between mt-4 pt-4">
+              <div className="text-center flex-1">
+                <div className="border-t border-foreground/30 w-32 mx-auto mb-1"></div>
+                <p>Director Pedagógico</p>
+              </div>
+              <div className="text-center flex-1">
+                <div className="border-t border-foreground/30 w-32 mx-auto mb-1"></div>
+                <p>Encarregado de Educação</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
@@ -445,107 +558,181 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          {/* Turma Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="turma">Turma *</Label>
-            <Select value={turmaSelecionada} onValueChange={setTurmaSelecionada}>
-              <SelectTrigger id="turma">
-                <SelectValue placeholder="Selecione a turma" />
-              </SelectTrigger>
-              <SelectContent>
-                {turmas.map((turma) => (
-                  <SelectItem key={turma.id} value={turma.id}>
-                    {turma.nome} - {turma.nivel}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "selecao" | "preview")} className="mt-2">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="selecao">
+              <Users className="h-4 w-4 mr-2" />
+              Seleção
+            </TabsTrigger>
+            <TabsTrigger value="preview" disabled={!canShowPreview}>
+              <Eye className="h-4 w-4 mr-2" />
+              Pré-visualização
+            </TabsTrigger>
+          </TabsList>
 
-          {/* Período Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="periodo">Período *</Label>
-            <Select value={periodoSelecionado} onValueChange={setPeriodoSelecionado}>
-              <SelectTrigger id="periodo">
-                <SelectValue placeholder="Selecione o período" />
-              </SelectTrigger>
-              <SelectContent>
-                {periodos.map((periodo) => (
-                  <SelectItem key={periodo.id} value={periodo.id}>
-                    {periodo.nome} ({periodo.ano})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Estudantes Selection */}
-          {turmaSelecionada && periodoSelecionado && (
+          <TabsContent value="selecao" className="space-y-4 mt-4">
+            {/* Turma Selection */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  Estudantes
-                </Label>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="selectAll"
-                    checked={selectAll}
-                    onCheckedChange={handleSelectAll}
-                  />
-                  <label
-                    htmlFor="selectAll"
-                    className="text-sm font-medium leading-none cursor-pointer"
-                  >
-                    Selecionar todos
-                  </label>
+              <Label htmlFor="turma">Turma *</Label>
+              <Select value={turmaSelecionada} onValueChange={setTurmaSelecionada}>
+                <SelectTrigger id="turma">
+                  <SelectValue placeholder="Selecione a turma" />
+                </SelectTrigger>
+                <SelectContent>
+                  {turmas.map((turma) => (
+                    <SelectItem key={turma.id} value={turma.id}>
+                      {turma.nome} - {turma.nivel}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Período Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="periodo">Período *</Label>
+              <Select value={periodoSelecionado} onValueChange={setPeriodoSelecionado}>
+                <SelectTrigger id="periodo">
+                  <SelectValue placeholder="Selecione o período" />
+                </SelectTrigger>
+                <SelectContent>
+                  {periodos.map((periodo) => (
+                    <SelectItem key={periodo.id} value={periodo.id}>
+                      {periodo.nome} ({periodo.ano})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Estudantes Selection */}
+            {turmaSelecionada && periodoSelecionado && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Estudantes
+                  </Label>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="selectAll"
+                      checked={selectAll}
+                      onCheckedChange={handleSelectAll}
+                    />
+                    <label
+                      htmlFor="selectAll"
+                      className="text-sm font-medium leading-none cursor-pointer"
+                    >
+                      Selecionar todos
+                    </label>
+                  </div>
+                </div>
+                
+                <ScrollArea className="h-[200px] rounded-md border p-4">
+                  <div className="space-y-3">
+                    {estudantesMock.map((estudante) => (
+                      <div
+                        key={estudante.id}
+                        className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/50"
+                      >
+                        <Checkbox
+                          id={`estudante-${estudante.id}`}
+                          checked={estudantesSelecionados.includes(estudante.id)}
+                          onCheckedChange={(checked) =>
+                            handleSelectEstudante(estudante.id, checked as boolean)
+                          }
+                        />
+                        <label
+                          htmlFor={`estudante-${estudante.id}`}
+                          className="flex-1 text-sm cursor-pointer"
+                        >
+                          <span className="font-medium">{estudante.nome}</span>
+                          <span className="text-muted-foreground ml-2">
+                            Nº {estudante.numero}
+                          </span>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    {estudantesSelecionados.length} de {estudantesMock.length} estudante(s) selecionado(s)
+                  </p>
+                  {canShowPreview && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setPreviewIndex(0);
+                        setActiveTab("preview");
+                      }}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      Pré-visualizar
+                    </Button>
+                  )}
                 </div>
               </div>
-              
-              <ScrollArea className="h-[200px] rounded-md border p-4">
-                <div className="space-y-3">
-                  {estudantesMock.map((estudante) => (
-                    <div
-                      key={estudante.id}
-                      className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/50"
+            )}
+          </TabsContent>
+
+          <TabsContent value="preview" className="mt-4">
+            {canShowPreview && currentPreviewStudent && currentTurma && currentPeriodo ? (
+              <div className="space-y-4">
+                {/* Navigation for multiple students */}
+                {selectedStudentsData.length > 1 && (
+                  <div className="flex items-center justify-between bg-muted/50 rounded-lg p-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setPreviewIndex(Math.max(0, previewIndex - 1))}
+                      disabled={previewIndex === 0}
                     >
-                      <Checkbox
-                        id={`estudante-${estudante.id}`}
-                        checked={estudantesSelecionados.includes(estudante.id)}
-                        onCheckedChange={(checked) =>
-                          handleSelectEstudante(estudante.id, checked as boolean)
-                        }
-                      />
-                      <label
-                        htmlFor={`estudante-${estudante.id}`}
-                        className="flex-1 text-sm cursor-pointer"
-                      >
-                        <span className="font-medium">{estudante.nome}</span>
-                        <span className="text-muted-foreground ml-2">
-                          Nº {estudante.numero}
-                        </span>
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
+                      <ChevronLeft className="h-4 w-4 mr-1" />
+                      Anterior
+                    </Button>
+                    <span className="text-sm font-medium">
+                      {previewIndex + 1} de {selectedStudentsData.length}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setPreviewIndex(Math.min(selectedStudentsData.length - 1, previewIndex + 1))}
+                      disabled={previewIndex === selectedStudentsData.length - 1}
+                    >
+                      Próximo
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
+                )}
 
-              <p className="text-xs text-muted-foreground">
-                {estudantesSelecionados.length} de {estudantesMock.length} estudante(s) selecionado(s)
-              </p>
-            </div>
-          )}
-        </div>
+                <ScrollArea className="h-[400px]">
+                  <BoletimPreview
+                    estudante={currentPreviewStudent}
+                    turma={currentTurma}
+                    periodo={currentPeriodo}
+                  />
+                </ScrollArea>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Eye className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                <p>Selecione a turma, período e pelo menos um estudante para pré-visualizar.</p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="gap-2 sm:gap-0 mt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isGenerating}>
             Cancelar
           </Button>
           <Button
             variant="outline"
             onClick={() => handleGenerate('print')}
-            disabled={isGenerating || !turmaSelecionada || !periodoSelecionado || estudantesSelecionados.length === 0}
+            disabled={isGenerating || !canShowPreview}
           >
             {isGenerating ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -556,7 +743,7 @@ export function GerarBoletinsModal({ open, onOpenChange }: GerarBoletinsModalPro
           </Button>
           <Button
             onClick={() => handleGenerate('download')}
-            disabled={isGenerating || !turmaSelecionada || !periodoSelecionado || estudantesSelecionados.length === 0}
+            disabled={isGenerating || !canShowPreview}
           >
             {isGenerating ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />

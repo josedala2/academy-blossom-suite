@@ -79,7 +79,7 @@ export const navigationConfig: NavSection[] = [
       },
       {
         label: "E-Learning",
-        href: "/dashboard/professores?tab=elearning",
+        href: "/dashboard/elearning",
         icon: Video,
         allowedRoles: ["professor", "director_pedagogico"],
       },
@@ -153,6 +153,7 @@ export const routePermissions: Record<string, UserRole[]> = {
   "/dashboard/comunicados": ["admin", "director_pedagogico", "secretario", "professor"],
   "/dashboard/relatorios": ["admin", "director_pedagogico", "secretario"],
   "/dashboard/relatorios-pedagogicos": ["admin", "director_pedagogico"],
+  "/dashboard/elearning": ["professor", "director_pedagogico"],
   "/dashboard/configuracoes": ["admin"],
   "/dashboard/secretaria": ["admin", "secretario"],
   "/dashboard/secretaria/pre-registos": ["admin", "secretario"],

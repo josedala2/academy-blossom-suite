@@ -23,6 +23,7 @@ import Horarios from "./pages/dashboard/Horarios";
 import Comunicados from "./pages/dashboard/Comunicados";
 import Relatorios from "./pages/dashboard/Relatorios";
 import RelatoriosPedagogicos from "./pages/dashboard/RelatoriosPedagogicos";
+import ELearning from "./pages/dashboard/ELearning";
 import Configuracoes from "./pages/dashboard/Configuracoes";
 import Secretaria from "./pages/dashboard/Secretaria";
 import PreRegistos from "./pages/dashboard/secretaria/PreRegistos";
@@ -114,6 +115,11 @@ const App = () => (
             <Route path="/dashboard/relatorios-pedagogicos" element={
               <ProtectedRoute allowedRoles={routePermissions["/dashboard/relatorios-pedagogicos"]}>
                 <RelatoriosPedagogicos />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/elearning" element={
+              <ProtectedRoute allowedRoles={routePermissions["/dashboard/elearning"]}>
+                <ELearning />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/configuracoes" element={

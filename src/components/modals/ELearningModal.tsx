@@ -521,37 +521,94 @@ const ELearningModal = ({ isOpen, onClose, teacher }: ELearningModalProps) => {
             E-Learning - {teacher.name}
           </DialogTitle>
           <DialogDescription>
-            Gerir aulas online e materiais de apoio para as turmas atribuídas
+            Gerir aulas online, módulos e materiais de apoio para as turmas atribuídas
           </DialogDescription>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="modules">
-              <Layers className="h-4 w-4 mr-1" />
-              Módulos
+          {/* Main Navigation */}
+          <TabsList className="grid w-full grid-cols-5 mb-2">
+            <TabsTrigger value="modules" className="flex flex-col sm:flex-row items-center gap-1">
+              <Layers className="h-4 w-4" />
+              <span className="text-xs sm:text-sm">Módulos</span>
             </TabsTrigger>
-            <TabsTrigger value="contents">
-              <BookOpen className="h-4 w-4 mr-1" />
-              Conteúdos
+            <TabsTrigger value="contents" className="flex flex-col sm:flex-row items-center gap-1">
+              <BookOpen className="h-4 w-4" />
+              <span className="text-xs sm:text-sm">Conteúdos</span>
             </TabsTrigger>
-            <TabsTrigger value="classes">Aulas Online</TabsTrigger>
-            <TabsTrigger value="materials">
-              <FolderOpen className="h-4 w-4 mr-1" />
-              Materiais
+            <TabsTrigger value="classes" className="flex flex-col sm:flex-row items-center gap-1">
+              <Video className="h-4 w-4" />
+              <span className="text-xs sm:text-sm">Aulas Online</span>
             </TabsTrigger>
-            <TabsTrigger value="stats">
-              <BarChart3 className="h-4 w-4 mr-1" />
-              Estatísticas
+            <TabsTrigger value="stats" className="flex flex-col sm:flex-row items-center gap-1">
+              <BarChart3 className="h-4 w-4" />
+              <span className="text-xs sm:text-sm">Estatísticas</span>
             </TabsTrigger>
-            <TabsTrigger value="create">
-              <Plus className="h-4 w-4 mr-1" />
-              Nova Aula
+            <TabsTrigger value="create" className="flex flex-col sm:flex-row items-center gap-1">
+              <Plus className="h-4 w-4" />
+              <span className="text-xs sm:text-sm">Nova Aula</span>
             </TabsTrigger>
           </TabsList>
 
+          {/* Feature description banners */}
+          <div className="mb-4">
+            {activeTab === "modules" && (
+              <Card className="bg-primary/5 border-primary/20">
+                <CardContent className="p-3">
+                  <div className="flex items-start gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                      <Layers className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-sm">Gestão de Módulos</h4>
+                      <p className="text-xs text-muted-foreground">
+                        Crie e organize módulos do curso. Cada módulo pode ter múltiplas aulas com ordem personalizável.
+                        Clique numa aula para adicionar conteúdos.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            {activeTab === "contents" && (
+              <Card className="bg-blue-500/5 border-blue-500/20">
+                <CardContent className="p-3">
+                  <div className="flex items-start gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                      <BookOpen className="h-5 w-5 text-blue-500" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-sm">Upload de Conteúdos</h4>
+                      <p className="text-xs text-muted-foreground">
+                        Adicione materiais às suas aulas: 🎬 Vídeos (MP4, AVI, MOV) • 🎵 Áudio (MP3, WAV) • 
+                        📊 Apresentações (PPT, PPTX) • 📄 PDFs e documentos • 🖼️ Imagens • 🔗 Links externos (YouTube, Vimeo)
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            {activeTab === "classes" && (
+              <Card className="bg-green-500/5 border-green-500/20">
+                <CardContent className="p-3">
+                  <div className="flex items-start gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center shrink-0">
+                      <Video className="h-5 w-5 text-green-500" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-sm">Aulas Online</h4>
+                      <p className="text-xs text-muted-foreground">
+                        Gerencie as suas aulas online agendadas. Integração com Google Meet, Zoom e Microsoft Teams.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
           {/* Modules Tab */}
-          <TabsContent value="modules" className="mt-4">
+          <TabsContent value="modules" className="mt-0">
             <ModuleManager
               modules={courseModules}
               onModulesChange={setCourseModules}
@@ -564,13 +621,81 @@ const ELearningModal = ({ isOpen, onClose, teacher }: ELearningModalProps) => {
           </TabsContent>
 
           {/* Contents Tab */}
-          <TabsContent value="contents" className="mt-4">
-            <ContentUploader
-              modules={courseModules}
-              selectedModule={selectedModuleId}
-              selectedLesson={selectedLessonId}
-              onModulesChange={setCourseModules}
-            />
+          <TabsContent value="contents" className="mt-0">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* Module/Lesson selector sidebar */}
+              <Card className="lg:col-span-1">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Selecionar Aula</CardTitle>
+                  <CardDescription className="text-xs">
+                    Escolha a aula para adicionar conteúdos
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[300px] pr-2">
+                    {courseModules.length === 0 ? (
+                      <div className="text-center py-6">
+                        <Layers className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                        <p className="text-xs text-muted-foreground">Nenhum módulo criado</p>
+                        <Button
+                          variant="link"
+                          size="sm"
+                          onClick={() => setActiveTab("modules")}
+                        >
+                          Criar módulo
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {courseModules.map((mod) => (
+                          <div key={mod.id} className="space-y-1">
+                            <div className="text-xs font-medium text-muted-foreground px-2 py-1 bg-muted/50 rounded">
+                              {mod.title}
+                            </div>
+                            {mod.lessons.length === 0 ? (
+                              <p className="text-xs text-muted-foreground px-2 py-1">
+                                Nenhuma aula
+                              </p>
+                            ) : (
+                              mod.lessons.map((lesson) => (
+                                <button
+                                  key={lesson.id}
+                                  onClick={() => {
+                                    setSelectedModuleId(mod.id);
+                                    setSelectedLessonId(lesson.id);
+                                  }}
+                                  className={`w-full text-left px-2 py-1.5 rounded text-xs transition-colors flex items-center gap-2 ${
+                                    selectedModuleId === mod.id && selectedLessonId === lesson.id
+                                      ? "bg-primary text-primary-foreground"
+                                      : "hover:bg-muted"
+                                  }`}
+                                >
+                                  <FileText className="h-3 w-3" />
+                                  <span className="truncate flex-1">{lesson.title}</span>
+                                  <Badge variant="secondary" className="text-[10px]">
+                                    {lesson.contents.length}
+                                  </Badge>
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+              
+              {/* Content uploader */}
+              <div className="lg:col-span-2">
+                <ContentUploader
+                  modules={courseModules}
+                  selectedModule={selectedModuleId}
+                  selectedLesson={selectedLessonId}
+                  onModulesChange={setCourseModules}
+                />
+              </div>
+            </div>
           </TabsContent>
 
           {/* My Classes Tab */}
@@ -739,124 +864,7 @@ const ELearningModal = ({ isOpen, onClose, teacher }: ELearningModalProps) => {
             </Card>
           </TabsContent>
 
-          {/* Materials Library Tab */}
-          <TabsContent value="materials" className="space-y-4 mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <FolderOpen className="h-5 w-5" />
-                  Biblioteca de Materiais
-                </CardTitle>
-                <CardDescription>
-                  Faça upload de materiais para utilizar nas suas aulas. 
-                  Os alunos só têm acesso aos materiais anexados às aulas das suas turmas.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Upload Area */}
-                <div
-                  className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                    isDragging
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  }`}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={(e) => handleDrop(e, false)}
-                >
-                  <input
-                    ref={materialFileInputRef}
-                    type="file"
-                    multiple
-                    className="hidden"
-                    onChange={(e) => handleFileUpload(e.target.files, false)}
-                  />
-                  <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Arraste ficheiros ou clique para fazer upload
-                  </p>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    PDF, Word, PowerPoint, Imagens, Vídeos, Áudio (máx. 50MB por ficheiro)
-                  </p>
-                  <Button
-                    variant="outline"
-                    onClick={() => materialFileInputRef.current?.click()}
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Seleccionar Ficheiros
-                  </Button>
-                </div>
-
-                {/* Materials List */}
-                {generalMaterials.length > 0 ? (
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">
-                      Ficheiros na Biblioteca ({generalMaterials.length})
-                    </p>
-                    <ScrollArea className="h-[300px]">
-                      <div className="space-y-2">
-                        {generalMaterials.map((material) => (
-                          <div
-                            key={material.id}
-                            className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors group"
-                          >
-                            <div className="flex items-center gap-3">
-                              {getFileIcon(material.type)}
-                              <div>
-                                <p className="font-medium text-sm">{material.name}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {material.size} • Carregado em {new Date(material.uploadedAt).toLocaleDateString("pt-AO")}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                                onClick={() => handleRemoveGeneralMaterial(material.id)}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <File className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>Nenhum material na biblioteca</p>
-                    <p className="text-sm">Faça upload de ficheiros para começar</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Info about access */}
-            <Card className="bg-primary/5 border-primary/20">
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="h-5 w-5 text-primary mt-0.5" />
-                  <div>
-                    <p className="font-medium text-sm">Acesso Controlado</p>
-                    <p className="text-sm text-muted-foreground">
-                      Os materiais da biblioteca são privados. Para partilhar com alunos, 
-                      anexe-os a uma aula específica - apenas os alunos matriculados nessa turma terão acesso.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          {/* Materials Library Tab - Removed, now integrated into Modules/Contents */}
 
           {/* Create Class Tab */}
           <TabsContent value="create" className="space-y-6 mt-4">

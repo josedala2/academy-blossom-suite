@@ -1,4 +1,4 @@
-import { Bell, BookOpen, GraduationCap, CreditCard, Info, Check, Trash2, X } from "lucide-react";
+import { Bell, BookOpen, GraduationCap, CreditCard, Info, Check, Trash2, X, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -20,6 +20,8 @@ const getNotificationIcon = (type: NotificationType) => {
       return <GraduationCap className="h-4 w-4" />;
     case "payment":
       return <CreditCard className="h-4 w-4" />;
+    case "elearning":
+      return <Video className="h-4 w-4" />;
     default:
       return <Info className="h-4 w-4" />;
   }
@@ -33,6 +35,8 @@ const getNotificationColor = (type: NotificationType) => {
       return "bg-green-500/10 text-green-500";
     case "payment":
       return "bg-orange-500/10 text-orange-500";
+    case "elearning":
+      return "bg-purple-500/10 text-purple-500";
     default:
       return "bg-muted text-muted-foreground";
   }
@@ -46,6 +50,8 @@ const getNotificationLabel = (type: NotificationType) => {
       return "Nota";
     case "payment":
       return "Pagamento";
+    case "elearning":
+      return "E-Learning";
     default:
       return "Geral";
   }

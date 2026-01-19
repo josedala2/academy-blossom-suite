@@ -23,6 +23,9 @@ import {
   X,
   Paperclip,
   FolderOpen,
+  BarChart3,
+  Eye,
+  UserCheck,
 } from "lucide-react";
 import {
   Dialog,
@@ -48,6 +51,10 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
+import { useNotifications } from "@/contexts/NotificationContext";
+import { useELearningTracking } from "@/contexts/ELearningTrackingContext";
+import { formatDistanceToNow } from "date-fns";
+import { pt } from "date-fns/locale";
 
 interface Teacher {
   id: number;
@@ -133,11 +140,14 @@ const formatFileSize = (bytes: number): string => {
 
 const ELearningModal = ({ isOpen, onClose, teacher }: ELearningModalProps) => {
   const { toast } = useToast();
+  const { addNotification } = useNotifications();
+  const { getClassStats, getStudentAccessHistory } = useELearningTracking();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const materialFileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState("classes");
   const [selectedClassForMaterials, setSelectedClassForMaterials] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [selectedClassForStats, setSelectedClassForStats] = useState<string | null>(null);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -357,6 +367,16 @@ const ELearningModal = ({ isOpen, onClose, teacher }: ELearningModalProps) => {
 
     setOnlineClasses((prev) => [newClass, ...prev]);
     
+    // Send notification if notifyStudents is enabled
+    if (formData.notifyStudents) {
+      addNotification({
+        type: "elearning",
+        title: "Nova Aula Online Agendada",
+        message: `${formData.title} - ${formData.subject} | ${new Date(formData.date).toLocaleDateString("pt-AO")} às ${formData.time}`,
+        link: "/dashboard/portal-estudante",
+      });
+    }
+
     toast({
       title: "Aula criada com sucesso!",
       description: formData.notifyStudents 
@@ -444,11 +464,15 @@ const ELearningModal = ({ isOpen, onClose, teacher }: ELearningModalProps) => {
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="classes">Minhas Aulas</TabsTrigger>
             <TabsTrigger value="materials">
               <FolderOpen className="h-4 w-4 mr-1" />
               Materiais
+            </TabsTrigger>
+            <TabsTrigger value="stats">
+              <BarChart3 className="h-4 w-4 mr-1" />
+              Estatísticas
             </TabsTrigger>
             <TabsTrigger value="create">
               <Plus className="h-4 w-4 mr-1" />
@@ -1024,6 +1048,166 @@ const ELearningModal = ({ isOpen, onClose, teacher }: ELearningModalProps) => {
                 <Video className="h-4 w-4 mr-2" />
                 Criar Aula Online
               </Button>
+            </div>
+          </TabsContent>
+
+          {/* Statistics Tab */}
+          <TabsContent value="stats" className="space-y-4 mt-4">
+            <div className="space-y-4">
+              {/* Class Selection for Stats */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <BarChart3 className="h-4 w-4" />
+                    Estatísticas de Acesso
+                  </CardTitle>
+                  <CardDescription>
+                    Veja quais alunos acederam às suas aulas e baixaram materiais
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {onlineClasses.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <BarChart3 className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p>Nenhuma aula disponível para estatísticas</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Class Selector */}
+                      <div className="flex items-center gap-3">
+                        <Label>Selecione uma aula:</Label>
+                        <Select
+                          value={selectedClassForStats || ""}
+                          onValueChange={setSelectedClassForStats}
+                        >
+                          <SelectTrigger className="w-[300px]">
+                            <SelectValue placeholder="Escolha uma aula" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {onlineClasses.map((c) => (
+                              <SelectItem key={c.id} value={c.id}>
+                                {c.title} - {c.subject}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Stats Display */}
+                      {selectedClassForStats && (() => {
+                        const stats = getClassStats(selectedClassForStats);
+                        const accessHistory = getStudentAccessHistory(selectedClassForStats);
+                        const selectedClass = onlineClasses.find(c => c.id === selectedClassForStats);
+                        
+                        return (
+                          <div className="space-y-4">
+                            {/* Summary Cards */}
+                            <div className="grid grid-cols-3 gap-3">
+                              <Card className="bg-blue-500/10 border-blue-500/20">
+                                <CardContent className="p-4 text-center">
+                                  <Eye className="h-6 w-6 mx-auto text-blue-500 mb-2" />
+                                  <p className="text-2xl font-bold text-blue-500">{stats.accessCount}</p>
+                                  <p className="text-xs text-muted-foreground">Acessos à Aula</p>
+                                </CardContent>
+                              </Card>
+                              <Card className="bg-green-500/10 border-green-500/20">
+                                <CardContent className="p-4 text-center">
+                                  <Download className="h-6 w-6 mx-auto text-green-500 mb-2" />
+                                  <p className="text-2xl font-bold text-green-500">{stats.downloadCount}</p>
+                                  <p className="text-xs text-muted-foreground">Downloads</p>
+                                </CardContent>
+                              </Card>
+                              <Card className="bg-purple-500/10 border-purple-500/20">
+                                <CardContent className="p-4 text-center">
+                                  <UserCheck className="h-6 w-6 mx-auto text-purple-500 mb-2" />
+                                  <p className="text-2xl font-bold text-purple-500">{stats.uniqueStudents.length}</p>
+                                  <p className="text-xs text-muted-foreground">Alunos Únicos</p>
+                                </CardContent>
+                              </Card>
+                            </div>
+
+                            {/* Students List */}
+                            {stats.uniqueStudents.length > 0 && (
+                              <Card>
+                                <CardHeader className="pb-2">
+                                  <CardTitle className="text-sm">Alunos que Acederam</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                  <div className="flex flex-wrap gap-2">
+                                    {stats.uniqueStudents.map((student, i) => (
+                                      <Badge key={i} variant="secondary" className="gap-1">
+                                        <UserCheck className="h-3 w-3" />
+                                        {student}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            )}
+
+                            {/* Activity Log */}
+                            <Card>
+                              <CardHeader className="pb-2">
+                                <CardTitle className="text-sm">Histórico de Actividades</CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                {accessHistory.length === 0 ? (
+                                  <p className="text-sm text-muted-foreground text-center py-4">
+                                    Nenhuma actividade registada ainda
+                                  </p>
+                                ) : (
+                                  <ScrollArea className="h-[200px]">
+                                    <div className="space-y-2">
+                                      {accessHistory.map((log) => (
+                                        <div
+                                          key={log.id}
+                                          className="flex items-center gap-3 p-2 rounded-lg bg-muted/50"
+                                        >
+                                          <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                                            log.type === "class_access" 
+                                              ? "bg-blue-500/10 text-blue-500" 
+                                              : "bg-green-500/10 text-green-500"
+                                          }`}>
+                                            {log.type === "class_access" ? (
+                                              <Eye className="h-4 w-4" />
+                                            ) : (
+                                              <Download className="h-4 w-4" />
+                                            )}
+                                          </div>
+                                          <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium truncate">
+                                              {log.studentName}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                              {log.type === "class_access" 
+                                                ? "Acedeu à aula" 
+                                                : `Baixou: ${log.materialName}`}
+                                            </p>
+                                          </div>
+                                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                            {formatDistanceToNow(log.timestamp, { addSuffix: true, locale: pt })}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </ScrollArea>
+                                )}
+                              </CardContent>
+                            </Card>
+                          </div>
+                        );
+                      })()}
+
+                      {!selectedClassForStats && (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Eye className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                          <p>Selecione uma aula para ver as estatísticas</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
         </Tabs>

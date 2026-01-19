@@ -50,6 +50,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
+import { useELearningTracking } from "@/contexts/ELearningTrackingContext";
 import jsPDF from "jspdf";
 
 // Student enrollment data
@@ -236,12 +237,26 @@ const documentTypes = [
 const PortalEstudante = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { logClassAccess, logMaterialDownload } = useELearningTracking();
   const [selectedDay, setSelectedDay] = useState("Segunda");
   const [isDocumentModalOpen, setIsDocumentModalOpen] = useState(false);
   const [isSuspendModalOpen, setIsSuspendModalOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState("");
   const [suspendReason, setSuspendReason] = useState("");
+
+  const handleClassAccess = (aula: typeof onlineClasses[0]) => {
+    logClassAccess(studentData.studentId, studentData.name, aula.id, aula.title);
+    window.open(aula.link, "_blank");
+  };
+
+  const handleMaterialDownload = (aula: typeof onlineClasses[0], materialName: string) => {
+    logMaterialDownload(studentData.studentId, studentData.name, aula.id, aula.title, materialName);
+    toast({
+      title: "Download iniciado",
+      description: `A descarregar ${materialName}`,
+    });
+  };
 
   const handleDownloadReceipt = (receiptId: string) => {
     const payment = payments.find(p => p.receipt === receiptId);
@@ -613,12 +628,7 @@ const PortalEstudante = () => {
                                           variant="ghost"
                                           size="sm"
                                           className="h-7 text-xs gap-1"
-                                          onClick={() => {
-                                            toast({
-                                              title: "Download iniciado",
-                                              description: `A descarregar ${material.name}`,
-                                            });
-                                          }}
+                                          onClick={() => handleMaterialDownload(aula, material.name)}
                                         >
                                           {material.type === "pdf" && <FileText className="h-3 w-3" />}
                                           {material.type === "video" && <FileVideo className="h-3 w-3" />}
@@ -635,7 +645,7 @@ const PortalEstudante = () => {
                                 <div className="flex flex-col gap-2">
                                   <Button
                                     size="sm"
-                                    onClick={() => window.open(aula.link, "_blank")}
+                                    onClick={() => handleClassAccess(aula)}
                                   >
                                     <Play className="h-4 w-4 mr-1" />
                                     Entrar

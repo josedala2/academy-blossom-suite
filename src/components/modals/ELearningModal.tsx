@@ -26,6 +26,8 @@ import {
   BarChart3,
   Eye,
   UserCheck,
+  BookOpen,
+  Layers,
 } from "lucide-react";
 import {
   Dialog,
@@ -55,6 +57,9 @@ import { useNotifications } from "@/contexts/NotificationContext";
 import { useELearningTracking } from "@/contexts/ELearningTrackingContext";
 import { formatDistanceToNow } from "date-fns";
 import { pt } from "date-fns/locale";
+import ModuleManager from "@/components/elearning/ModuleManager";
+import ContentUploader from "@/components/elearning/ContentUploader";
+import { Module, Lesson, Content } from "@/components/elearning/types";
 
 interface Teacher {
   id: number;
@@ -144,10 +149,67 @@ const ELearningModal = ({ isOpen, onClose, teacher }: ELearningModalProps) => {
   const { getClassStats, getStudentAccessHistory } = useELearningTracking();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const materialFileInputRef = useRef<HTMLInputElement>(null);
-  const [activeTab, setActiveTab] = useState("classes");
+  const [activeTab, setActiveTab] = useState("modules");
   const [selectedClassForMaterials, setSelectedClassForMaterials] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedClassForStats, setSelectedClassForStats] = useState<string | null>(null);
+  const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
+  const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
+  
+  // Course modules state
+  const [courseModules, setCourseModules] = useState<Module[]>([
+    {
+      id: "mod1",
+      title: "Módulo 1 - Introdução à Matemática",
+      description: "Conceitos básicos e fundamentos da disciplina",
+      order: 1,
+      isPublished: true,
+      createdAt: "2026-01-15",
+      lessons: [
+        {
+          id: "les1",
+          title: "Aula 1 - Números e Operações",
+          description: "Revisão das operações básicas",
+          order: 1,
+          isPublished: true,
+          contents: [
+            { id: "c1", name: "Introdução_Matemática.mp4", type: "video", size: "45.3 MB", uploadedAt: "2026-01-15" },
+            { id: "c2", name: "Exercícios_Práticos.pdf", type: "pdf", size: "2.1 MB", uploadedAt: "2026-01-15" },
+          ],
+        },
+        {
+          id: "les2",
+          title: "Aula 2 - Equações de 1º Grau",
+          description: "Resolução de equações simples",
+          order: 2,
+          isPublished: false,
+          contents: [
+            { id: "c3", name: "Apresentação_Equações.pptx", type: "presentation", size: "5.8 MB", uploadedAt: "2026-01-16" },
+          ],
+        },
+      ],
+    },
+    {
+      id: "mod2",
+      title: "Módulo 2 - Física Básica",
+      description: "Leis fundamentais da física",
+      order: 2,
+      isPublished: false,
+      createdAt: "2026-01-18",
+      lessons: [
+        {
+          id: "les3",
+          title: "Aula 1 - Leis de Newton",
+          description: "As três leis do movimento",
+          order: 1,
+          isPublished: false,
+          contents: [
+            { id: "c4", name: "Newton_Explicação.mp3", type: "audio", size: "12.5 MB", uploadedAt: "2026-01-18" },
+          ],
+        },
+      ],
+    },
+  ]);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -464,8 +526,16 @@ const ELearningModal = ({ isOpen, onClose, teacher }: ELearningModalProps) => {
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="classes">Minhas Aulas</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="modules">
+              <Layers className="h-4 w-4 mr-1" />
+              Módulos
+            </TabsTrigger>
+            <TabsTrigger value="contents">
+              <BookOpen className="h-4 w-4 mr-1" />
+              Conteúdos
+            </TabsTrigger>
+            <TabsTrigger value="classes">Aulas Online</TabsTrigger>
             <TabsTrigger value="materials">
               <FolderOpen className="h-4 w-4 mr-1" />
               Materiais
@@ -479,6 +549,29 @@ const ELearningModal = ({ isOpen, onClose, teacher }: ELearningModalProps) => {
               Nova Aula
             </TabsTrigger>
           </TabsList>
+
+          {/* Modules Tab */}
+          <TabsContent value="modules" className="mt-4">
+            <ModuleManager
+              modules={courseModules}
+              onModulesChange={setCourseModules}
+              onSelectLesson={(moduleId, lessonId) => {
+                setSelectedModuleId(moduleId);
+                setSelectedLessonId(lessonId);
+                setActiveTab("contents");
+              }}
+            />
+          </TabsContent>
+
+          {/* Contents Tab */}
+          <TabsContent value="contents" className="mt-4">
+            <ContentUploader
+              modules={courseModules}
+              selectedModule={selectedModuleId}
+              selectedLesson={selectedLessonId}
+              onModulesChange={setCourseModules}
+            />
+          </TabsContent>
 
           {/* My Classes Tab */}
           <TabsContent value="classes" className="space-y-4 mt-4">

@@ -11,6 +11,50 @@ export interface Content {
   description?: string;
 }
 
+// Quiz Types
+export type QuestionType = "multiple_choice" | "true_false" | "short_answer";
+
+export interface QuizOption {
+  id: string;
+  text: string;
+  isCorrect: boolean;
+}
+
+export interface QuizQuestion {
+  id: string;
+  type: QuestionType;
+  question: string;
+  options: QuizOption[];
+  correctAnswer?: string; // For short_answer type
+  points: number;
+  explanation?: string;
+}
+
+export interface Quiz {
+  id: string;
+  title: string;
+  description: string;
+  lessonId: string;
+  questions: QuizQuestion[];
+  timeLimit?: number; // in minutes
+  passingScore: number; // percentage
+  maxAttempts: number;
+  isPublished: boolean;
+  createdAt: string;
+}
+
+export interface QuizAttempt {
+  id: string;
+  quizId: string;
+  studentId: string;
+  answers: Record<string, string | string[]>; // questionId -> answer(s)
+  score: number;
+  totalPoints: number;
+  passed: boolean;
+  startedAt: string;
+  completedAt?: string;
+}
+
 export interface Lesson {
   id: string;
   title: string;
@@ -18,6 +62,7 @@ export interface Lesson {
   order: number;
   duration?: number; // minutes
   contents: Content[];
+  quiz?: Quiz;
   isPublished: boolean;
 }
 
@@ -93,4 +138,12 @@ export const formatFileSize = (bytes: number): string => {
   if (bytes < 1024) return bytes + " B";
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
   return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+};
+
+export const getQuestionTypeLabel = (type: QuestionType): string => {
+  switch (type) {
+    case "multiple_choice": return "Escolha Múltipla";
+    case "true_false": return "Verdadeiro/Falso";
+    case "short_answer": return "Resposta Curta";
+  }
 };

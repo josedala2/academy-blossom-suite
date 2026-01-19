@@ -29,6 +29,7 @@ import {
   File,
   FolderOpen,
   Settings,
+  ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,6 +68,7 @@ import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { Module, Lesson, Content, ContentType, getContentIcon, getContentColor, getFileContentType, formatFileSize } from "@/components/elearning/types";
+import QuizManager from "@/components/elearning/QuizManager";
 
 // Mock data for modules
 const initialModules: Module[] = [
@@ -473,7 +475,7 @@ const ELearning = () => {
 
         {/* Main Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="modules" className="gap-2">
               <Layers className="h-4 w-4" />
               <span className="hidden sm:inline">Módulos</span>
@@ -481,6 +483,10 @@ const ELearning = () => {
             <TabsTrigger value="contents" className="gap-2">
               <Upload className="h-4 w-4" />
               <span className="hidden sm:inline">Conteúdos</span>
+            </TabsTrigger>
+            <TabsTrigger value="quizzes" className="gap-2">
+              <ClipboardList className="h-4 w-4" />
+              <span className="hidden sm:inline">Quizzes</span>
             </TabsTrigger>
             <TabsTrigger value="live" className="gap-2">
               <Video className="h-4 w-4" />

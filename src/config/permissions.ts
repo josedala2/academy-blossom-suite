@@ -122,6 +122,7 @@ export const navigationConfig: NavSection[] = [
 // Route permissions mapping
 export const routePermissions: Record<string, UserRole[]> = {
   "/dashboard": ["admin", "secretario", "professor", "estudante"],
+  "/dashboard/perfil": ["admin", "secretario", "professor", "estudante"],
   "/dashboard/estudantes": ["admin", "secretario", "professor"],
   "/dashboard/professores": ["admin", "secretario"],
   "/dashboard/turmas": ["admin", "secretario", "professor"],

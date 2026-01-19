@@ -9,6 +9,7 @@ import { routePermissions } from "@/config/permissions";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import Perfil from "./pages/dashboard/Perfil";
 import Estudantes from "./pages/dashboard/Estudantes";
 import Professores from "./pages/dashboard/Professores";
 import Turmas from "./pages/dashboard/Turmas";
@@ -47,6 +48,11 @@ const App = () => (
             <Route path="/dashboard" element={
               <ProtectedRoute allowedRoles={routePermissions["/dashboard"]}>
                 <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/perfil" element={
+              <ProtectedRoute allowedRoles={routePermissions["/dashboard/perfil"]}>
+                <Perfil />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/estudantes" element={

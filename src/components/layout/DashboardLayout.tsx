@@ -5,7 +5,6 @@ import {
   Menu,
   X,
   ChevronDown,
-  Bell,
   Search,
   User,
 } from "lucide-react";
@@ -22,6 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useAuth, roleNames, roleColors } from "@/contexts/AuthContext";
 import { getFilteredNavigation } from "@/config/permissions";
+import NotificationPanel from "@/components/notifications/NotificationPanel";
 import logoSGE from "@/assets/logo-sge.png";
 
 interface DashboardLayoutProps {
@@ -155,30 +155,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
           <div className="flex items-center gap-1.5 sm:gap-3">
             {/* Notifications */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-accent" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80">
-                <DropdownMenuLabel>Notificações</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="flex flex-col items-start gap-1 py-3">
-                  <span className="font-medium">Nova matrícula pendente</span>
-                  <span className="text-xs text-muted-foreground">
-                    João Silva aguarda aprovação
-                  </span>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="flex flex-col items-start gap-1 py-3">
-                  <span className="font-medium">Pagamento recebido</span>
-                  <span className="text-xs text-muted-foreground">
-                    Maria Santos - Propina Janeiro
-                  </span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <NotificationPanel />
 
             {/* User menu */}
             <DropdownMenu>

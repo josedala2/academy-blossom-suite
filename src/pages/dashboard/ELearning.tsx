@@ -1094,6 +1094,11 @@ const ELearning = () => {
             </div>
           </TabsContent>
 
+          {/* Quizzes Tab */}
+          <TabsContent value="quizzes" className="space-y-4">
+            <QuizManager modules={modules} onModulesChange={setModules} />
+          </TabsContent>
+
           {/* Live Classes Tab */}
           <TabsContent value="live" className="space-y-4">
             <Card className="bg-green-500/5 border-green-500/20">

@@ -5,6 +5,7 @@ import {
   Menu,
   X,
   ChevronDown,
+  ChevronRight,
   Search,
   User,
 } from "lucide-react";
@@ -18,9 +19,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
 import { useAuth, roleNames, roleColors } from "@/contexts/AuthContext";
-import { getFilteredNavigation } from "@/config/permissions";
+import { getFilteredNavigation, NavItem } from "@/config/permissions";
 import NotificationPanel from "@/components/notifications/NotificationPanel";
 import logoSGE from "@/assets/logo-sge.png";
 
@@ -30,17 +36,36 @@ interface DashboardLayoutProps {
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
   const filteredNavigation = user ? getFilteredNavigation(user.role) : [];
 
+  const toggleExpanded = (label: string) => {
+    setExpandedMenus(prev => 
+      prev.includes(label) 
+        ? prev.filter(l => l !== label)
+        : [...prev, label]
+    );
+  };
+
   const isActive = (href: string) => {
     if (href === "/dashboard") {
       return location.pathname === "/dashboard";
     }
     return location.pathname.startsWith(href);
+  };
+
+  const hasAccessToSubItem = (item: NavItem) => {
+    if (!item.subItems || !user) return false;
+    return item.subItems.some(sub => sub.allowedRoles.includes(user.role));
+  };
+
+  const getFilteredSubItems = (item: NavItem) => {
+    if (!item.subItems || !user) return [];
+    return item.subItems.filter(sub => sub.allowedRoles.includes(user.role));
   };
 
   const handleLogout = () => {
@@ -79,21 +104,82 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                     {section.title}
                   </p>
                 )}
-                {section.items.map((item) => (
-                  <Link
-                    key={item.href}
-                    to={item.href}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                      isActive(item.href)
-                        ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                    }`}
-                    onClick={() => setSidebarOpen(false)}
-                  >
-                    <item.icon className="h-5 w-5" />
-                    {item.label}
-                  </Link>
-                ))}
+                {section.items.map((item) => {
+                  const filteredSubItems = getFilteredSubItems(item);
+                  const hasSubItems = filteredSubItems.length > 0;
+                  const isExpanded = expandedMenus.includes(item.label);
+
+                  if (hasSubItems) {
+                    return (
+                      <Collapsible
+                        key={item.href}
+                        open={isExpanded}
+                        onOpenChange={() => toggleExpanded(item.label)}
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center">
+                            <Link
+                              to={item.href}
+                              className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-l-lg text-sm font-medium transition-colors ${
+                                isActive(item.href)
+                                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                              }`}
+                              onClick={() => setSidebarOpen(false)}
+                            >
+                              <item.icon className="h-5 w-5" />
+                              {item.label}
+                            </Link>
+                            <CollapsibleTrigger asChild>
+                              <button
+                                className={`px-2 py-2.5 rounded-r-lg transition-colors ${
+                                  isActive(item.href)
+                                    ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                                }`}
+                              >
+                                <ChevronRight className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+                              </button>
+                            </CollapsibleTrigger>
+                          </div>
+                          <CollapsibleContent className="pl-4 space-y-1">
+                            {filteredSubItems.map((subItem) => (
+                              <Link
+                                key={subItem.href}
+                                to={subItem.href}
+                                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                                  isActive(subItem.href)
+                                    ? "bg-sidebar-primary/80 text-sidebar-primary-foreground"
+                                    : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                                }`}
+                                onClick={() => setSidebarOpen(false)}
+                              >
+                                <subItem.icon className="h-4 w-4" />
+                                {subItem.label}
+                              </Link>
+                            ))}
+                          </CollapsibleContent>
+                        </div>
+                      </Collapsible>
+                    );
+                  }
+
+                  return (
+                    <Link
+                      key={item.href}
+                      to={item.href}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                        isActive(item.href)
+                          ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                          : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      }`}
+                      onClick={() => setSidebarOpen(false)}
+                    >
+                      <item.icon className="h-5 w-5" />
+                      {item.label}
+                    </Link>
+                  );
+                })}
               </div>
             ))}
           </nav>

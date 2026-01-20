@@ -12,13 +12,22 @@ import {
   Building2,
   LucideIcon,
   Video,
+  IdCard,
 } from "lucide-react";
+
+export interface NavSubItem {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+  allowedRoles: UserRole[];
+}
 
 export interface NavItem {
   label: string;
   href: string;
   icon: LucideIcon;
   allowedRoles: UserRole[];
+  subItems?: NavSubItem[];
 }
 
 export interface NavSection {
@@ -52,6 +61,14 @@ export const navigationConfig: NavSection[] = [
         href: "/dashboard/estudantes",
         icon: GraduationCap,
         allowedRoles: ["admin", "director_pedagogico", "secretario", "professor"],
+        subItems: [
+          {
+            label: "Emissão de Passes",
+            href: "/dashboard/secretaria/passes",
+            icon: IdCard,
+            allowedRoles: ["admin", "secretario"],
+          },
+        ],
       },
       {
         label: "Professores",

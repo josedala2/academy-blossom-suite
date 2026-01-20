@@ -164,6 +164,8 @@ export const routePermissions: Record<string, UserRole[]> = {
   "/dashboard/secretaria/templates": ["admin", "secretario"],
   "/dashboard/secretaria/processos": ["admin", "secretario"],
   "/dashboard/secretaria/relatorios": ["admin", "secretario"],
+  "/dashboard/secretaria/rastreio-documentos": ["admin", "secretario"],
+  "/dashboard/secretaria/passes": ["admin", "secretario"],
 };
 
 // Get filtered navigation based on user role

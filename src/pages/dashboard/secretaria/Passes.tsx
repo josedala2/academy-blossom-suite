@@ -29,6 +29,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Slider } from "@/components/ui/slider";
 import {
   Search,
   ArrowLeft,
@@ -51,11 +52,18 @@ import {
   VideoOff,
   RotateCcw,
   X,
+  Crop,
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
+  Sun,
+  Contrast,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import Cropper, { Area, Point } from "react-easy-crop";
 
 // Tipos
 type TipoPasse = "estudante" | "professor" | "funcionario";
@@ -214,6 +222,15 @@ const SecretariaPasses = () => {
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [pessoas, setPessoas] = useState<Pessoa[]>(pessoasMock);
   
+  // Cropping states
+  const [isCropping, setIsCropping] = useState(false);
+  const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [rotation, setRotation] = useState(0);
+  const [brightness, setBrightness] = useState(100);
+  const [contrast, setContrast] = useState(100);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -279,15 +296,116 @@ const SecretariaPasses = () => {
 
   const retakePhoto = useCallback(() => {
     setCapturedPhoto(null);
+    setIsCropping(false);
+    resetCropSettings();
     startWebcam();
   }, [startWebcam]);
 
-  const savePhoto = useCallback(() => {
+  const resetCropSettings = useCallback(() => {
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setRotation(0);
+    setBrightness(100);
+    setContrast(100);
+    setCroppedAreaPixels(null);
+  }, []);
+
+  const onCropComplete = useCallback((croppedArea: Area, croppedAreaPixels: Area) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  const startCropping = useCallback(() => {
+    setIsCropping(true);
+  }, []);
+
+  const cancelCropping = useCallback(() => {
+    setIsCropping(false);
+    resetCropSettings();
+  }, [resetCropSettings]);
+
+  // Helper function to create cropped image
+  const getCroppedImg = useCallback(async (
+    imageSrc: string,
+    pixelCrop: Area,
+    rotation: number,
+    brightness: number,
+    contrast: number
+  ): Promise<string> => {
+    const image = new Image();
+    image.src = imageSrc;
+    
+    return new Promise((resolve, reject) => {
+      image.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        
+        if (!ctx) {
+          reject(new Error("Could not get canvas context"));
+          return;
+        }
+
+        const maxSize = Math.max(image.width, image.height);
+        const safeArea = 2 * ((maxSize / 2) * Math.sqrt(2));
+
+        canvas.width = safeArea;
+        canvas.height = safeArea;
+
+        ctx.translate(safeArea / 2, safeArea / 2);
+        ctx.rotate((rotation * Math.PI) / 180);
+        ctx.translate(-safeArea / 2, -safeArea / 2);
+
+        ctx.filter = `brightness(${brightness}%) contrast(${contrast}%)`;
+        ctx.drawImage(
+          image,
+          safeArea / 2 - image.width * 0.5,
+          safeArea / 2 - image.height * 0.5
+        );
+
+        const data = ctx.getImageData(0, 0, safeArea, safeArea);
+
+        canvas.width = pixelCrop.width;
+        canvas.height = pixelCrop.height;
+
+        ctx.putImageData(
+          data,
+          Math.round(0 - safeArea / 2 + image.width * 0.5 - pixelCrop.x),
+          Math.round(0 - safeArea / 2 + image.height * 0.5 - pixelCrop.y)
+        );
+
+        resolve(canvas.toDataURL("image/jpeg", 0.9));
+      };
+      
+      image.onerror = () => {
+        reject(new Error("Could not load image"));
+      };
+    });
+  }, []);
+
+  const savePhoto = useCallback(async () => {
     if (capturedPhoto && webcamPessoa) {
+      let finalPhoto = capturedPhoto;
+      
+      // If we have cropping data, apply it
+      if (croppedAreaPixels && isCropping) {
+        try {
+          finalPhoto = await getCroppedImg(
+            capturedPhoto,
+            croppedAreaPixels,
+            rotation,
+            brightness,
+            contrast
+          );
+        } catch (error) {
+          console.error("Error cropping image:", error);
+          toast.error("Erro ao processar a imagem");
+          return;
+        }
+      }
+      
       // Update the person's photo in state
       setPessoas((prev) =>
         prev.map((p) =>
-          p.id === webcamPessoa.id ? { ...p, foto: capturedPhoto } : p
+          p.id === webcamPessoa.id ? { ...p, foto: finalPhoto } : p
         )
       );
       
@@ -297,20 +415,24 @@ const SecretariaPasses = () => {
       
       closeWebcamModal();
     }
-  }, [capturedPhoto, webcamPessoa]);
+  }, [capturedPhoto, webcamPessoa, croppedAreaPixels, isCropping, rotation, brightness, contrast, getCroppedImg]);
 
   const openWebcamModal = useCallback((pessoa: Pessoa) => {
     setWebcamPessoa(pessoa);
     setCapturedPhoto(null);
+    setIsCropping(false);
+    resetCropSettings();
     setWebcamModalOpen(true);
-  }, []);
+  }, [resetCropSettings]);
 
   const closeWebcamModal = useCallback(() => {
     stopWebcam();
     setCapturedPhoto(null);
+    setIsCropping(false);
+    resetCropSettings();
     setWebcamPessoa(null);
     setWebcamModalOpen(false);
-  }, [stopWebcam]);
+  }, [stopWebcam, resetCropSettings]);
 
   // Auto-start webcam when modal opens
   useEffect(() => {
@@ -935,11 +1057,39 @@ const SecretariaPasses = () => {
             {/* Video/Photo Preview Area */}
             <div className="relative aspect-[4/3] bg-muted rounded-lg overflow-hidden">
               {capturedPhoto ? (
-                <img
-                  src={capturedPhoto}
-                  alt="Foto capturada"
-                  className="w-full h-full object-cover"
-                />
+                isCropping ? (
+                  <div className="relative w-full h-full">
+                    <Cropper
+                      image={capturedPhoto}
+                      crop={crop}
+                      zoom={zoom}
+                      rotation={rotation}
+                      aspect={3 / 4}
+                      onCropChange={setCrop}
+                      onCropComplete={onCropComplete}
+                      onZoomChange={setZoom}
+                      style={{
+                        containerStyle: {
+                          width: "100%",
+                          height: "100%",
+                        },
+                        mediaStyle: {
+                          filter: `brightness(${brightness}%) contrast(${contrast}%)`,
+                        },
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <img
+                    src={capturedPhoto}
+                    alt="Foto capturada"
+                    className="w-full h-full object-cover"
+                    style={{
+                      filter: `brightness(${brightness}%) contrast(${contrast}%)`,
+                      transform: `rotate(${rotation}deg)`,
+                    }}
+                  />
+                )
               ) : (
                 <>
                   <video
@@ -962,10 +1112,102 @@ const SecretariaPasses = () => {
               <canvas ref={canvasRef} className="hidden" />
             </div>
 
+            {/* Crop/Adjustment Controls - Only visible when cropping */}
+            {capturedPhoto && isCropping && (
+              <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                {/* Zoom Control */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium flex items-center gap-2">
+                      <ZoomIn className="h-4 w-4" />
+                      Zoom
+                    </label>
+                    <span className="text-sm text-muted-foreground">{zoom.toFixed(1)}x</span>
+                  </div>
+                  <Slider
+                    value={[zoom]}
+                    min={1}
+                    max={3}
+                    step={0.1}
+                    onValueChange={([value]) => setZoom(value)}
+                  />
+                </div>
+
+                {/* Rotation Control */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium flex items-center gap-2">
+                      <RotateCw className="h-4 w-4" />
+                      Rotação
+                    </label>
+                    <span className="text-sm text-muted-foreground">{rotation}°</span>
+                  </div>
+                  <Slider
+                    value={[rotation]}
+                    min={-180}
+                    max={180}
+                    step={1}
+                    onValueChange={([value]) => setRotation(value)}
+                  />
+                </div>
+
+                {/* Brightness Control */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium flex items-center gap-2">
+                      <Sun className="h-4 w-4" />
+                      Brilho
+                    </label>
+                    <span className="text-sm text-muted-foreground">{brightness}%</span>
+                  </div>
+                  <Slider
+                    value={[brightness]}
+                    min={50}
+                    max={150}
+                    step={1}
+                    onValueChange={([value]) => setBrightness(value)}
+                  />
+                </div>
+
+                {/* Contrast Control */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium flex items-center gap-2">
+                      <Contrast className="h-4 w-4" />
+                      Contraste
+                    </label>
+                    <span className="text-sm text-muted-foreground">{contrast}%</span>
+                  </div>
+                  <Slider
+                    value={[contrast]}
+                    min={50}
+                    max={150}
+                    step={1}
+                    onValueChange={([value]) => setContrast(value)}
+                  />
+                </div>
+
+                {/* Reset Button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={resetCropSettings}
+                >
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Repor Valores
+                </Button>
+              </div>
+            )}
+
             {/* Instructions */}
             <div className="text-center text-sm text-muted-foreground">
               {capturedPhoto ? (
-                <p>Foto capturada. Clique em "Guardar" para confirmar ou "Repetir" para tirar outra.</p>
+                isCropping ? (
+                  <p>Arraste para posicionar, use os controlos para ajustar zoom, rotação, brilho e contraste.</p>
+                ) : (
+                  <p>Foto capturada. Clique em "Recortar" para ajustar ou "Guardar" para confirmar.</p>
+                )
               ) : (
                 <p>Posicione a pessoa no centro do enquadramento e clique em "Capturar".</p>
               )}
@@ -974,16 +1216,33 @@ const SecretariaPasses = () => {
             {/* Action Buttons */}
             <div className="flex justify-center gap-3">
               {capturedPhoto ? (
-                <>
-                  <Button variant="outline" onClick={retakePhoto}>
-                    <RotateCcw className="h-4 w-4 mr-2" />
-                    Repetir
-                  </Button>
-                  <Button onClick={savePhoto}>
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                    Guardar Foto
-                  </Button>
-                </>
+                isCropping ? (
+                  <>
+                    <Button variant="outline" onClick={cancelCropping}>
+                      <X className="h-4 w-4 mr-2" />
+                      Cancelar
+                    </Button>
+                    <Button onClick={savePhoto}>
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      Aplicar e Guardar
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="outline" onClick={retakePhoto}>
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Repetir
+                    </Button>
+                    <Button variant="outline" onClick={startCropping}>
+                      <Crop className="h-4 w-4 mr-2" />
+                      Recortar
+                    </Button>
+                    <Button onClick={savePhoto}>
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      Guardar
+                    </Button>
+                  </>
+                )
               ) : (
                 <>
                   <Button variant="outline" onClick={closeWebcamModal}>

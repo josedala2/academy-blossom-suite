@@ -132,6 +132,27 @@ const modulosSecretaria = [
     rota: "/dashboard/secretaria/relatorios",
     atalho: "8",
   },
+  {
+    titulo: "Rastreio Docs",
+    descricao: "Acompanhar solicitações de documentos",
+    icon: FileBarChart,
+    cor: "text-teal-600",
+    bgCor: "bg-teal-500/10",
+    borderCor: "border-teal-500/20",
+    rota: "/dashboard/secretaria/rastreio-documentos",
+    badge: 4,
+    atalho: "9",
+  },
+  {
+    titulo: "Passes",
+    descricao: "Impressão de passes de identificação",
+    icon: UserCheck,
+    cor: "text-rose-600",
+    bgCor: "bg-rose-500/10",
+    borderCor: "border-rose-500/20",
+    rota: "/dashboard/secretaria/passes",
+    atalho: "0",
+  },
 ];
 
 // Recent pre-registrations

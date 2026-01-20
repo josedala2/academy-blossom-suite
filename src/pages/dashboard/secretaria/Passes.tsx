@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,6 +47,10 @@ import {
   AlertCircle,
   RefreshCw,
   FileBarChart,
+  Video,
+  VideoOff,
+  RotateCcw,
+  X,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -202,8 +206,124 @@ const SecretariaPasses = () => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedPessoa, setSelectedPessoa] = useState<Pessoa | null>(null);
   const [emitirModalOpen, setEmitirModalOpen] = useState(false);
+  
+  // Webcam states
+  const [webcamModalOpen, setWebcamModalOpen] = useState(false);
+  const [webcamPessoa, setWebcamPessoa] = useState<Pessoa | null>(null);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  const [pessoas, setPessoas] = useState<Pessoa[]>(pessoasMock);
+  
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
-  const pessoas = pessoasMock;
+  // Webcam functions
+  const startWebcam = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+          facingMode: "user",
+        },
+      });
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        streamRef.current = stream;
+        setIsStreaming(true);
+      }
+    } catch (error) {
+      console.error("Erro ao aceder à webcam:", error);
+      toast.error("Não foi possível aceder à webcam", {
+        description: "Verifique se a câmara está conectada e as permissões estão concedidas.",
+      });
+    }
+  }, []);
+
+  const stopWebcam = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setIsStreaming(false);
+  }, []);
+
+  const capturePhoto = useCallback(() => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      const context = canvas.getContext("2d");
+      
+      if (context) {
+        // Set canvas size to match video
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        // Draw the video frame to canvas
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Convert to base64
+        const photoData = canvas.toDataURL("image/jpeg", 0.8);
+        setCapturedPhoto(photoData);
+        
+        // Stop the webcam after capture
+        stopWebcam();
+      }
+    }
+  }, [stopWebcam]);
+
+  const retakePhoto = useCallback(() => {
+    setCapturedPhoto(null);
+    startWebcam();
+  }, [startWebcam]);
+
+  const savePhoto = useCallback(() => {
+    if (capturedPhoto && webcamPessoa) {
+      // Update the person's photo in state
+      setPessoas((prev) =>
+        prev.map((p) =>
+          p.id === webcamPessoa.id ? { ...p, foto: capturedPhoto } : p
+        )
+      );
+      
+      toast.success("Foto guardada com sucesso!", {
+        description: `A foto de ${webcamPessoa.nome} foi actualizada.`,
+      });
+      
+      closeWebcamModal();
+    }
+  }, [capturedPhoto, webcamPessoa]);
+
+  const openWebcamModal = useCallback((pessoa: Pessoa) => {
+    setWebcamPessoa(pessoa);
+    setCapturedPhoto(null);
+    setWebcamModalOpen(true);
+  }, []);
+
+  const closeWebcamModal = useCallback(() => {
+    stopWebcam();
+    setCapturedPhoto(null);
+    setWebcamPessoa(null);
+    setWebcamModalOpen(false);
+  }, [stopWebcam]);
+
+  // Auto-start webcam when modal opens
+  useEffect(() => {
+    if (webcamModalOpen && !capturedPhoto) {
+      startWebcam();
+    }
+    
+    return () => {
+      if (!webcamModalOpen) {
+        stopWebcam();
+      }
+    };
+  }, [webcamModalOpen, capturedPhoto, startWebcam, stopWebcam]);
 
   const filteredPessoas = pessoas.filter((p) => {
     const matchesSearch = p.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -592,9 +712,17 @@ const SecretariaPasses = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                              <User className="h-5 w-5 text-muted-foreground" />
-                            </div>
+                            {pessoa.foto ? (
+                              <img
+                                src={pessoa.foto}
+                                alt={pessoa.nome}
+                                className="h-10 w-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                                <User className="h-5 w-5 text-muted-foreground" />
+                              </div>
+                            )}
                             <span className="font-medium">{pessoa.nome}</span>
                           </div>
                         </TableCell>
@@ -619,6 +747,14 @@ const SecretariaPasses = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Capturar Foto"
+                              onClick={() => openWebcamModal(pessoa)}
+                            >
+                              <Camera className="h-4 w-4" />
+                            </Button>
                             <Button
                               variant="ghost"
                               size="icon"
@@ -674,9 +810,17 @@ const SecretariaPasses = () => {
                 {/* Content */}
                 <div className="absolute top-14 left-0 right-0 bottom-0 p-4 flex gap-4">
                   {/* Photo */}
-                  <div className="w-20 h-24 bg-muted rounded flex items-center justify-center flex-shrink-0">
-                    <Camera className="h-8 w-8 text-muted-foreground" />
-                  </div>
+                  {selectedPessoa.foto ? (
+                    <img
+                      src={selectedPessoa.foto}
+                      alt={selectedPessoa.nome}
+                      className="w-20 h-24 rounded object-cover flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="w-20 h-24 bg-muted rounded flex items-center justify-center flex-shrink-0">
+                      <Camera className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                  )}
 
                   {/* Info */}
                   <div className="flex-1 text-white space-y-1">
@@ -771,6 +915,118 @@ const SecretariaPasses = () => {
               Confirmar Emissão
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Webcam Capture Modal */}
+      <Dialog open={webcamModalOpen} onOpenChange={(open) => !open && closeWebcamModal()}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Camera className="h-5 w-5" />
+              Capturar Foto
+            </DialogTitle>
+            <DialogDescription>
+              {webcamPessoa && `Capturando foto para ${webcamPessoa.nome}`}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Video/Photo Preview Area */}
+            <div className="relative aspect-[4/3] bg-muted rounded-lg overflow-hidden">
+              {capturedPhoto ? (
+                <img
+                  src={capturedPhoto}
+                  alt="Foto capturada"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <>
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover"
+                  />
+                  {!isStreaming && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted">
+                      <VideoOff className="h-12 w-12 text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">A iniciar câmara...</p>
+                    </div>
+                  )}
+                </>
+              )}
+              
+              {/* Hidden canvas for capturing */}
+              <canvas ref={canvasRef} className="hidden" />
+            </div>
+
+            {/* Instructions */}
+            <div className="text-center text-sm text-muted-foreground">
+              {capturedPhoto ? (
+                <p>Foto capturada. Clique em "Guardar" para confirmar ou "Repetir" para tirar outra.</p>
+              ) : (
+                <p>Posicione a pessoa no centro do enquadramento e clique em "Capturar".</p>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-center gap-3">
+              {capturedPhoto ? (
+                <>
+                  <Button variant="outline" onClick={retakePhoto}>
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Repetir
+                  </Button>
+                  <Button onClick={savePhoto}>
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Guardar Foto
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="outline" onClick={closeWebcamModal}>
+                    <X className="h-4 w-4 mr-2" />
+                    Cancelar
+                  </Button>
+                  <Button onClick={capturePhoto} disabled={!isStreaming}>
+                    <Camera className="h-4 w-4 mr-2" />
+                    Capturar
+                  </Button>
+                </>
+              )}
+            </div>
+
+            {/* Current person info */}
+            {webcamPessoa && (
+              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                {webcamPessoa.foto ? (
+                  <img
+                    src={webcamPessoa.foto}
+                    alt="Foto actual"
+                    className="h-12 w-12 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                    <User className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                )}
+                <div>
+                  <p className="font-medium">{webcamPessoa.nome}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {webcamPessoa.tipo === "estudante" ? `Estudante - ${webcamPessoa.classe}` :
+                     webcamPessoa.cargo}
+                  </p>
+                </div>
+                {webcamPessoa.foto && (
+                  <Badge variant="outline" className="ml-auto">
+                    Foto existente
+                  </Badge>
+                )}
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </DashboardLayout>

@@ -1,4 +1,7 @@
 import { useState } from "react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 import {
   Layers,
   BookOpen,
@@ -35,6 +38,7 @@ import {
   AlertTriangle,
   Trophy,
   Target,
+  Download,
 } from "lucide-react";
 import {
   BarChart,
@@ -1248,8 +1252,160 @@ const ELearning = () => {
 
               const COLORS = ["hsl(var(--primary))", "hsl(142 76% 36%)", "hsl(38 92% 50%)", "hsl(0 84% 60%)", "hsl(var(--destructive))"];
 
+              const handleExportStatsPDF = () => {
+                const doc = new jsPDF();
+
+                // Header
+                doc.setFontSize(18);
+                doc.text("Relatório de Estatísticas - Quizzes E-Learning", 14, 22);
+                doc.setFontSize(10);
+                doc.setTextColor(100);
+                doc.text(`Gerado em: ${new Date().toLocaleDateString("pt-AO")}`, 14, 30);
+
+                // Summary stats
+                doc.setTextColor(0);
+                doc.setFontSize(12);
+                doc.text("Resumo Geral", 14, 44);
+                doc.setFontSize(10);
+                doc.text(`Total de Quizzes: ${quizStats.totalQuizzes}`, 14, 52);
+                doc.text(`Total de Tentativas: ${quizStats.totalAttempts}`, 14, 58);
+                doc.text(`Estudantes Únicos: ${quizStats.uniqueStudents}`, 14, 64);
+                doc.text(`Média de Notas: ${quizStats.avgScore}%`, 100, 52);
+                doc.text(`Taxa de Aprovação: ${quizStats.passRate}%`, 100, 58);
+                doc.text(`Tempo Médio: ${quizStats.avgTimeMinutes} minutos`, 100, 64);
+
+                // Quiz Performance Table
+                doc.setFontSize(12);
+                doc.text("Desempenho por Quiz", 14, 78);
+                
+                autoTable(doc, {
+                  startY: 84,
+                  head: [["Quiz", "Tentativas", "Média Notas", "Taxa Aprovação"]],
+                  body: quizPerformance.map(q => [
+                    q.name,
+                    q.tentativas.toString(),
+                    `${q.mediaNotas}%`,
+                    `${q.taxaAprovacao}%`
+                  ]),
+                  headStyles: { fillColor: [59, 130, 246] },
+                  alternateRowStyles: { fillColor: [245, 247, 250] },
+                });
+
+                // Score Distribution Table
+                const finalY1 = (doc as any).lastAutoTable.finalY || 140;
+                doc.setFontSize(12);
+                doc.text("Distribuição de Notas", 14, finalY1 + 15);
+                
+                autoTable(doc, {
+                  startY: finalY1 + 21,
+                  head: [["Faixa", "Nº Estudantes"]],
+                  body: scoreDistribution.map(s => [
+                    s.range,
+                    s.count.toString()
+                  ]),
+                  headStyles: { fillColor: [59, 130, 246] },
+                });
+
+                // Most Missed Questions
+                const finalY2 = (doc as any).lastAutoTable.finalY || 200;
+                doc.setFontSize(12);
+                doc.text("Questões Mais Erradas", 14, finalY2 + 15);
+                
+                autoTable(doc, {
+                  startY: finalY2 + 21,
+                  head: [["Questão", "Quiz", "Taxa de Erro"]],
+                  body: mostMissedQuestions.map(q => [
+                    q.question.length > 40 ? q.question.substring(0, 40) + "..." : q.question,
+                    q.quiz,
+                    `${q.errorRate}%`
+                  ]),
+                  headStyles: { fillColor: [59, 130, 246] },
+                  columnStyles: {
+                    0: { cellWidth: 80 },
+                    1: { cellWidth: 60 },
+                    2: { cellWidth: 30 }
+                  },
+                });
+
+                doc.save(`estatisticas_quizzes_${new Date().toISOString().split("T")[0]}.pdf`);
+                toast({
+                  title: "Exportação concluída!",
+                  description: "Relatório PDF exportado com sucesso.",
+                });
+              };
+
+              const handleExportStatsExcel = () => {
+                const workbook = XLSX.utils.book_new();
+
+                // Summary Sheet
+                const summaryData = [
+                  { "Métrica": "Total de Quizzes", "Valor": quizStats.totalQuizzes },
+                  { "Métrica": "Total de Tentativas", "Valor": quizStats.totalAttempts },
+                  { "Métrica": "Estudantes Únicos", "Valor": quizStats.uniqueStudents },
+                  { "Métrica": "Média de Notas (%)", "Valor": quizStats.avgScore },
+                  { "Métrica": "Taxa de Aprovação (%)", "Valor": quizStats.passRate },
+                  { "Métrica": "Tempo Médio (min)", "Valor": quizStats.avgTimeMinutes },
+                ];
+                const summarySheet = XLSX.utils.json_to_sheet(summaryData);
+                XLSX.utils.book_append_sheet(workbook, summarySheet, "Resumo");
+
+                // Quiz Performance Sheet
+                const performanceData = quizPerformance.map(q => ({
+                  "Quiz": q.name,
+                  "Tentativas": q.tentativas,
+                  "Média Notas (%)": q.mediaNotas,
+                  "Taxa Aprovação (%)": q.taxaAprovacao
+                }));
+                const performanceSheet = XLSX.utils.json_to_sheet(performanceData);
+                XLSX.utils.book_append_sheet(workbook, performanceSheet, "Por Quiz");
+
+                // Score Distribution Sheet
+                const distributionData = scoreDistribution.map(s => ({
+                  "Faixa de Notas": s.range,
+                  "Nº Estudantes": s.count
+                }));
+                const distributionSheet = XLSX.utils.json_to_sheet(distributionData);
+                XLSX.utils.book_append_sheet(workbook, distributionSheet, "Distribuição");
+
+                // Weekly Attempts Sheet
+                const weeklyData = weeklyAttempts.map(w => ({
+                  "Dia": w.day,
+                  "Tentativas": w.tentativas,
+                  "Aprovados": w.aprovados
+                }));
+                const weeklySheet = XLSX.utils.json_to_sheet(weeklyData);
+                XLSX.utils.book_append_sheet(workbook, weeklySheet, "Semanal");
+
+                // Most Missed Questions Sheet
+                const missedData = mostMissedQuestions.map(q => ({
+                  "Questão": q.question,
+                  "Quiz": q.quiz,
+                  "Taxa de Erro (%)": q.errorRate
+                }));
+                const missedSheet = XLSX.utils.json_to_sheet(missedData);
+                XLSX.utils.book_append_sheet(workbook, missedSheet, "Questões Erradas");
+
+                XLSX.writeFile(workbook, `estatisticas_quizzes_${new Date().toISOString().split("T")[0]}.xlsx`);
+                toast({
+                  title: "Exportação concluída!",
+                  description: "Relatório Excel exportado com sucesso.",
+                });
+              };
+
               return (
                 <>
+                  {/* Export Buttons */}
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" size="sm" onClick={handleExportStatsExcel}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Excel
+                    </Button>
+                    <Button size="sm" onClick={handleExportStatsPDF}>
+                      <FileText className="h-4 w-4 mr-2" />
+                      PDF
+                    </Button>
+                  </div>
+
                   {/* Overview Stats */}
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                     <Card>

@@ -13,6 +13,8 @@ import {
   LucideIcon,
   Video,
   IdCard,
+  UserPlus,
+  History,
 } from "lucide-react";
 
 export interface NavSubItem {
@@ -62,6 +64,18 @@ export const navigationConfig: NavSection[] = [
         icon: GraduationCap,
         allowedRoles: ["admin", "director_pedagogico", "secretario", "professor"],
         subItems: [
+          {
+            label: "Matrícula Rápida",
+            href: "/dashboard/estudantes/matricula-rapida",
+            icon: UserPlus,
+            allowedRoles: ["admin", "secretario"],
+          },
+          {
+            label: "Histórico Académico",
+            href: "/dashboard/estudantes/historico-academico",
+            icon: History,
+            allowedRoles: ["admin", "director_pedagogico", "secretario"],
+          },
           {
             label: "Emissão de Passes",
             href: "/dashboard/secretaria/passes",
@@ -161,6 +175,8 @@ export const routePermissions: Record<string, UserRole[]> = {
   "/dashboard/perfil": ["admin", "director_pedagogico", "secretario", "professor", "estudante"],
   "/dashboard/portal-estudante": ["estudante"],
   "/dashboard/estudantes": ["admin", "director_pedagogico", "secretario", "professor"],
+  "/dashboard/estudantes/matricula-rapida": ["admin", "secretario"],
+  "/dashboard/estudantes/historico-academico": ["admin", "director_pedagogico", "secretario"],
   "/dashboard/professores": ["admin", "director_pedagogico", "secretario"],
   "/dashboard/turmas": ["admin", "director_pedagogico", "secretario", "professor"],
   "/dashboard/avaliacoes": ["admin", "director_pedagogico", "secretario", "professor", "estudante"],

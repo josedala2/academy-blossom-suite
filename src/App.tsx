@@ -14,6 +14,8 @@ import Dashboard from "./pages/Dashboard";
 import Perfil from "./pages/dashboard/Perfil";
 import PortalEstudante from "./pages/dashboard/PortalEstudante";
 import Estudantes from "./pages/dashboard/Estudantes";
+import MatriculaRapida from "./pages/dashboard/estudantes/MatriculaRapida";
+import HistoricoAcademico from "./pages/dashboard/estudantes/HistoricoAcademico";
 import Professores from "./pages/dashboard/Professores";
 import Turmas from "./pages/dashboard/Turmas";
 import Avaliacoes from "./pages/dashboard/Avaliacoes";
@@ -72,6 +74,16 @@ const App = () => (
             <Route path="/dashboard/estudantes" element={
               <ProtectedRoute allowedRoles={routePermissions["/dashboard/estudantes"]}>
                 <Estudantes />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/estudantes/matricula-rapida" element={
+              <ProtectedRoute allowedRoles={routePermissions["/dashboard/estudantes/matricula-rapida"]}>
+                <MatriculaRapida />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/estudantes/historico-academico" element={
+              <ProtectedRoute allowedRoles={routePermissions["/dashboard/estudantes/historico-academico"]}>
+                <HistoricoAcademico />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/professores" element={

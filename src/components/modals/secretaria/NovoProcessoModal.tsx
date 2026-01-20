@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -88,11 +88,19 @@ const processoSchema = z.object({
 
 type ProcessoFormData = z.infer<typeof processoSchema>;
 
+interface Anexo {
+  name: string;
+  size: number;
+  type: string;
+  file: File;
+}
+
 const NovoProcessoModal = ({ open, onOpenChange }: Props) => {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [searchEstudante, setSearchEstudante] = useState("");
-  const [anexos, setAnexos] = useState<string[]>([]);
+  const [anexos, setAnexos] = useState<Anexo[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<ProcessoFormData>({
     resolver: zodResolver(processoSchema),
@@ -117,17 +125,80 @@ const NovoProcessoModal = ({ open, onOpenChange }: Props) => {
       est.numero.includes(searchEstudante)
   );
 
-  const handleAddAnexo = () => {
-    const novoAnexo = `documento_${anexos.length + 1}.pdf`;
-    setAnexos([...anexos, novoAnexo]);
-    toast({
-      title: "Anexo adicionado",
-      description: `${novoAnexo} foi adicionado ao processo.`,
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const allowedTypes = [
+      'application/pdf',
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    const maxSize = 10 * 1024 * 1024; // 10MB
+
+    const newAnexos: Anexo[] = [];
+    const errors: string[] = [];
+
+    Array.from(files).forEach((file) => {
+      if (!allowedTypes.includes(file.type)) {
+        errors.push(`${file.name}: Tipo de ficheiro não suportado`);
+        return;
+      }
+      if (file.size > maxSize) {
+        errors.push(`${file.name}: Ficheiro muito grande (máx. 10MB)`);
+        return;
+      }
+      newAnexos.push({
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        file: file,
+      });
     });
+
+    if (errors.length > 0) {
+      toast({
+        title: "Erro ao adicionar ficheiros",
+        description: errors.join(", "),
+        variant: "destructive",
+      });
+    }
+
+    if (newAnexos.length > 0) {
+      setAnexos((prev) => [...prev, ...newAnexos]);
+      toast({
+        title: "Anexo(s) adicionado(s)",
+        description: `${newAnexos.length} ficheiro(s) adicionado(s) ao processo.`,
+      });
+    }
+
+    // Reset input to allow re-selecting same file
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleAddAnexo = () => {
+    fileInputRef.current?.click();
   };
 
   const handleRemoveAnexo = (index: number) => {
     setAnexos(anexos.filter((_, i) => i !== index));
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const getFileIcon = (type: string) => {
+    if (type.startsWith('image/')) return '🖼️';
+    if (type === 'application/pdf') return '📄';
+    return '📎';
   };
 
   const onSubmit = (data: ProcessoFormData) => {
@@ -361,26 +432,52 @@ const NovoProcessoModal = ({ open, onOpenChange }: Props) => {
                 {/* Anexos */}
                 <div>
                   <FormLabel className="mb-2 block">Anexos</FormLabel>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
                   <div className="space-y-2">
-                    {anexos.map((anexo, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-2 bg-muted rounded-lg"
-                      >
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{anexo}</span>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveAnexo(index)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
+                    {anexos.length === 0 ? (
+                      <div className="text-center py-6 border-2 border-dashed rounded-lg">
+                        <FileText className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                        <p className="text-sm text-muted-foreground">
+                          Nenhum anexo adicionado
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          PDF, Imagens ou Documentos Word (máx. 10MB)
+                        </p>
                       </div>
-                    ))}
+                    ) : (
+                      anexos.map((anexo, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                        >
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <span className="text-lg">{getFileIcon(anexo.type)}</span>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium truncate">{anexo.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {formatFileSize(anexo.size)}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveAnexo(index)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))
+                    )}
                     <Button
                       type="button"
                       variant="outline"

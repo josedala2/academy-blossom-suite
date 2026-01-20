@@ -58,6 +58,8 @@ import {
   RotateCw,
   Sun,
   Contrast,
+  Upload,
+  ImagePlus,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -234,6 +236,7 @@ const SecretariaPasses = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Webcam functions
   const startWebcam = useCallback(async () => {
@@ -433,6 +436,54 @@ const SecretariaPasses = () => {
     setWebcamPessoa(null);
     setWebcamModalOpen(false);
   }, [stopWebcam, resetCropSettings]);
+
+  // Upload photo from file
+  const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Formato de ficheiro inválido", {
+        description: "Apenas são aceites imagens JPG, PNG ou WEBP.",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error("Ficheiro muito grande", {
+        description: "O tamanho máximo permitido é 5MB.",
+      });
+      return;
+    }
+
+    // Read file and set as captured photo
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      stopWebcam(); // Stop webcam when uploading
+      setCapturedPhoto(result);
+      toast.success("Foto carregada com sucesso!", {
+        description: "Pode agora recortar e ajustar a imagem.",
+      });
+    };
+    reader.onerror = () => {
+      toast.error("Erro ao ler o ficheiro", {
+        description: "Tente novamente com outro ficheiro.",
+      });
+    };
+    reader.readAsDataURL(file);
+
+    // Reset input so same file can be selected again
+    event.target.value = "";
+  }, [stopWebcam]);
+
+  const triggerFileUpload = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
 
   // Auto-start webcam when modal opens
   useEffect(() => {
@@ -1167,12 +1218,21 @@ const SecretariaPasses = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Camera className="h-5 w-5" />
-              Capturar Foto
+              Capturar ou Carregar Foto
             </DialogTitle>
             <DialogDescription>
-              {webcamPessoa && `Capturando foto para ${webcamPessoa.nome}`}
+              {webcamPessoa && `Foto para ${webcamPessoa.nome} - Use a câmara ou carregue uma imagem`}
             </DialogDescription>
           </DialogHeader>
+
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={handleFileUpload}
+          />
 
           <div className="space-y-4">
             {/* Video/Photo Preview Area */}
@@ -1322,15 +1382,19 @@ const SecretariaPasses = () => {
             )}
 
             {/* Instructions */}
+            {/* Instructions */}
             <div className="text-center text-sm text-muted-foreground">
               {capturedPhoto ? (
                 isCropping ? (
                   <p>Arraste para posicionar, use os controlos para ajustar zoom, rotação, brilho e contraste.</p>
                 ) : (
-                  <p>Foto capturada. Clique em "Recortar" para ajustar ou "Guardar" para confirmar.</p>
+                  <p>Foto pronta. Clique em "Recortar" para ajustar ou "Guardar" para confirmar.</p>
                 )
               ) : (
-                <p>Posicione a pessoa no centro do enquadramento e clique em "Capturar".</p>
+                <div className="space-y-1">
+                  <p>Use a câmara para capturar ou carregue uma foto existente.</p>
+                  <p className="text-xs text-muted-foreground/70">Formatos aceites: JPG, PNG, WEBP (máx. 5MB)</p>
+                </div>
               )}
             </div>
 
@@ -1369,6 +1433,10 @@ const SecretariaPasses = () => {
                   <Button variant="outline" onClick={closeWebcamModal}>
                     <X className="h-4 w-4 mr-2" />
                     Cancelar
+                  </Button>
+                  <Button variant="outline" onClick={triggerFileUpload}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Carregar Foto
                   </Button>
                   <Button onClick={capturePhoto} disabled={!isStreaming}>
                     <Camera className="h-4 w-4 mr-2" />

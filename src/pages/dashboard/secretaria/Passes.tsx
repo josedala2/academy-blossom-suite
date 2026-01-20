@@ -524,6 +524,7 @@ const SecretariaPasses = () => {
       format: [85.6, 53.98], // Tamanho de cartão de crédito
     });
 
+    // ======== FRENTE DO PASSE ========
     // Background
     doc.setFillColor(25, 65, 120);
     doc.rect(0, 0, 85.6, 53.98, "F");
@@ -583,9 +584,70 @@ const SecretariaPasses = () => {
     doc.setFontSize(4);
     doc.text("QR", 76, 45, { align: "center" });
 
+    // ======== VERSO DO PASSE (Nova página) ========
+    doc.addPage([85.6, 53.98], "landscape");
+
+    // Background verso
+    doc.setFillColor(240, 240, 245);
+    doc.rect(0, 0, 85.6, 53.98, "F");
+
+    // Header strip verso
+    doc.setFillColor(25, 65, 120);
+    doc.rect(0, 0, 85.6, 8, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(6);
+    doc.setFont("helvetica", "bold");
+    doc.text("INFORMAÇÕES IMPORTANTES", 42.8, 5, { align: "center" });
+
+    // Magnetic strip simulation
+    doc.setFillColor(50, 50, 50);
+    doc.rect(0, 10, 85.6, 8, "F");
+
+    // Instructions
+    doc.setTextColor(50, 50, 50);
+    doc.setFontSize(5);
+    doc.setFont("helvetica", "normal");
+    
+    const instrucoes = [
+      "1. Este passe é pessoal e intransferível.",
+      "2. Apresente este documento sempre que solicitado.",
+      "3. Em caso de perda, comunique imediatamente à Secretaria.",
+      "4. O uso indevido deste passe é passível de sanções.",
+      "5. Este passe deve ser devolvido no final do vínculo.",
+    ];
+
+    instrucoes.forEach((texto, index) => {
+      doc.text(texto, 5, 24 + (index * 4));
+    });
+
+    // Contact info box
+    doc.setFillColor(25, 65, 120);
+    doc.setDrawColor(25, 65, 120);
+    doc.roundedRect(5, 44, 50, 7, 1, 1, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(4);
+    doc.text("Secretaria: +244 923 456 789 | secretaria@sge.ao", 30, 48, { align: "center" });
+
+    // Barcode placeholder
+    doc.setFillColor(255, 255, 255);
+    doc.rect(60, 44, 22, 7, "F");
+    doc.setDrawColor(0, 0, 0);
+    // Simulate barcode lines
+    for (let i = 0; i < 15; i++) {
+      const x = 62 + (i * 1.2);
+      const width = i % 3 === 0 ? 0.8 : 0.4;
+      doc.setFillColor(0, 0, 0);
+      doc.rect(x, 45, width, 5, "F");
+    }
+
+    // Emergency contact section
+    doc.setTextColor(50, 50, 50);
+    doc.setFontSize(4);
+    doc.text(`ID: ${pessoa.id} | Emitido: ${pessoa.passeDataEmissao ? new Date(pessoa.passeDataEmissao).toLocaleDateString("pt-AO") : new Date().toLocaleDateString("pt-AO")}`, 42.8, 42, { align: "center" });
+
     doc.save(`passe_${pessoa.id}_${pessoa.nome.replace(/\s+/g, "_")}.pdf`);
     toast.success("Passe gerado com sucesso!", {
-      description: `PDF do passe de ${pessoa.nome} foi descarregado.`,
+      description: `PDF do passe de ${pessoa.nome} (frente e verso) foi descarregado.`,
     });
   };
 
@@ -908,68 +970,127 @@ const SecretariaPasses = () => {
 
       {/* Preview Modal */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg">
           {selectedPessoa && (
             <>
               <DialogHeader>
                 <DialogTitle>Pré-visualização do Passe</DialogTitle>
                 <DialogDescription>
-                  Passe de identificação de {selectedPessoa.nome}
+                  Passe de identificação de {selectedPessoa.nome} (frente e verso)
                 </DialogDescription>
               </DialogHeader>
 
-              {/* Card Preview */}
-              <div className="relative w-full aspect-[1.586/1] rounded-xl overflow-hidden shadow-lg">
-                {/* Background */}
-                <div className="absolute inset-0 bg-gradient-to-br from-primary to-primary/80" />
-                
-                {/* Header strip */}
-                <div className="absolute top-0 left-0 right-0 h-12 bg-accent flex flex-col items-center justify-center">
-                  <span className="text-primary font-bold text-sm">SGE - SISTEMA DE GESTÃO ESCOLAR</span>
-                  <span className="text-primary text-xs">PASSE DE IDENTIFICAÇÃO</span>
-                </div>
-
-                {/* Content */}
-                <div className="absolute top-14 left-0 right-0 bottom-0 p-4 flex gap-4">
-                  {/* Photo */}
-                  {selectedPessoa.foto ? (
-                    <img
-                      src={selectedPessoa.foto}
-                      alt={selectedPessoa.nome}
-                      className="w-20 h-24 rounded object-cover flex-shrink-0"
-                    />
-                  ) : (
-                    <div className="w-20 h-24 bg-muted rounded flex items-center justify-center flex-shrink-0">
-                      <Camera className="h-8 w-8 text-muted-foreground" />
+              <div className="space-y-4">
+                {/* FRENTE DO PASSE */}
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                    <CreditCard className="h-3 w-3" /> FRENTE
+                  </p>
+                  <div className="relative w-full aspect-[1.586/1] rounded-xl overflow-hidden shadow-lg">
+                    {/* Background */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary to-primary/80" />
+                    
+                    {/* Header strip */}
+                    <div className="absolute top-0 left-0 right-0 h-12 bg-accent flex flex-col items-center justify-center">
+                      <span className="text-primary font-bold text-sm">SGE - SISTEMA DE GESTÃO ESCOLAR</span>
+                      <span className="text-primary text-xs">PASSE DE IDENTIFICAÇÃO</span>
                     </div>
-                  )}
 
-                  {/* Info */}
-                  <div className="flex-1 text-white space-y-1">
-                    <h3 className="font-bold text-sm uppercase">{selectedPessoa.nome}</h3>
-                    <p className="text-xs opacity-80">
-                      {selectedPessoa.tipo === "estudante" ? "ESTUDANTE" : 
-                       selectedPessoa.tipo === "professor" ? "PROFESSOR(A)" : "FUNCIONÁRIO(A)"}
-                    </p>
-                    {selectedPessoa.classe && (
-                      <p className="text-xs">Turma: {selectedPessoa.classe}</p>
-                    )}
-                    {selectedPessoa.cargo && (
-                      <p className="text-xs">{selectedPessoa.cargo}</p>
-                    )}
-                    <p className="text-xs opacity-80">Nº: {selectedPessoa.identificador}</p>
-                  </div>
+                    {/* Content */}
+                    <div className="absolute top-14 left-0 right-0 bottom-0 p-4 flex gap-4">
+                      {/* Photo */}
+                      {selectedPessoa.foto ? (
+                        <img
+                          src={selectedPessoa.foto}
+                          alt={selectedPessoa.nome}
+                          className="w-20 h-24 rounded object-cover flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-20 h-24 bg-muted rounded flex items-center justify-center flex-shrink-0">
+                          <Camera className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                      )}
 
-                  {/* QR Code */}
-                  <div className="absolute bottom-3 right-3 w-12 h-12 bg-white rounded flex items-center justify-center">
-                    <QrCode className="h-8 w-8 text-gray-800" />
+                      {/* Info */}
+                      <div className="flex-1 text-white space-y-1">
+                        <h3 className="font-bold text-sm uppercase">{selectedPessoa.nome}</h3>
+                        <p className="text-xs opacity-80">
+                          {selectedPessoa.tipo === "estudante" ? "ESTUDANTE" : 
+                           selectedPessoa.tipo === "professor" ? "PROFESSOR(A)" : "FUNCIONÁRIO(A)"}
+                        </p>
+                        {selectedPessoa.classe && (
+                          <p className="text-xs">Turma: {selectedPessoa.classe}</p>
+                        )}
+                        {selectedPessoa.cargo && (
+                          <p className="text-xs">{selectedPessoa.cargo}</p>
+                        )}
+                        <p className="text-xs opacity-80">Nº: {selectedPessoa.identificador}</p>
+                      </div>
+
+                      {/* QR Code */}
+                      <div className="absolute bottom-3 right-3 w-12 h-12 bg-white rounded flex items-center justify-center">
+                        <QrCode className="h-8 w-8 text-gray-800" />
+                      </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="absolute bottom-0 left-0 right-20 p-2 text-white text-[10px] opacity-70">
+                      <p>Passe: {selectedPessoa.passeNumero || "---"}</p>
+                      <p>Válido até: {selectedPessoa.passeDataValidade ? new Date(selectedPessoa.passeDataValidade).toLocaleDateString("pt-AO") : "---"}</p>
+                    </div>
                   </div>
                 </div>
 
-                {/* Footer */}
-                <div className="absolute bottom-0 left-0 right-20 p-2 text-white text-[10px] opacity-70">
-                  <p>Passe: {selectedPessoa.passeNumero || "---"}</p>
-                  <p>Válido até: {selectedPessoa.passeDataValidade ? new Date(selectedPessoa.passeDataValidade).toLocaleDateString("pt-AO") : "---"}</p>
+                {/* VERSO DO PASSE */}
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                    <CreditCard className="h-3 w-3" /> VERSO
+                  </p>
+                  <div className="relative w-full aspect-[1.586/1] rounded-xl overflow-hidden shadow-lg bg-slate-100">
+                    {/* Header strip */}
+                    <div className="absolute top-0 left-0 right-0 h-8 bg-primary flex items-center justify-center">
+                      <span className="text-white font-bold text-xs">INFORMAÇÕES IMPORTANTES</span>
+                    </div>
+
+                    {/* Magnetic strip */}
+                    <div className="absolute top-10 left-0 right-0 h-6 bg-gray-800" />
+
+                    {/* Instructions */}
+                    <div className="absolute top-18 left-0 right-0 bottom-0 p-3 pt-8">
+                      <div className="space-y-1 text-[10px] text-gray-700">
+                        <p>1. Este passe é pessoal e intransferível.</p>
+                        <p>2. Apresente este documento sempre que solicitado.</p>
+                        <p>3. Em caso de perda, comunique imediatamente à Secretaria.</p>
+                        <p>4. O uso indevido deste passe é passível de sanções.</p>
+                        <p>5. Este passe deve ser devolvido no final do vínculo.</p>
+                      </div>
+
+                      {/* Contact info */}
+                      <div className="absolute bottom-8 left-3 right-3 flex justify-between items-end">
+                        <div className="bg-primary text-white text-[8px] px-2 py-1 rounded">
+                          Secretaria: +244 923 456 789 | secretaria@sge.ao
+                        </div>
+                        {/* Barcode simulation */}
+                        <div className="flex gap-[1px]">
+                          {Array.from({ length: 20 }).map((_, i) => (
+                            <div
+                              key={i}
+                              className="bg-black"
+                              style={{
+                                width: i % 3 === 0 ? 2 : 1,
+                                height: 20,
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* ID and emission date */}
+                      <div className="absolute bottom-2 left-0 right-0 text-center text-[8px] text-gray-500">
+                        ID: {selectedPessoa.id} | Emitido: {selectedPessoa.passeDataEmissao ? new Date(selectedPessoa.passeDataEmissao).toLocaleDateString("pt-AO") : new Date().toLocaleDateString("pt-AO")}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -982,7 +1103,7 @@ const SecretariaPasses = () => {
                   setPreviewOpen(false);
                 }}>
                   <Printer className="h-4 w-4 mr-2" />
-                  Imprimir
+                  Imprimir (Frente e Verso)
                 </Button>
               </DialogFooter>
             </>

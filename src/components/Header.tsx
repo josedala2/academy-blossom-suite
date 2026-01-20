@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Phone, Mail, ChevronDown } from "lucide-react";
 import logoSGE from "@/assets/logo-sge.png";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   const navItems = [
     { label: "Início", href: "#" },
@@ -66,7 +68,7 @@ const Header = () => {
             <Button variant="outline" className="hidden sm:inline-flex">
               Registar
             </Button>
-            <Button variant="default">
+            <Button variant="default" onClick={() => navigate("/login")}>
               Entrar
             </Button>
             
@@ -99,7 +101,7 @@ const Header = () => {
                 <Button variant="outline" className="flex-1">
                   Registar
                 </Button>
-                <Button variant="default" className="flex-1">
+                <Button variant="default" className="flex-1" onClick={() => navigate("/login")}>
                   Entrar
                 </Button>
               </div>

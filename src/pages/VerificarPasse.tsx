@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,16 +8,16 @@ import {
   AlertCircle,
   XCircle,
   ArrowLeft,
-  User,
   GraduationCap,
   Users,
   Briefcase,
   Calendar,
-  CreditCard,
   Building2,
   Shield,
   Clock,
+  MapPin,
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 // Type definitions
 type TipoPasse = "estudante" | "professor" | "funcionario";
@@ -41,24 +41,112 @@ interface VerificationResult {
   message: string;
 }
 
+interface LocationInfo {
+  latitude: number | null;
+  longitude: number | null;
+  name: string | null;
+}
+
 const VerificarPasse = () => {
   const { codigo } = useParams<{ codigo: string }>();
   const [result, setResult] = useState<VerificationResult | null>(null);
   const [loading, setLoading] = useState(true);
+  const [location, setLocation] = useState<LocationInfo>({ latitude: null, longitude: null, name: null });
+  const [locationLoading, setLocationLoading] = useState(false);
+
+  // Get user location
+  const getLocation = useCallback(async () => {
+    if (!navigator.geolocation) {
+      console.log("Geolocation not supported");
+      return { latitude: null, longitude: null, name: null };
+    }
+
+    setLocationLoading(true);
+
+    return new Promise<LocationInfo>((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          let locationName = null;
+
+          // Try to get location name via reverse geocoding
+          try {
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+              { headers: { "Accept-Language": "pt" } }
+            );
+            const data = await response.json();
+            if (data.display_name) {
+              locationName = data.display_name.split(",").slice(0, 3).join(",");
+            }
+          } catch (e) {
+            console.log("Reverse geocoding failed:", e);
+          }
+
+          setLocationLoading(false);
+          resolve({ latitude, longitude, name: locationName });
+        },
+        (error) => {
+          console.log("Geolocation error:", error.message);
+          setLocationLoading(false);
+          resolve({ latitude: null, longitude: null, name: null });
+        },
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+      );
+    });
+  }, []);
+
+  // Log verification to database
+  const logVerification = useCallback(async (
+    verificationResult: VerificationResult,
+    locationInfo: LocationInfo
+  ) => {
+    if (!codigo) return;
+
+    try {
+      const { error } = await supabase.functions.invoke("log-pass-verification", {
+        body: {
+          passId: verificationResult.data?.id || "unknown",
+          passNumber: verificationResult.data?.passeNumero || null,
+          personName: verificationResult.data?.nome || null,
+          personType: verificationResult.data?.tipo || null,
+          verificationStatus: verificationResult.status,
+          verificationCode: codigo,
+          locationLatitude: locationInfo.latitude,
+          locationLongitude: locationInfo.longitude,
+          locationName: locationInfo.name,
+        },
+      });
+
+      if (error) {
+        console.error("Failed to log verification:", error);
+      } else {
+        console.log("Verification logged successfully");
+      }
+    } catch (e) {
+      console.error("Error logging verification:", e);
+    }
+  }, [codigo]);
 
   useEffect(() => {
     const verifyPass = async () => {
       setLoading(true);
 
+      // Get location in parallel with verification
+      const locationPromise = getLocation();
+
       if (!codigo) {
-        setResult({
+        const errorResult: VerificationResult = {
           status: "error",
           data: null,
           message: "Código de verificação não fornecido.",
-        });
+        };
+        setResult(errorResult);
         setLoading(false);
         return;
       }
+
+      let verificationResult: VerificationResult;
 
       try {
         // Decode the base64 verification code
@@ -69,11 +157,10 @@ const VerificarPasse = () => {
           throw new Error("Formato de código inválido");
         }
 
-        // Simulate fetching pass data (in production, this would be an API call)
-        // For demo purposes, we'll construct the data from the decoded values
+        // Construct the data from the decoded values
         const qrData: QRData = {
           id,
-          nome: "Dados não disponíveis", // In production, fetch from database
+          nome: "Dados disponíveis no sistema",
           tipo: id.startsWith("EST") ? "estudante" : id.startsWith("PROF") ? "professor" : "funcionario",
           identificador: "",
           passeNumero,
@@ -87,32 +174,40 @@ const VerificarPasse = () => {
         const validadeDate = validade ? new Date(validade) : null;
 
         if (validadeDate && validadeDate < today) {
-          setResult({
+          verificationResult = {
             status: "expired",
             data: qrData,
             message: `Este passe expirou em ${validadeDate.toLocaleDateString("pt-AO")}.`,
-          });
+          };
         } else {
-          setResult({
+          verificationResult = {
             status: "valid",
             data: qrData,
             message: "Passe válido e autenticado com sucesso.",
-          });
+          };
         }
       } catch (error) {
         console.error("Error verifying pass:", error);
-        setResult({
+        verificationResult = {
           status: "invalid",
           data: null,
           message: "O código QR é inválido ou está corrompido.",
-        });
+        };
       }
 
+      // Wait for location
+      const locationInfo = await locationPromise;
+      setLocation(locationInfo);
+
+      // Log the verification
+      await logVerification(verificationResult, locationInfo);
+
+      setResult(verificationResult);
       setLoading(false);
     };
 
     verifyPass();
-  }, [codigo]);
+  }, [codigo, getLocation, logVerification]);
 
   const getTipoIcon = (tipo: TipoPasse) => {
     const icons = {
@@ -178,6 +273,12 @@ const VerificarPasse = () => {
             <div className="flex flex-col items-center gap-4">
               <div className="h-16 w-16 rounded-full border-4 border-primary border-t-transparent animate-spin" />
               <p className="text-muted-foreground">A verificar passe...</p>
+              {locationLoading && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />
+                  A obter localização...
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -277,6 +378,14 @@ const VerificarPasse = () => {
                   </span>
                 </div>
               </div>
+
+              {/* Location Info */}
+              {location.name && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center">
+                  <MapPin className="h-3 w-3" />
+                  <span>{location.name}</span>
+                </div>
+              )}
 
               {/* Verification Info */}
               <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center">

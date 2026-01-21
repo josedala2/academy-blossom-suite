@@ -697,24 +697,24 @@ const SecretariaPasses = () => {
     doc.setFontSize(6);
     doc.text("PASSE DE IDENTIFICAÇÃO", 42.8, 9, { align: "center" });
 
-    // Photo - add real photo if available, otherwise placeholder
+    // Photo - add real photo if available, otherwise placeholder (25% larger: 27.5x35)
     if (photoBase64) {
       try {
-        doc.addImage(photoBase64, "JPEG", 5, 16, 22, 28);
+        doc.addImage(photoBase64, "JPEG", 5, 14, 27.5, 35);
       } catch (e) {
         // Fallback to placeholder if image fails
         doc.setFillColor(200, 200, 200);
-        doc.rect(5, 16, 22, 28, "F");
+        doc.rect(5, 14, 27.5, 35, "F");
         doc.setTextColor(100, 100, 100);
         doc.setFontSize(6);
-        doc.text("FOTO", 16, 31, { align: "center" });
+        doc.text("FOTO", 18.75, 32, { align: "center" });
       }
     } else {
       doc.setFillColor(200, 200, 200);
-      doc.rect(5, 16, 22, 28, "F");
+      doc.rect(5, 14, 27.5, 35, "F");
       doc.setTextColor(100, 100, 100);
       doc.setFontSize(6);
-      doc.text("FOTO", 16, 31, { align: "center" });
+      doc.text("FOTO", 18.75, 32, { align: "center" });
     }
 
     // Person info - Dark text for professors (white background), white for others
@@ -727,38 +727,38 @@ const SecretariaPasses = () => {
     }
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
-    doc.text(pessoa.nome.toUpperCase(), 30, 20);
+    doc.text(pessoa.nome.toUpperCase(), 35, 20);
 
     doc.setFontSize(6);
     doc.setFont("helvetica", "normal");
     
     const tipoLabels = { estudante: "ESTUDANTE", professor: "PROFESSOR(A)", funcionario: "FUNCIONÁRIO(A)" };
-    doc.text(tipoLabels[pessoa.tipo], 30, 25);
+    doc.text(tipoLabels[pessoa.tipo], 35, 25);
     
     if (pessoa.classe) {
-      doc.text(`Turma: ${pessoa.classe}`, 30, 30);
+      doc.text(`Turma: ${pessoa.classe}`, 35, 30);
     }
     if (pessoa.cargo) {
-      doc.text(pessoa.cargo, 30, 30);
+      doc.text(pessoa.cargo, 35, 30);
     }
     if (pessoa.departamento) {
-      doc.text(pessoa.departamento, 30, 35);
+      doc.text(pessoa.departamento, 35, 35);
     }
 
-    doc.text(`Nº: ${pessoa.identificador}`, 30, 40);
+    doc.text(`Nº: ${pessoa.identificador}`, 35, 40);
 
     // Pass number and validity
     doc.setFontSize(5);
     doc.text(`Passe: ${pessoa.passeNumero || "---"}`, 5, 48);
     doc.text(`Válido até: ${pessoa.passeDataValidade ? new Date(pessoa.passeDataValidade).toLocaleDateString("pt-AO") : "---"}`, 5, 51);
 
-    // QR Code - add real QR code if generated, otherwise fallback
+    // QR Code - add real QR code if generated, otherwise fallback (25% larger: 18.75x18.75)
     doc.setFillColor(255, 255, 255);
-    doc.rect(68, 36, 15, 15, "F");
+    doc.rect(64, 33, 19, 19, "F");
     
     if (qrImageBase64) {
       try {
-        doc.addImage(qrImageBase64, "PNG", 68.5, 36.5, 14, 14);
+        doc.addImage(qrImageBase64, "PNG", 64.5, 33.5, 18, 18);
       } catch (e) {
         // Fallback to pattern if QR fails
         drawQRFallback();
@@ -768,9 +768,9 @@ const SecretariaPasses = () => {
     }
 
     function drawQRFallback() {
-      const qrStartX = 69;
-      const qrStartY = 37;
-      const moduleSize = 0.5;
+      const qrStartX = 65;
+      const qrStartY = 34;
+      const moduleSize = 0.625; // 25% larger
       const verificationCode = pessoa.id + pessoa.passeNumero;
       
       doc.setFillColor(0, 0, 0);
@@ -797,7 +797,7 @@ const SecretariaPasses = () => {
     // Add verification text under QR
     doc.setFontSize(3);
     doc.setTextColor(0, 0, 0);
-    doc.text("Verificar", 75.5, 52, { align: "center" });
+    doc.text("Verificar", 73.5, 52, { align: "center" });
 
     // ======== VERSO DO PASSE (Nova página) ========
     doc.addPage([85.6, 53.98], "landscape");
@@ -1240,16 +1240,16 @@ const SecretariaPasses = () => {
 
                     {/* Content */}
                     <div className="absolute top-14 left-0 right-0 bottom-0 p-4 flex gap-4">
-                      {/* Photo */}
+                      {/* Photo - 25% larger */}
                       {selectedPessoa.foto ? (
                         <img
                           src={selectedPessoa.foto}
                           alt={selectedPessoa.nome}
-                          className="w-20 h-24 rounded object-cover flex-shrink-0"
+                          className="w-24 h-[120px] rounded object-cover flex-shrink-0"
                         />
                       ) : (
-                        <div className="w-20 h-24 bg-muted rounded flex items-center justify-center flex-shrink-0">
-                          <Camera className="h-8 w-8 text-muted-foreground" />
+                        <div className="w-24 h-[120px] bg-muted rounded flex items-center justify-center flex-shrink-0">
+                          <Camera className="h-10 w-10 text-muted-foreground" />
                         </div>
                       )}
 
@@ -1269,11 +1269,11 @@ const SecretariaPasses = () => {
                         <p className="text-xs opacity-80">Nº: {selectedPessoa.identificador}</p>
                       </div>
 
-                      {/* QR Code Real */}
-                      <div className="absolute bottom-3 right-3 w-14 h-14 bg-white rounded p-1 flex items-center justify-center shadow-md">
+                      {/* QR Code Real - 25% larger */}
+                      <div className="absolute bottom-3 right-3 w-[70px] h-[70px] bg-white rounded p-1 flex items-center justify-center shadow-md">
                         <QRCodeSVG
                           value={generateQRData(selectedPessoa)}
-                          size={48}
+                          size={60}
                           level="H"
                           includeMargin={false}
                           bgColor="#FFFFFF"

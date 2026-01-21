@@ -38,6 +38,7 @@ import SecretariaProcessos from "./pages/dashboard/secretaria/Processos";
 import SecretariaRelatorios from "./pages/dashboard/secretaria/Relatorios";
 import SecretariaRastreioDocumentos from "./pages/dashboard/secretaria/RastreioDocumentos";
 import SecretariaPasses from "./pages/dashboard/secretaria/Passes";
+import VerificarPasse from "./pages/VerificarPasse";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,9 +52,10 @@ const App = () => (
           <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
+        <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/verificar-passe/:codigo" element={<VerificarPasse />} />
             
             {/* Protected Dashboard Routes */}
             <Route path="/dashboard" element={

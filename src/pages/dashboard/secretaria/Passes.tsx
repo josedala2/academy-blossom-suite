@@ -593,138 +593,182 @@ const SecretariaPasses = () => {
     setPreviewOpen(true);
   };
 
-  const handleImprimirPasse = (pessoa: Pessoa) => {
+  const handleImprimirPasse = async (pessoa: Pessoa) => {
     const doc = new jsPDF({
       orientation: "landscape",
       unit: "mm",
       format: [85.6, 53.98], // Tamanho de cartão de crédito
     });
 
-    // Generate QR Code image
+    // Generate QR Code data
     const qrData = generateQRData(pessoa);
     
-    // Create a temporary canvas to render QR code
-    const qrCanvas = document.createElement("canvas");
-    const qrSize = 150; // Size in pixels for good quality
-    qrCanvas.width = qrSize;
-    qrCanvas.height = qrSize;
-    
-    // Render QR code to the canvas
-    const tempContainer = document.createElement("div");
-    tempContainer.style.position = "absolute";
-    tempContainer.style.left = "-9999px";
-    document.body.appendChild(tempContainer);
-    
-    // Create QR code using a simple approach with data URL
-    const qrImagePromise = new Promise<string>((resolve) => {
-      const qrCodeElement = document.createElement("canvas");
-      qrCodeElement.id = "temp-qr-canvas";
-      tempContainer.appendChild(qrCodeElement);
-      
-      // Import QRCode library inline rendering
-      import("qrcode.react").then(({ QRCodeCanvas }) => {
-        const ReactDOM = require("react-dom/client");
-        const root = ReactDOM.createRoot(qrCodeElement);
-        root.render(
-          <QRCodeCanvas
-            value={qrData}
-            size={qrSize}
-            level="H"
-            includeMargin={true}
-            bgColor="#FFFFFF"
-            fgColor="#000000"
-          />
-        );
-        
-        setTimeout(() => {
-          const canvas = tempContainer.querySelector("canvas");
-          if (canvas) {
-            resolve(canvas.toDataURL("image/png"));
+    // Helper function to load image as base64
+    const loadImageAsBase64 = (src: string): Promise<string | null> => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL("image/jpeg", 0.9));
           } else {
-            resolve("");
+            resolve(null);
           }
-          document.body.removeChild(tempContainer);
-        }, 100);
+        };
+        img.onerror = () => resolve(null);
+        img.src = src;
       });
-    });
+    };
 
-    // For immediate PDF generation, create QR manually using basic canvas
-    const generateQRManually = () => {
-      // ======== FRENTE DO PASSE ========
-      // Background
-      doc.setFillColor(25, 65, 120);
-      doc.rect(0, 0, 85.6, 53.98, "F");
+    // Load the person's photo if available
+    let photoBase64: string | null = null;
+    if (pessoa.foto) {
+      photoBase64 = await loadImageAsBase64(pessoa.foto);
+    }
 
-      // Header strip
-      doc.setFillColor(200, 160, 50);
-      doc.rect(0, 0, 85.6, 12, "F");
+    // Generate QR code image
+    const generateQRImageBase64 = (): Promise<string | null> => {
+      return new Promise((resolve) => {
+        const tempContainer = document.createElement("div");
+        tempContainer.style.position = "absolute";
+        tempContainer.style.left = "-9999px";
+        document.body.appendChild(tempContainer);
 
-      // School name
-      doc.setTextColor(25, 65, 120);
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "bold");
-      doc.text("SGE - SISTEMA DE GESTÃO ESCOLAR", 42.8, 5, { align: "center" });
-      doc.setFontSize(6);
-      doc.text("PASSE DE IDENTIFICAÇÃO", 42.8, 9, { align: "center" });
+        const qrCanvas = document.createElement("canvas");
+        tempContainer.appendChild(qrCanvas);
 
-      // Photo placeholder
+        import("qrcode.react").then(({ QRCodeCanvas }) => {
+          const ReactDOM = require("react-dom/client");
+          const root = ReactDOM.createRoot(qrCanvas);
+          root.render(
+            <QRCodeCanvas
+              value={qrData}
+              size={150}
+              level="H"
+              includeMargin={true}
+              bgColor="#FFFFFF"
+              fgColor="#000000"
+            />
+          );
+
+          setTimeout(() => {
+            const canvas = tempContainer.querySelector("canvas");
+            if (canvas) {
+              resolve(canvas.toDataURL("image/png"));
+            } else {
+              resolve(null);
+            }
+            document.body.removeChild(tempContainer);
+          }, 150);
+        }).catch(() => {
+          document.body.removeChild(tempContainer);
+          resolve(null);
+        });
+      });
+    };
+
+    const qrImageBase64 = await generateQRImageBase64();
+
+    // ======== FRENTE DO PASSE ========
+    // Background
+    doc.setFillColor(25, 65, 120);
+    doc.rect(0, 0, 85.6, 53.98, "F");
+
+    // Header strip
+    doc.setFillColor(200, 160, 50);
+    doc.rect(0, 0, 85.6, 12, "F");
+
+    // School name
+    doc.setTextColor(25, 65, 120);
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.text("SGE - SISTEMA DE GESTÃO ESCOLAR", 42.8, 5, { align: "center" });
+    doc.setFontSize(6);
+    doc.text("PASSE DE IDENTIFICAÇÃO", 42.8, 9, { align: "center" });
+
+    // Photo - add real photo if available, otherwise placeholder
+    if (photoBase64) {
+      try {
+        doc.addImage(photoBase64, "JPEG", 5, 16, 22, 28);
+      } catch (e) {
+        // Fallback to placeholder if image fails
+        doc.setFillColor(200, 200, 200);
+        doc.rect(5, 16, 22, 28, "F");
+        doc.setTextColor(100, 100, 100);
+        doc.setFontSize(6);
+        doc.text("FOTO", 16, 31, { align: "center" });
+      }
+    } else {
       doc.setFillColor(200, 200, 200);
       doc.rect(5, 16, 22, 28, "F");
       doc.setTextColor(100, 100, 100);
       doc.setFontSize(6);
       doc.text("FOTO", 16, 31, { align: "center" });
+    }
 
-      // Person info
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "bold");
-      doc.text(pessoa.nome.toUpperCase(), 30, 20);
+    // Person info
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.text(pessoa.nome.toUpperCase(), 30, 20);
 
-      doc.setFontSize(6);
-      doc.setFont("helvetica", "normal");
-      
-      const tipoLabels = { estudante: "ESTUDANTE", professor: "PROFESSOR(A)", funcionario: "FUNCIONÁRIO(A)" };
-      doc.text(tipoLabels[pessoa.tipo], 30, 25);
-      
-      if (pessoa.classe) {
-        doc.text(`Turma: ${pessoa.classe}`, 30, 30);
+    doc.setFontSize(6);
+    doc.setFont("helvetica", "normal");
+    
+    const tipoLabels = { estudante: "ESTUDANTE", professor: "PROFESSOR(A)", funcionario: "FUNCIONÁRIO(A)" };
+    doc.text(tipoLabels[pessoa.tipo], 30, 25);
+    
+    if (pessoa.classe) {
+      doc.text(`Turma: ${pessoa.classe}`, 30, 30);
+    }
+    if (pessoa.cargo) {
+      doc.text(pessoa.cargo, 30, 30);
+    }
+    if (pessoa.departamento) {
+      doc.text(pessoa.departamento, 30, 35);
+    }
+
+    doc.text(`Nº: ${pessoa.identificador}`, 30, 40);
+
+    // Pass number and validity
+    doc.setFontSize(5);
+    doc.text(`Passe: ${pessoa.passeNumero || "---"}`, 5, 48);
+    doc.text(`Válido até: ${pessoa.passeDataValidade ? new Date(pessoa.passeDataValidade).toLocaleDateString("pt-AO") : "---"}`, 5, 51);
+
+    // QR Code - add real QR code if generated, otherwise fallback
+    doc.setFillColor(255, 255, 255);
+    doc.rect(68, 36, 15, 15, "F");
+    
+    if (qrImageBase64) {
+      try {
+        doc.addImage(qrImageBase64, "PNG", 68.5, 36.5, 14, 14);
+      } catch (e) {
+        // Fallback to pattern if QR fails
+        drawQRFallback();
       }
-      if (pessoa.cargo) {
-        doc.text(pessoa.cargo, 30, 30);
-      }
-      if (pessoa.departamento) {
-        doc.text(pessoa.departamento, 30, 35);
-      }
+    } else {
+      drawQRFallback();
+    }
 
-      doc.text(`Nº: ${pessoa.identificador}`, 30, 40);
-
-      // Pass number and validity
-      doc.setFontSize(5);
-      doc.text(`Passe: ${pessoa.passeNumero || "---"}`, 5, 48);
-      doc.text(`Válido até: ${pessoa.passeDataValidade ? new Date(pessoa.passeDataValidade).toLocaleDateString("pt-AO") : "---"}`, 5, 51);
-
-      // QR Code - Generate a simple QR pattern representation
-      // In production, you would use an actual QR library
-      doc.setFillColor(255, 255, 255);
-      doc.rect(68, 36, 15, 15, "F");
-      
-      // Draw QR code pattern (simplified representation)
+    function drawQRFallback() {
       const qrStartX = 69;
       const qrStartY = 37;
       const moduleSize = 0.5;
       const verificationCode = pessoa.id + pessoa.passeNumero;
       
-      // Create a deterministic pattern based on the verification code
       doc.setFillColor(0, 0, 0);
       for (let row = 0; row < 25; row++) {
         for (let col = 0; col < 25; col++) {
-          // Position markers (corners)
           const isPositionMarker = 
             (row < 7 && col < 7) || 
             (row < 7 && col > 17) || 
             (row > 17 && col < 7);
           
-          // Data pattern based on hash
           const charCode = (verificationCode?.charCodeAt((row * 25 + col) % (verificationCode?.length || 1)) || 0);
           const shouldFill = isPositionMarker ? 
             ((row === 0 || row === 6 || col === 0 || col === 6) || (row >= 2 && row <= 4 && col >= 2 && col <= 4)) && 
@@ -736,82 +780,80 @@ const SecretariaPasses = () => {
           }
         }
       }
-      
-      // Add verification text under QR
-      doc.setFontSize(3);
-      doc.setTextColor(0, 0, 0);
-      doc.text("Verificar", 75.5, 52, { align: "center" });
+    }
+    
+    // Add verification text under QR
+    doc.setFontSize(3);
+    doc.setTextColor(0, 0, 0);
+    doc.text("Verificar", 75.5, 52, { align: "center" });
 
-      // ======== VERSO DO PASSE (Nova página) ========
-      doc.addPage([85.6, 53.98], "landscape");
+    // ======== VERSO DO PASSE (Nova página) ========
+    doc.addPage([85.6, 53.98], "landscape");
 
-      // Background verso
-      doc.setFillColor(240, 240, 245);
-      doc.rect(0, 0, 85.6, 53.98, "F");
+    // Background verso
+    doc.setFillColor(240, 240, 245);
+    doc.rect(0, 0, 85.6, 53.98, "F");
 
-      // Header strip verso
-      doc.setFillColor(25, 65, 120);
-      doc.rect(0, 0, 85.6, 8, "F");
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(6);
-      doc.setFont("helvetica", "bold");
-      doc.text("INFORMAÇÕES IMPORTANTES", 42.8, 5, { align: "center" });
+    // Header strip verso
+    doc.setFillColor(25, 65, 120);
+    doc.rect(0, 0, 85.6, 8, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(6);
+    doc.setFont("helvetica", "bold");
+    doc.text("INFORMAÇÕES IMPORTANTES", 42.8, 5, { align: "center" });
 
-      // Magnetic strip simulation
-      doc.setFillColor(50, 50, 50);
-      doc.rect(0, 10, 85.6, 8, "F");
+    // Magnetic strip simulation
+    doc.setFillColor(50, 50, 50);
+    doc.rect(0, 10, 85.6, 8, "F");
 
-      // Instructions
-      doc.setTextColor(50, 50, 50);
-      doc.setFontSize(5);
-      doc.setFont("helvetica", "normal");
-      
-      const instrucoes = [
-        "1. Este passe é pessoal e intransferível.",
-        "2. Apresente este documento sempre que solicitado.",
-        "3. Em caso de perda, comunique imediatamente à Secretaria.",
-        "4. O uso indevido deste passe é passível de sanções.",
-        "5. Este passe deve ser devolvido no final do vínculo.",
-      ];
+    // Instructions
+    doc.setTextColor(50, 50, 50);
+    doc.setFontSize(5);
+    doc.setFont("helvetica", "normal");
+    
+    const instrucoes = [
+      "1. Este passe é pessoal e intransferível.",
+      "2. Apresente este documento sempre que solicitado.",
+      "3. Em caso de perda, comunique imediatamente à Secretaria.",
+      "4. O uso indevido deste passe é passível de sanções.",
+      "5. Este passe deve ser devolvido no final do vínculo.",
+    ];
 
-      instrucoes.forEach((texto, index) => {
-        doc.text(texto, 5, 24 + (index * 4));
-      });
+    instrucoes.forEach((texto, index) => {
+      doc.text(texto, 5, 24 + (index * 4));
+    });
 
-      // Contact info box
-      doc.setFillColor(25, 65, 120);
-      doc.setDrawColor(25, 65, 120);
-      doc.roundedRect(5, 44, 50, 7, 1, 1, "F");
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(4);
-      doc.text("Secretaria: +244 923 456 789 | secretaria@sge.ao", 30, 48, { align: "center" });
+    // Contact info box
+    doc.setFillColor(25, 65, 120);
+    doc.setDrawColor(25, 65, 120);
+    doc.roundedRect(5, 44, 50, 7, 1, 1, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(4);
+    doc.text("Secretaria: +244 923 456 789 | secretaria@sge.ao", 30, 48, { align: "center" });
 
-      // Barcode placeholder
-      doc.setFillColor(255, 255, 255);
-      doc.rect(60, 44, 22, 7, "F");
-      doc.setDrawColor(0, 0, 0);
-      // Simulate barcode lines
-      for (let i = 0; i < 15; i++) {
-        const x = 62 + (i * 1.2);
-        const width = i % 3 === 0 ? 0.8 : 0.4;
-        doc.setFillColor(0, 0, 0);
-        doc.rect(x, 45, width, 5, "F");
-      }
+    // Barcode placeholder
+    doc.setFillColor(255, 255, 255);
+    doc.rect(60, 44, 22, 7, "F");
+    doc.setDrawColor(0, 0, 0);
+    // Simulate barcode lines
+    for (let i = 0; i < 15; i++) {
+      const x = 62 + (i * 1.2);
+      const width = i % 3 === 0 ? 0.8 : 0.4;
+      doc.setFillColor(0, 0, 0);
+      doc.rect(x, 45, width, 5, "F");
+    }
 
-      // Verification code for manual verification
-      doc.setTextColor(50, 50, 50);
-      doc.setFontSize(4);
-      const verCode = btoa(`${pessoa.id}:${pessoa.passeNumero}`).slice(0, 12).toUpperCase();
-      doc.text(`Código: ${verCode}`, 42.8, 42, { align: "center" });
-      doc.text(`ID: ${pessoa.id} | Emitido: ${pessoa.passeDataEmissao ? new Date(pessoa.passeDataEmissao).toLocaleDateString("pt-AO") : new Date().toLocaleDateString("pt-AO")}`, 42.8, 52, { align: "center" });
+    // Verification code for manual verification
+    doc.setTextColor(50, 50, 50);
+    doc.setFontSize(4);
+    const verCode = btoa(`${pessoa.id}:${pessoa.passeNumero}`).slice(0, 12).toUpperCase();
+    doc.text(`Código: ${verCode}`, 42.8, 42, { align: "center" });
+    doc.text(`ID: ${pessoa.id} | Emitido: ${pessoa.passeDataEmissao ? new Date(pessoa.passeDataEmissao).toLocaleDateString("pt-AO") : new Date().toLocaleDateString("pt-AO")}`, 42.8, 52, { align: "center" });
 
-      doc.save(`passe_${pessoa.id}_${pessoa.nome.replace(/\s+/g, "_")}.pdf`);
-      toast.success("Passe gerado com sucesso!", {
-        description: `PDF do passe de ${pessoa.nome} com QR Code foi descarregado.`,
-      });
-    };
-
-    generateQRManually();
+    doc.save(`passe_${pessoa.id}_${pessoa.nome.replace(/\s+/g, "_")}.pdf`);
+    toast.success("Passe gerado com sucesso!", {
+      description: `PDF do passe de ${pessoa.nome} com QR Code foi descarregado.`,
+    });
   };
 
   const handleImprimirSelecionados = () => {

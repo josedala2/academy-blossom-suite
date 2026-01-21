@@ -201,6 +201,13 @@ export const routePermissions: Record<string, UserRole[]> = {
   "/dashboard/secretaria/passes": ["admin", "secretario"],
 };
 
+// Public routes that don't require authentication
+export const publicRoutes: string[] = [
+  "/",
+  "/login",
+  "/verificar-passe",
+];
+
 // Get filtered navigation based on user role
 export function getFilteredNavigation(userRole: UserRole): NavSection[] {
   return navigationConfig

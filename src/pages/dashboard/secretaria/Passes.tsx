@@ -675,8 +675,12 @@ const SecretariaPasses = () => {
     const qrImageBase64 = await generateQRImageBase64();
 
     // ======== FRENTE DO PASSE ========
-    // Background
-    doc.setFillColor(25, 65, 120);
+    // Background - White for professors, blue for others
+    if (pessoa.tipo === "professor") {
+      doc.setFillColor(255, 255, 255);
+    } else {
+      doc.setFillColor(25, 65, 120);
+    }
     doc.rect(0, 0, 85.6, 53.98, "F");
 
     // Header strip
@@ -711,8 +715,12 @@ const SecretariaPasses = () => {
       doc.text("FOTO", 16, 31, { align: "center" });
     }
 
-    // Person info
-    doc.setTextColor(255, 255, 255);
+    // Person info - Dark text for professors (white background), white for others
+    if (pessoa.tipo === "professor") {
+      doc.setTextColor(25, 65, 120);
+    } else {
+      doc.setTextColor(255, 255, 255);
+    }
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
     doc.text(pessoa.nome.toUpperCase(), 30, 20);
@@ -1211,8 +1219,8 @@ const SecretariaPasses = () => {
                     <CreditCard className="h-3 w-3" /> FRENTE
                   </p>
                   <div className="relative w-full aspect-[1.586/1] rounded-xl overflow-hidden shadow-lg">
-                    {/* Background */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary to-primary/80" />
+                    {/* Background - White for professors, blue gradient for others */}
+                    <div className={`absolute inset-0 ${selectedPessoa.tipo === "professor" ? "bg-white" : "bg-gradient-to-br from-primary to-primary/80"}`} />
                     
                     {/* Header strip */}
                     <div className="absolute top-0 left-0 right-0 h-12 bg-accent flex flex-col items-center justify-center">
@@ -1236,7 +1244,7 @@ const SecretariaPasses = () => {
                       )}
 
                       {/* Info */}
-                      <div className="flex-1 text-white space-y-1">
+                      <div className={`flex-1 space-y-1 ${selectedPessoa.tipo === "professor" ? "text-primary" : "text-white"}`}>
                         <h3 className="font-bold text-sm uppercase">{selectedPessoa.nome}</h3>
                         <p className="text-xs opacity-80">
                           {selectedPessoa.tipo === "estudante" ? "ESTUDANTE" : 
@@ -1265,7 +1273,7 @@ const SecretariaPasses = () => {
                     </div>
 
                     {/* Footer */}
-                    <div className="absolute bottom-0 left-0 right-20 p-2 text-white text-[10px] opacity-70">
+                    <div className={`absolute bottom-0 left-0 right-20 p-2 text-[10px] opacity-70 ${selectedPessoa.tipo === "professor" ? "text-primary" : "text-white"}`}>
                       <p>Passe: {selectedPessoa.passeNumero || "---"}</p>
                       <p>Válido até: {selectedPessoa.passeDataValidade ? new Date(selectedPessoa.passeDataValidade).toLocaleDateString("pt-AO") : "---"}</p>
                     </div>

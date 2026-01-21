@@ -675,11 +675,13 @@ const SecretariaPasses = () => {
     const qrImageBase64 = await generateQRImageBase64();
 
     // ======== FRENTE DO PASSE ========
-    // Background - White for professors, blue for others
+    // Background - White for professors, gray for employees, cyan for students
     if (pessoa.tipo === "professor") {
-      doc.setFillColor(255, 255, 255);
+      doc.setFillColor(255, 255, 255); // White
+    } else if (pessoa.tipo === "funcionario") {
+      doc.setFillColor(128, 128, 128); // Gray
     } else {
-      doc.setFillColor(25, 65, 120);
+      doc.setFillColor(6, 182, 212); // Cyan
     }
     doc.rect(0, 0, 85.6, 53.98, "F");
 
@@ -717,9 +719,11 @@ const SecretariaPasses = () => {
 
     // Person info - Dark text for professors (white background), white for others
     if (pessoa.tipo === "professor") {
-      doc.setTextColor(25, 65, 120);
+      doc.setTextColor(25, 65, 120); // Dark blue text on white
+    } else if (pessoa.tipo === "funcionario") {
+      doc.setTextColor(255, 255, 255); // White text on gray
     } else {
-      doc.setTextColor(255, 255, 255);
+      doc.setTextColor(255, 255, 255); // White text on cyan
     }
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
@@ -1219,8 +1223,14 @@ const SecretariaPasses = () => {
                     <CreditCard className="h-3 w-3" /> FRENTE
                   </p>
                   <div className="relative w-full aspect-[1.586/1] rounded-xl overflow-hidden shadow-lg">
-                    {/* Background - White for professors, blue gradient for others */}
-                    <div className={`absolute inset-0 ${selectedPessoa.tipo === "professor" ? "bg-white" : "bg-gradient-to-br from-primary to-primary/80"}`} />
+                    {/* Background - White for professors, gray for employees, cyan for students */}
+                    <div className={`absolute inset-0 ${
+                      selectedPessoa.tipo === "professor" 
+                        ? "bg-white" 
+                        : selectedPessoa.tipo === "funcionario" 
+                          ? "bg-gray-500" 
+                          : "bg-cyan-500"
+                    }`} />
                     
                     {/* Header strip */}
                     <div className="absolute top-0 left-0 right-0 h-12 bg-accent flex flex-col items-center justify-center">

@@ -918,44 +918,50 @@ const SecretariaPasses = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <Link to="/dashboard/secretaria">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-5 w-5" />
+              <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10">
+                <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">
+              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">
                 Impressão de Passes
               </h1>
-              <p className="text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
                 Gerir e imprimir passes de identificação
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Link to="/dashboard/secretaria/verificacoes">
-              <Button variant="outline">
-                <QrCode className="h-4 w-4 mr-2" />
-                Histórico Verificações
+          <div className="flex flex-wrap gap-2">
+            <Link to="/dashboard/secretaria/verificacoes" className="w-full sm:w-auto">
+              <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                <QrCode className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Histórico Verificações</span>
               </Button>
             </Link>
-            <Button variant="outline" onClick={handleImprimirSelecionados} disabled={selectedPessoas.length === 0}>
-              <Printer className="h-4 w-4 mr-2" />
-              Imprimir Selecionados ({selectedPessoas.length})
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleImprimirSelecionados} 
+              disabled={selectedPessoas.length === 0}
+              className="flex-1 sm:flex-none"
+            >
+              <Printer className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Imprimir</span> ({selectedPessoas.length})
             </Button>
-            <Button onClick={handleEmitirNovoPasse}>
-              <CreditCard className="h-4 w-4 mr-2" />
-              Emitir Passes
+            <Button size="sm" onClick={handleEmitirNovoPasse} className="flex-1 sm:flex-none">
+              <CreditCard className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Emitir Passes</span>
             </Button>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-6 gap-2 sm:gap-4">
           <Card>
             <CardContent className="py-4">
               <div className="flex items-center gap-2">
@@ -1024,27 +1030,26 @@ const SecretariaPasses = () => {
           </Card>
         </div>
 
-        {/* Tabs */}
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TipoPasse | "todos")}>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <TabsList>
-              <TabsTrigger value="todos">Todos</TabsTrigger>
-              <TabsTrigger value="estudante">
-                <GraduationCap className="h-4 w-4 mr-1" />
-                Estudantes
+          <div className="flex flex-col gap-4">
+            <TabsList className="w-full sm:w-auto grid grid-cols-4 sm:flex">
+              <TabsTrigger value="todos" className="text-xs sm:text-sm">Todos</TabsTrigger>
+              <TabsTrigger value="estudante" className="text-xs sm:text-sm">
+                <GraduationCap className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                <span className="hidden sm:inline">Estudantes</span>
               </TabsTrigger>
-              <TabsTrigger value="professor">
-                <Users className="h-4 w-4 mr-1" />
-                Professores
+              <TabsTrigger value="professor" className="text-xs sm:text-sm">
+                <Users className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                <span className="hidden sm:inline">Professores</span>
               </TabsTrigger>
-              <TabsTrigger value="funcionario">
-                <Briefcase className="h-4 w-4 mr-1" />
-                Funcionários
+              <TabsTrigger value="funcionario" className="text-xs sm:text-sm">
+                <Briefcase className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                <span className="hidden sm:inline">Func.</span>
               </TabsTrigger>
             </TabsList>
 
-            <div className="flex gap-2">
-              <div className="relative flex-1 md:w-64">
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Pesquisar..."
@@ -1054,7 +1059,7 @@ const SecretariaPasses = () => {
                 />
               </div>
               <Select value={estadoFilter} onValueChange={setEstadoFilter}>
-                <SelectTrigger className="w-36">
+                <SelectTrigger className="w-full sm:w-36">
                   <SelectValue placeholder="Estado" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1070,69 +1075,73 @@ const SecretariaPasses = () => {
 
           <TabsContent value={activeTab} className="mt-4">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5" />
+              <CardHeader className="pb-2 sm:pb-4">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <CreditCard className="h-4 w-4 sm:h-5 sm:w-5" />
                   Passes ({filteredPessoas.length})
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12">
-                        <Checkbox
-                          checked={selectedPessoas.length === filteredPessoas.length && filteredPessoas.length > 0}
-                          onCheckedChange={handleSelectAll}
-                        />
-                      </TableHead>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Identificador</TableHead>
-                      <TableHead>Detalhe</TableHead>
-                      <TableHead>Nº Passe</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead>Validade</TableHead>
-                      <TableHead className="text-right">Acções</TableHead>
-                    </TableRow>
-                  </TableHeader>
+              <CardContent className="p-2 sm:p-6">
+                <div className="overflow-x-auto -mx-2 sm:mx-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-10 sm:w-12">
+                          <Checkbox
+                            checked={selectedPessoas.length === filteredPessoas.length && filteredPessoas.length > 0}
+                            onCheckedChange={handleSelectAll}
+                          />
+                        </TableHead>
+                        <TableHead className="min-w-[120px]">Nome</TableHead>
+                        <TableHead className="hidden md:table-cell">Tipo</TableHead>
+                        <TableHead className="hidden lg:table-cell">Identificador</TableHead>
+                        <TableHead className="hidden xl:table-cell">Detalhe</TableHead>
+                        <TableHead className="hidden sm:table-cell">Nº Passe</TableHead>
+                        <TableHead>Estado</TableHead>
+                        <TableHead className="hidden md:table-cell">Validade</TableHead>
+                        <TableHead className="text-right">Acções</TableHead>
+                      </TableRow>
+                    </TableHeader>
                   <TableBody>
                     {filteredPessoas.map((pessoa) => (
                       <TableRow key={pessoa.id}>
-                        <TableCell>
+                        <TableCell className="p-2 sm:p-4">
                           <Checkbox
                             checked={selectedPessoas.includes(pessoa.id)}
                             onCheckedChange={(checked) => handleSelectPessoa(pessoa.id, checked as boolean)}
                           />
                         </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
+                        <TableCell className="p-2 sm:p-4">
+                          <div className="flex items-center gap-2 sm:gap-3">
                             {pessoa.foto ? (
                               <img
                                 src={pessoa.foto}
                                 alt={pessoa.nome}
-                                className="h-10 w-10 rounded-full object-cover"
+                                className="h-8 w-8 sm:h-10 sm:w-10 rounded-full object-cover flex-shrink-0"
                               />
                             ) : (
-                              <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                                <User className="h-5 w-5 text-muted-foreground" />
+                              <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                                <User className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                               </div>
                             )}
-                            <span className="font-medium">{pessoa.nome}</span>
+                            <div className="min-w-0">
+                              <span className="font-medium text-sm sm:text-base block truncate">{pessoa.nome}</span>
+                              <span className="text-xs text-muted-foreground md:hidden">{pessoa.tipo}</span>
+                            </div>
                           </div>
                         </TableCell>
-                        <TableCell>{getTipoBadge(pessoa.tipo)}</TableCell>
-                        <TableCell className="font-mono text-sm">{pessoa.identificador}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
+                        <TableCell className="hidden md:table-cell">{getTipoBadge(pessoa.tipo)}</TableCell>
+                        <TableCell className="hidden lg:table-cell font-mono text-xs sm:text-sm">{pessoa.identificador}</TableCell>
+                        <TableCell className="hidden xl:table-cell text-xs sm:text-sm text-muted-foreground">
                           {pessoa.classe || pessoa.cargo || "-"}
                         </TableCell>
-                        <TableCell className="font-mono text-sm">
+                        <TableCell className="hidden sm:table-cell font-mono text-xs sm:text-sm">
                           {pessoa.passeNumero || <span className="text-muted-foreground">---</span>}
                         </TableCell>
-                        <TableCell>{getEstadoBadge(pessoa.passeEstado)}</TableCell>
-                        <TableCell>
+                        <TableCell className="p-2 sm:p-4">{getEstadoBadge(pessoa.passeEstado)}</TableCell>
+                        <TableCell className="hidden md:table-cell">
                           {pessoa.passeDataValidade ? (
-                            <div className="flex items-center gap-1 text-sm">
+                            <div className="flex items-center gap-1 text-xs sm:text-sm">
                               <Calendar className="h-3 w-3 text-muted-foreground" />
                               {new Date(pessoa.passeDataValidade).toLocaleDateString("pt-AO")}
                             </div>
@@ -1140,32 +1149,35 @@ const SecretariaPasses = () => {
                             <span className="text-muted-foreground">---</span>
                           )}
                         </TableCell>
-                        <TableCell>
-                          <div className="flex justify-end gap-1">
+                        <TableCell className="p-2 sm:p-4">
+                          <div className="flex justify-end gap-0.5 sm:gap-1">
                             <Button
                               variant="ghost"
                               size="icon"
+                              className="h-7 w-7 sm:h-8 sm:w-8"
                               title="Capturar Foto"
                               onClick={() => openWebcamModal(pessoa)}
                             >
-                              <Camera className="h-4 w-4" />
+                              <Camera className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="icon"
+                              className="h-7 w-7 sm:h-8 sm:w-8"
                               title="Pré-visualizar"
                               onClick={() => handlePreview(pessoa)}
                             >
-                              <Eye className="h-4 w-4" />
+                              <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="icon"
+                              className="h-7 w-7 sm:h-8 sm:w-8"
                               title="Imprimir Passe"
                               onClick={() => handleImprimirPasse(pessoa)}
                               disabled={pessoa.passeEstado === "pendente"}
                             >
-                              <Printer className="h-4 w-4" />
+                              <Printer className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                             </Button>
                           </div>
                         </TableCell>
@@ -1173,6 +1185,7 @@ const SecretariaPasses = () => {
                     ))}
                   </TableBody>
                 </Table>
+              </div>
               </CardContent>
             </Card>
           </TabsContent>

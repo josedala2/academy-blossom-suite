@@ -179,89 +179,89 @@ const HistoricoVerificacoes = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <Link to="/dashboard/secretaria/passes">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-5 w-5" />
+              <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10">
+                <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">
+              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">
                 Histórico de Verificações
               </h1>
-              <p className="text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
                 Registo de todas as verificações de passes por QR Code
               </p>
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={fetchLogs} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-              Actualizar
+            <Button variant="outline" size="sm" onClick={fetchLogs} disabled={loading}>
+              <RefreshCw className={`h-4 w-4 sm:mr-2 ${loading ? "animate-spin" : ""}`} />
+              <span className="hidden sm:inline">Actualizar</span>
             </Button>
-            <Button onClick={handleExportPDF} disabled={filteredLogs.length === 0}>
-              <Download className="h-4 w-4 mr-2" />
-              Exportar PDF
+            <Button size="sm" onClick={handleExportPDF} disabled={filteredLogs.length === 0}>
+              <Download className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Exportar PDF</span>
             </Button>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-4">
           <Card>
-            <CardContent className="py-4">
+            <CardContent className="py-3 sm:py-4 px-3 sm:px-6">
               <div className="flex items-center gap-2">
-                <History className="h-5 w-5 text-primary" />
+                <History className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                 <div>
-                  <div className="text-2xl font-bold">{stats.total}</div>
-                  <div className="text-xs text-muted-foreground">Total</div>
+                  <div className="text-lg sm:text-2xl font-bold">{stats.total}</div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground">Total</div>
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="py-4">
+            <CardContent className="py-3 sm:py-4 px-3 sm:px-6">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                 <div>
-                  <div className="text-2xl font-bold text-green-600">{stats.valid}</div>
-                  <div className="text-xs text-muted-foreground">Válidos</div>
+                  <div className="text-lg sm:text-2xl font-bold text-green-600">{stats.valid}</div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground">Válidos</div>
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="py-4">
+            <CardContent className="py-3 sm:py-4 px-3 sm:px-6">
               <div className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-yellow-600" />
+                <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600" />
                 <div>
-                  <div className="text-2xl font-bold text-yellow-600">{stats.expired}</div>
-                  <div className="text-xs text-muted-foreground">Expirados</div>
+                  <div className="text-lg sm:text-2xl font-bold text-yellow-600">{stats.expired}</div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground">Expirados</div>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="py-4">
+          <Card className="hidden sm:block">
+            <CardContent className="py-3 sm:py-4 px-3 sm:px-6">
               <div className="flex items-center gap-2">
-                <XCircle className="h-5 w-5 text-red-600" />
+                <XCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
                 <div>
-                  <div className="text-2xl font-bold text-red-600">{stats.invalid}</div>
-                  <div className="text-xs text-muted-foreground">Inválidos</div>
+                  <div className="text-lg sm:text-2xl font-bold text-red-600">{stats.invalid}</div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground">Inválidos</div>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="py-4">
+          <Card className="hidden sm:block">
+            <CardContent className="py-3 sm:py-4 px-3 sm:px-6">
               <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-blue-600" />
+                <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
                 <div>
-                  <div className="text-2xl font-bold text-blue-600">{stats.today}</div>
-                  <div className="text-xs text-muted-foreground">Hoje</div>
+                  <div className="text-lg sm:text-2xl font-bold text-blue-600">{stats.today}</div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground">Hoje</div>
                 </div>
               </div>
             </CardContent>
@@ -277,61 +277,63 @@ const HistoricoVerificacoes = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Pesquisar por ID, nº passe, nome ou local..."
+                  placeholder="Pesquisar..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
                 />
               </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Estado" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos Estados</SelectItem>
-                  <SelectItem value="valid">Válido</SelectItem>
-                  <SelectItem value="expired">Expirado</SelectItem>
-                  <SelectItem value="invalid">Inválido</SelectItem>
-                  <SelectItem value="error">Erro</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={tipoFilter} onValueChange={setTipoFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos Tipos</SelectItem>
-                  <SelectItem value="estudante">Estudante</SelectItem>
-                  <SelectItem value="professor">Professor</SelectItem>
-                  <SelectItem value="funcionario">Funcionário</SelectItem>
-                </SelectContent>
-              </Select>
-              <Input
-                type="date"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-                className="w-40"
-              />
+              <div className="flex gap-2 flex-wrap sm:flex-nowrap">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="flex-1 sm:w-32">
+                    <SelectValue placeholder="Estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos Estados</SelectItem>
+                    <SelectItem value="valid">Válido</SelectItem>
+                    <SelectItem value="expired">Expirado</SelectItem>
+                    <SelectItem value="invalid">Inválido</SelectItem>
+                    <SelectItem value="error">Erro</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={tipoFilter} onValueChange={setTipoFilter}>
+                  <SelectTrigger className="flex-1 sm:w-32">
+                    <SelectValue placeholder="Tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos Tipos</SelectItem>
+                    <SelectItem value="estudante">Estudante</SelectItem>
+                    <SelectItem value="professor">Professor</SelectItem>
+                    <SelectItem value="funcionario">Funcionário</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input
+                  type="date"
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="flex-1 sm:w-36"
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Table */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <History className="h-5 w-5" />
+          <CardHeader className="pb-2 sm:pb-4">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <History className="h-4 w-4 sm:h-5 sm:w-5" />
               Verificações ({filteredLogs.length})
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-xs sm:text-sm">
               Lista de todas as verificações de passes via QR Code
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-2 sm:p-6">
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -342,17 +344,17 @@ const HistoricoVerificacoes = () => {
                 <p>Nenhuma verificação encontrada</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto -mx-2 sm:mx-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Data/Hora</TableHead>
-                      <TableHead>ID Passe</TableHead>
-                      <TableHead>Nº Passe</TableHead>
-                      <TableHead>Tipo</TableHead>
+                      <TableHead className="min-w-[130px]">Data/Hora</TableHead>
+                      <TableHead className="hidden sm:table-cell">ID Passe</TableHead>
+                      <TableHead className="hidden lg:table-cell">Nº Passe</TableHead>
+                      <TableHead className="hidden md:table-cell">Tipo</TableHead>
                       <TableHead>Estado</TableHead>
-                      <TableHead>Local</TableHead>
-                      <TableHead>IP</TableHead>
+                      <TableHead className="hidden lg:table-cell">Local</TableHead>
+                      <TableHead className="hidden xl:table-cell">IP</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -360,21 +362,26 @@ const HistoricoVerificacoes = () => {
                       const TipoIcon = getTipoIcon(log.person_type);
                       return (
                         <TableRow key={log.id}>
-                          <TableCell>
-                            <div className="flex items-center gap-1 text-sm">
-                              <Clock className="h-3 w-3 text-muted-foreground" />
-                              {new Date(log.verified_at).toLocaleString("pt-AO")}
+                          <TableCell className="p-2 sm:p-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-1 text-xs sm:text-sm">
+                              <Clock className="h-3 w-3 text-muted-foreground hidden sm:block" />
+                              <span>{new Date(log.verified_at).toLocaleDateString("pt-AO")}</span>
+                              <span className="text-muted-foreground">{new Date(log.verified_at).toLocaleTimeString("pt-AO", { hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
+                            {/* Mobile: show ID below date */}
+                            <div className="text-xs text-muted-foreground sm:hidden mt-1 font-mono">
+                              {log.pass_id}
                             </div>
                           </TableCell>
-                          <TableCell className="font-mono text-sm">
+                          <TableCell className="hidden sm:table-cell font-mono text-xs sm:text-sm p-2 sm:p-4">
                             {log.pass_id}
                           </TableCell>
-                          <TableCell className="font-mono text-sm">
+                          <TableCell className="hidden lg:table-cell font-mono text-xs sm:text-sm p-2 sm:p-4">
                             {log.pass_number || "-"}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="hidden md:table-cell p-2 sm:p-4">
                             {log.person_type ? (
-                              <Badge variant="outline" className="flex items-center gap-1 w-fit">
+                              <Badge variant="outline" className="flex items-center gap-1 w-fit text-xs">
                                 <TipoIcon className="h-3 w-3" />
                                 {getTipoLabel(log.person_type)}
                               </Badge>
@@ -382,10 +389,10 @@ const HistoricoVerificacoes = () => {
                               "-"
                             )}
                           </TableCell>
-                          <TableCell>{getStatusBadge(log.verification_status)}</TableCell>
-                          <TableCell>
+                          <TableCell className="p-2 sm:p-4">{getStatusBadge(log.verification_status)}</TableCell>
+                          <TableCell className="hidden lg:table-cell p-2 sm:p-4">
                             {log.location_name ? (
-                              <div className="flex items-center gap-1 text-sm max-w-[200px] truncate" title={log.location_name}>
+                              <div className="flex items-center gap-1 text-xs sm:text-sm max-w-[150px] lg:max-w-[200px] truncate" title={log.location_name}>
                                 <MapPin className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                                 {log.location_name}
                               </div>
@@ -393,7 +400,7 @@ const HistoricoVerificacoes = () => {
                               <span className="text-muted-foreground">-</span>
                             )}
                           </TableCell>
-                          <TableCell className="font-mono text-xs text-muted-foreground">
+                          <TableCell className="hidden xl:table-cell font-mono text-xs text-muted-foreground p-2 sm:p-4">
                             {log.ip_address || "-"}
                           </TableCell>
                         </TableRow>

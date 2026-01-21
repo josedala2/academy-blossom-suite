@@ -67,6 +67,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Cropper, { Area, Point } from "react-easy-crop";
 import { QRCodeSVG, QRCodeCanvas } from "qrcode.react";
+import logoSGE from "@/assets/logo-sge.png";
 
 // Tipos
 type TipoPasse = "estudante" | "professor" | "funcionario";
@@ -689,13 +690,23 @@ const SecretariaPasses = () => {
     doc.setFillColor(200, 160, 50);
     doc.rect(0, 0, 85.6, 12, "F");
 
-    // School name
+    // Logo - load and add to header
+    try {
+      const logoBase64 = await loadImageAsBase64(logoSGE);
+      if (logoBase64) {
+        doc.addImage(logoBase64, "PNG", 2, 1, 10, 10);
+      }
+    } catch (e) {
+      // Continue without logo if it fails
+    }
+
+    // School name (shifted right to accommodate logo)
     doc.setTextColor(25, 65, 120);
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
-    doc.text("SGE - SISTEMA DE GESTÃO ESCOLAR", 42.8, 5, { align: "center" });
+    doc.text("SGE - SISTEMA DE GESTÃO ESCOLAR", 48, 5, { align: "center" });
     doc.setFontSize(6);
-    doc.text("PASSE DE IDENTIFICAÇÃO", 42.8, 9, { align: "center" });
+    doc.text("PASSE DE IDENTIFICAÇÃO", 48, 9, { align: "center" });
 
     // Photo - add real photo if available, otherwise placeholder (25% larger: 27.5x35)
     if (photoBase64) {
@@ -1232,10 +1243,13 @@ const SecretariaPasses = () => {
                           : "bg-cyan-500"
                     }`} />
                     
-                    {/* Header strip */}
-                    <div className="absolute top-0 left-0 right-0 h-12 bg-accent flex flex-col items-center justify-center">
-                      <span className="text-primary font-bold text-sm">SGE - SISTEMA DE GESTÃO ESCOLAR</span>
-                      <span className="text-primary text-xs">PASSE DE IDENTIFICAÇÃO</span>
+                    {/* Header strip with logo */}
+                    <div className="absolute top-0 left-0 right-0 h-12 bg-accent flex items-center px-2 gap-2">
+                      <img src={logoSGE} alt="Logo SGE" className="h-9 w-9 object-contain" />
+                      <div className="flex flex-col items-center flex-1">
+                        <span className="text-primary font-bold text-sm">SGE - SISTEMA DE GESTÃO ESCOLAR</span>
+                        <span className="text-primary text-xs">PASSE DE IDENTIFICAÇÃO</span>
+                      </div>
                     </div>
 
                     {/* Content */}

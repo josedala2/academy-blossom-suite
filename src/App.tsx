@@ -39,6 +39,7 @@ import SecretariaRelatorios from "./pages/dashboard/secretaria/Relatorios";
 import SecretariaRastreioDocumentos from "./pages/dashboard/secretaria/RastreioDocumentos";
 import SecretariaPasses from "./pages/dashboard/secretaria/Passes";
 import VerificarPasse from "./pages/VerificarPasse";
+import HistoricoVerificacoes from "./pages/dashboard/secretaria/HistoricoVerificacoes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -196,6 +197,11 @@ const App = () => (
             <Route path="/dashboard/secretaria/passes" element={
               <ProtectedRoute allowedRoles={routePermissions["/dashboard/secretaria/passes"]}>
                 <SecretariaPasses />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/secretaria/verificacoes" element={
+              <ProtectedRoute allowedRoles={routePermissions["/dashboard/secretaria/passes"]}>
+                <HistoricoVerificacoes />
               </ProtectedRoute>
             } />
             

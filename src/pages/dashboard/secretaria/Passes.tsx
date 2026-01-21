@@ -937,6 +937,12 @@ const SecretariaPasses = () => {
             </div>
           </div>
           <div className="flex gap-2">
+            <Link to="/dashboard/secretaria/verificacoes">
+              <Button variant="outline">
+                <QrCode className="h-4 w-4 mr-2" />
+                Histórico Verificações
+              </Button>
+            </Link>
             <Button variant="outline" onClick={handleImprimirSelecionados} disabled={selectedPessoas.length === 0}>
               <Printer className="h-4 w-4 mr-2" />
               Imprimir Selecionados ({selectedPessoas.length})

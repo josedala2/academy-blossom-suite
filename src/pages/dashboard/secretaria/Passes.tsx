@@ -748,28 +748,29 @@ const SecretariaPasses = () => {
     }
     doc.rect(0, 0, 85.6, 53.98, "F");
 
-    // Header strip
+    // Header strip (increased height for larger logo)
     doc.setFillColor(200, 160, 50);
-    doc.rect(0, 0, 85.6, 12, "F");
+    doc.rect(0, 0, 85.6, 14, "F");
 
     // Logo - load and add to header (use custom logo if set, otherwise default)
+    // Increased size: 12x12mm positioned at (1, 1)
     try {
       const logoToUse = customLogo || logoSGE;
       const logoBase64 = await loadImageAsBase64(logoToUse);
       if (logoBase64) {
-        doc.addImage(logoBase64, "PNG", 2, 1, 10, 10);
+        doc.addImage(logoBase64, "PNG", 1, 1, 12, 12);
       }
     } catch (e) {
       // Continue without logo if it fails
     }
 
-    // School name (shifted right to accommodate logo)
+    // School name (shifted right to accommodate larger logo)
     doc.setTextColor(25, 65, 120);
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
-    doc.text("SGE - SISTEMA DE GESTÃO ESCOLAR", 48, 5, { align: "center" });
+    doc.text("SGE - SISTEMA DE GESTÃO ESCOLAR", 50, 5.5, { align: "center" });
     doc.setFontSize(6);
-    doc.text("PASSE DE IDENTIFICAÇÃO", 48, 9, { align: "center" });
+    doc.text("PASSE DE IDENTIFICAÇÃO", 50, 10, { align: "center" });
 
     // Photo - add real photo if available, otherwise placeholder (25% larger: 27.5x35)
     if (photoBase64) {
@@ -1315,17 +1316,21 @@ const SecretariaPasses = () => {
                           : "bg-cyan-500"
                     }`} />
                     
-                    {/* Header strip with logo */}
-                    <div className="absolute top-0 left-0 right-0 h-12 bg-accent flex items-center px-2 gap-2">
-                      <img src={customLogo || logoSGE} alt="Logo" className="h-9 w-9 object-contain" />
+                    {/* Header strip with logo - increased height */}
+                    <div className="absolute top-0 left-0 right-0 h-14 bg-accent flex items-center px-3 gap-3">
+                      <img 
+                        src={customLogo || logoSGE} 
+                        alt="Logo" 
+                        className="h-11 w-11 object-contain drop-shadow-sm" 
+                      />
                       <div className="flex flex-col items-center flex-1">
                         <span className="text-primary font-bold text-sm">SGE - SISTEMA DE GESTÃO ESCOLAR</span>
                         <span className="text-primary text-xs">PASSE DE IDENTIFICAÇÃO</span>
                       </div>
                     </div>
 
-                    {/* Content */}
-                    <div className="absolute top-14 left-0 right-0 bottom-0 p-4 flex gap-4">
+                    {/* Content - adjusted top position for larger header */}
+                    <div className="absolute top-16 left-0 right-0 bottom-0 p-4 flex gap-4">
                       {/* Photo - 25% larger */}
                       {selectedPessoa.foto ? (
                         <img

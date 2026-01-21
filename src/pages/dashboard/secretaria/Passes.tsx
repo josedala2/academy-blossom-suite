@@ -60,6 +60,9 @@ import {
   Contrast,
   Upload,
   ImagePlus,
+  Settings,
+  Trash2,
+  Image as ImageIcon,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -258,6 +261,11 @@ const SecretariaPasses = () => {
   const [brightness, setBrightness] = useState(100);
   const [contrast, setContrast] = useState(100);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  
+  // Custom logo states
+  const [customLogo, setCustomLogo] = useState<string | null>(null);
+  const [logoSettingsOpen, setLogoSettingsOpen] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -511,6 +519,60 @@ const SecretariaPasses = () => {
     fileInputRef.current?.click();
   }, []);
 
+  // Custom logo upload handler
+  const handleLogoUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Formato de ficheiro inválido", {
+        description: "Apenas são aceites imagens JPG, PNG ou WEBP.",
+      });
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error("Ficheiro muito grande", {
+        description: "O tamanho máximo permitido para o logotipo é 2MB.",
+      });
+      return;
+    }
+
+    // Read file and set as custom logo
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      setCustomLogo(result);
+      toast.success("Logotipo personalizado carregado!", {
+        description: "O novo logotipo será usado nos passes.",
+      });
+    };
+    reader.onerror = () => {
+      toast.error("Erro ao ler o ficheiro", {
+        description: "Tente novamente com outro ficheiro.",
+      });
+    };
+    reader.readAsDataURL(file);
+
+    // Reset input so same file can be selected again
+    event.target.value = "";
+  }, []);
+
+  const removeCustomLogo = useCallback(() => {
+    setCustomLogo(null);
+    toast.success("Logotipo personalizado removido", {
+      description: "O logotipo padrão do sistema será usado.",
+    });
+  }, []);
+
+  const triggerLogoUpload = useCallback(() => {
+    logoInputRef.current?.click();
+  }, []);
+
   // Auto-start webcam when modal opens
   useEffect(() => {
     if (webcamModalOpen && !capturedPhoto) {
@@ -690,9 +752,10 @@ const SecretariaPasses = () => {
     doc.setFillColor(200, 160, 50);
     doc.rect(0, 0, 85.6, 12, "F");
 
-    // Logo - load and add to header
+    // Logo - load and add to header (use custom logo if set, otherwise default)
     try {
-      const logoBase64 = await loadImageAsBase64(logoSGE);
+      const logoToUse = customLogo || logoSGE;
+      const logoBase64 = await loadImageAsBase64(logoToUse);
       if (logoBase64) {
         doc.addImage(logoBase64, "PNG", 2, 1, 10, 10);
       }
@@ -960,6 +1023,15 @@ const SecretariaPasses = () => {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setLogoSettingsOpen(true)}
+              className="flex-1 sm:flex-none"
+            >
+              <Settings className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Logotipo</span>
+            </Button>
             <Link to="/dashboard/secretaria/verificacoes" className="w-full sm:w-auto">
               <Button variant="outline" size="sm" className="w-full sm:w-auto">
                 <QrCode className="h-4 w-4 sm:mr-2" />
@@ -1245,7 +1317,7 @@ const SecretariaPasses = () => {
                     
                     {/* Header strip with logo */}
                     <div className="absolute top-0 left-0 right-0 h-12 bg-accent flex items-center px-2 gap-2">
-                      <img src={logoSGE} alt="Logo SGE" className="h-9 w-9 object-contain" />
+                      <img src={customLogo || logoSGE} alt="Logo" className="h-9 w-9 object-contain" />
                       <div className="flex flex-col items-center flex-1">
                         <span className="text-primary font-bold text-sm">SGE - SISTEMA DE GESTÃO ESCOLAR</span>
                         <span className="text-primary text-xs">PASSE DE IDENTIFICAÇÃO</span>
@@ -1687,6 +1759,91 @@ const SecretariaPasses = () => {
               </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Logo Settings Modal */}
+      <Dialog open={logoSettingsOpen} onOpenChange={setLogoSettingsOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ImageIcon className="h-5 w-5" />
+              Configurar Logotipo do Passe
+            </DialogTitle>
+            <DialogDescription>
+              Carregue um logotipo personalizado para usar nos passes de identificação
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Hidden file input for logo */}
+          <input
+            ref={logoInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={handleLogoUpload}
+          />
+
+          <div className="space-y-4">
+            {/* Current Logo Preview */}
+            <div className="flex flex-col items-center gap-4 p-6 bg-muted/50 rounded-lg">
+              <div className="relative">
+                <div className="w-24 h-24 bg-accent rounded-lg flex items-center justify-center overflow-hidden shadow-md">
+                  <img 
+                    src={customLogo || logoSGE} 
+                    alt="Logotipo actual" 
+                    className="w-20 h-20 object-contain"
+                  />
+                </div>
+                {customLogo && (
+                  <Badge className="absolute -top-2 -right-2 bg-green-600">
+                    Personalizado
+                  </Badge>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground text-center">
+                {customLogo ? "Logotipo personalizado em uso" : "Logotipo padrão do sistema em uso"}
+              </p>
+            </div>
+
+            {/* Upload Instructions */}
+            <div className="text-sm text-muted-foreground space-y-1">
+              <p className="font-medium">Requisitos da imagem:</p>
+              <ul className="list-disc list-inside space-y-0.5 text-xs">
+                <li>Formatos aceites: JPG, PNG ou WEBP</li>
+                <li>Tamanho máximo: 2MB</li>
+                <li>Recomendado: imagem quadrada (ex: 200x200px)</li>
+                <li>Fundo transparente recomendado (PNG)</li>
+              </ul>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={triggerLogoUpload}
+                className="flex-1"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Carregar Novo Logotipo
+              </Button>
+              {customLogo && (
+                <Button 
+                  variant="destructive" 
+                  onClick={removeCustomLogo}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Remover
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLogoSettingsOpen(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </DashboardLayout>

@@ -63,6 +63,7 @@ import {
   Settings,
   Trash2,
   Image as ImageIcon,
+  Palette,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -270,6 +271,46 @@ const SecretariaPasses = () => {
   const [contactPhone, setContactPhone] = useState("+244 923 456 789");
   const [contactEmail, setContactEmail] = useState("secretaria@sge.ao");
   const logoInputRef = useRef<HTMLInputElement>(null);
+
+  // Custom colors per type - { background, header, text, headerText }
+  interface PassColors {
+    background: string;
+    header: string;
+    text: string;
+    headerText: string;
+  }
+  
+  const defaultColors: Record<TipoPasse, PassColors> = {
+    estudante: { background: "#06B6D4", header: "#C8A032", text: "#FFFFFF", headerText: "#194178" },
+    professor: { background: "#FFFFFF", header: "#C8A032", text: "#194178", headerText: "#194178" },
+    funcionario: { background: "#808080", header: "#C8A032", text: "#FFFFFF", headerText: "#194178" },
+  };
+  
+  const [passColors, setPassColors] = useState<Record<TipoPasse, PassColors>>(defaultColors);
+
+  const updatePassColor = (tipo: TipoPasse, field: keyof PassColors, value: string) => {
+    setPassColors(prev => ({
+      ...prev,
+      [tipo]: { ...prev[tipo], [field]: value }
+    }));
+  };
+
+  const resetColorsToDefault = (tipo: TipoPasse) => {
+    setPassColors(prev => ({
+      ...prev,
+      [tipo]: defaultColors[tipo]
+    }));
+  };
+
+  // Helper to convert hex to RGB
+  const hexToRgb = (hex: string): { r: number; g: number; b: number } => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : { r: 255, g: 255, b: 255 };
+  };
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -742,18 +783,14 @@ const SecretariaPasses = () => {
     const qrImageBase64 = await generateQRImageBase64();
 
     // ======== FRENTE DO PASSE ========
-    // Background - White for professors, gray for employees, cyan for students
-    if (pessoa.tipo === "professor") {
-      doc.setFillColor(255, 255, 255); // White
-    } else if (pessoa.tipo === "funcionario") {
-      doc.setFillColor(128, 128, 128); // Gray
-    } else {
-      doc.setFillColor(6, 182, 212); // Cyan
-    }
+    // Background - Use custom colors per type
+    const bgColor = hexToRgb(passColors[pessoa.tipo].background);
+    doc.setFillColor(bgColor.r, bgColor.g, bgColor.b);
     doc.rect(0, 0, 85.6, 53.98, "F");
 
-    // Header strip (increased height for larger logo)
-    doc.setFillColor(200, 160, 50);
+    // Header strip (increased height for larger logo) - Use custom header color
+    const headerColor = hexToRgb(passColors[pessoa.tipo].header);
+    doc.setFillColor(headerColor.r, headerColor.g, headerColor.b);
     doc.rect(0, 0, 85.6, 14, "F");
 
     // Logo - load and add to header (use custom logo if set, otherwise default)
@@ -768,8 +805,9 @@ const SecretariaPasses = () => {
       // Continue without logo if it fails
     }
 
-    // School name (shifted right to accommodate larger logo)
-    doc.setTextColor(25, 65, 120);
+    // School name (shifted right to accommodate larger logo) - Use custom header text color
+    const headerTextColor = hexToRgb(passColors[pessoa.tipo].headerText);
+    doc.setTextColor(headerTextColor.r, headerTextColor.g, headerTextColor.b);
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
     doc.text(institutionName, 50, 5.5, { align: "center" });
@@ -796,14 +834,9 @@ const SecretariaPasses = () => {
       doc.text("FOTO", 18.75, 32, { align: "center" });
     }
 
-    // Person info - Dark text for professors (white background), white for others
-    if (pessoa.tipo === "professor") {
-      doc.setTextColor(25, 65, 120); // Dark blue text on white
-    } else if (pessoa.tipo === "funcionario") {
-      doc.setTextColor(255, 255, 255); // White text on gray
-    } else {
-      doc.setTextColor(255, 255, 255); // White text on cyan
-    }
+    // Person info - Use custom text color per type
+    const textColor = hexToRgb(passColors[pessoa.tipo].text);
+    doc.setTextColor(textColor.r, textColor.g, textColor.b);
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
     doc.text(pessoa.nome.toUpperCase(), 35, 20);
@@ -1311,25 +1344,31 @@ const SecretariaPasses = () => {
                     <CreditCard className="h-3 w-3" /> FRENTE
                   </p>
                   <div className="relative w-full aspect-[1.586/1] rounded-xl overflow-hidden shadow-lg">
-                    {/* Background - White for professors, gray for employees, cyan for students */}
-                    <div className={`absolute inset-0 ${
-                      selectedPessoa.tipo === "professor" 
-                        ? "bg-white" 
-                        : selectedPessoa.tipo === "funcionario" 
-                          ? "bg-gray-500" 
-                          : "bg-cyan-500"
-                    }`} />
+                    {/* Background - Use custom colors */}
+                    <div 
+                      className="absolute inset-0" 
+                      style={{ backgroundColor: passColors[selectedPessoa.tipo].background }}
+                    />
                     
                     {/* Header strip with logo - increased height */}
-                    <div className="absolute top-0 left-0 right-0 h-14 bg-accent flex items-center px-3 gap-3">
+                    <div 
+                      className="absolute top-0 left-0 right-0 h-14 flex items-center px-3 gap-3"
+                      style={{ backgroundColor: passColors[selectedPessoa.tipo].header }}
+                    >
                       <img 
                         src={customLogo || logoSGE} 
                         alt="Logo" 
                         className="h-11 w-11 object-contain drop-shadow-sm" 
                       />
                       <div className="flex flex-col items-center flex-1">
-                        <span className="text-primary font-bold text-sm">{institutionName}</span>
-                        <span className="text-primary text-xs">{institutionSubtitle}</span>
+                        <span 
+                          className="font-bold text-sm"
+                          style={{ color: passColors[selectedPessoa.tipo].headerText }}
+                        >{institutionName}</span>
+                        <span 
+                          className="text-xs"
+                          style={{ color: passColors[selectedPessoa.tipo].headerText }}
+                        >{institutionSubtitle}</span>
                       </div>
                     </div>
 
@@ -1348,8 +1387,11 @@ const SecretariaPasses = () => {
                         </div>
                       )}
 
-                      {/* Info */}
-                      <div className={`flex-1 space-y-1 ${selectedPessoa.tipo === "professor" ? "text-primary" : "text-white"}`}>
+                      {/* Info - Use custom text color */}
+                      <div 
+                        className="flex-1 space-y-1"
+                        style={{ color: passColors[selectedPessoa.tipo].text }}
+                      >
                         <h3 className="font-bold text-sm uppercase">{selectedPessoa.nome}</h3>
                         <p className="text-xs opacity-80">
                           {selectedPessoa.tipo === "estudante" ? "ESTUDANTE" : 
@@ -1377,8 +1419,11 @@ const SecretariaPasses = () => {
                       </div>
                     </div>
 
-                    {/* Footer */}
-                    <div className={`absolute bottom-0 left-0 right-20 p-2 text-[10px] opacity-70 ${selectedPessoa.tipo === "professor" ? "text-primary" : "text-white"}`}>
+                    {/* Footer - Use custom text color */}
+                    <div 
+                      className="absolute bottom-0 left-0 right-20 p-2 text-[10px] opacity-70"
+                      style={{ color: passColors[selectedPessoa.tipo].text }}
+                    >
                       <p>Passe: {selectedPessoa.passeNumero || "---"}</p>
                       <p>Válido até: {selectedPessoa.passeDataValidade ? new Date(selectedPessoa.passeDataValidade).toLocaleDateString("pt-AO") : "---"}</p>
                     </div>
@@ -1911,9 +1956,133 @@ const SecretariaPasses = () => {
               </div>
             </div>
 
+            {/* Colors Per Type Section */}
+            <div className="space-y-3">
+              <h4 className="font-medium text-sm flex items-center gap-2">
+                <Palette className="h-4 w-4" />
+                Cores por Tipo de Utilizador
+              </h4>
+              <div className="space-y-4">
+                {(["estudante", "professor", "funcionario"] as TipoPasse[]).map((tipo) => {
+                  const tipoLabels = { estudante: "Estudante", professor: "Professor", funcionario: "Funcionário" };
+                  const TipoIcon = tipo === "estudante" ? GraduationCap : tipo === "professor" ? Users : Briefcase;
+                  return (
+                    <div key={tipo} className="p-3 bg-muted/50 rounded-lg space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium flex items-center gap-2">
+                          <TipoIcon className="h-4 w-4" />
+                          {tipoLabels[tipo]}
+                        </span>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => resetColorsToDefault(tipo)}
+                          className="text-xs h-7"
+                        >
+                          <RotateCcw className="h-3 w-3 mr-1" />
+                          Repor
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <label className="text-xs text-muted-foreground">Fundo</label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="color"
+                              value={passColors[tipo].background}
+                              onChange={(e) => updatePassColor(tipo, "background", e.target.value)}
+                              className="w-8 h-8 rounded cursor-pointer border-0"
+                            />
+                            <Input
+                              value={passColors[tipo].background}
+                              onChange={(e) => updatePassColor(tipo, "background", e.target.value)}
+                              className="h-8 text-xs font-mono flex-1"
+                              maxLength={7}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs text-muted-foreground">Cabeçalho</label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="color"
+                              value={passColors[tipo].header}
+                              onChange={(e) => updatePassColor(tipo, "header", e.target.value)}
+                              className="w-8 h-8 rounded cursor-pointer border-0"
+                            />
+                            <Input
+                              value={passColors[tipo].header}
+                              onChange={(e) => updatePassColor(tipo, "header", e.target.value)}
+                              className="h-8 text-xs font-mono flex-1"
+                              maxLength={7}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs text-muted-foreground">Texto</label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="color"
+                              value={passColors[tipo].text}
+                              onChange={(e) => updatePassColor(tipo, "text", e.target.value)}
+                              className="w-8 h-8 rounded cursor-pointer border-0"
+                            />
+                            <Input
+                              value={passColors[tipo].text}
+                              onChange={(e) => updatePassColor(tipo, "text", e.target.value)}
+                              className="h-8 text-xs font-mono flex-1"
+                              maxLength={7}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs text-muted-foreground">Texto Cabeçalho</label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="color"
+                              value={passColors[tipo].headerText}
+                              onChange={(e) => updatePassColor(tipo, "headerText", e.target.value)}
+                              className="w-8 h-8 rounded cursor-pointer border-0"
+                            />
+                            <Input
+                              value={passColors[tipo].headerText}
+                              onChange={(e) => updatePassColor(tipo, "headerText", e.target.value)}
+                              className="h-8 text-xs font-mono flex-1"
+                              maxLength={7}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      {/* Mini Preview */}
+                      <div 
+                        className="h-10 rounded flex items-center px-2 gap-2"
+                        style={{ backgroundColor: passColors[tipo].background }}
+                      >
+                        <div 
+                          className="h-6 px-2 rounded flex items-center text-[10px] font-bold"
+                          style={{ 
+                            backgroundColor: passColors[tipo].header,
+                            color: passColors[tipo].headerText 
+                          }}
+                        >
+                          SGE
+                        </div>
+                        <span 
+                          className="text-xs font-medium"
+                          style={{ color: passColors[tipo].text }}
+                        >
+                          {tipoLabels[tipo]}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Preview Section */}
             <div className="space-y-3">
-              <h4 className="font-medium text-sm">Pré-visualização</h4>
+              <h4 className="font-medium text-sm">Pré-visualização Geral</h4>
               <div className="p-3 bg-accent rounded-lg">
                 <div className="flex items-center gap-2">
                   <img 

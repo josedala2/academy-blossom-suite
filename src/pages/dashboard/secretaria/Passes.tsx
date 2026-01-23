@@ -262,9 +262,13 @@ const SecretariaPasses = () => {
   const [contrast, setContrast] = useState(100);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   
-  // Custom logo states
+  // Custom branding states
   const [customLogo, setCustomLogo] = useState<string | null>(null);
-  const [logoSettingsOpen, setLogoSettingsOpen] = useState(false);
+  const [brandingSettingsOpen, setBrandingSettingsOpen] = useState(false);
+  const [institutionName, setInstitutionName] = useState("SGE - SISTEMA DE GESTÃO ESCOLAR");
+  const [institutionSubtitle, setInstitutionSubtitle] = useState("PASSE DE IDENTIFICAÇÃO");
+  const [contactPhone, setContactPhone] = useState("+244 923 456 789");
+  const [contactEmail, setContactEmail] = useState("secretaria@sge.ao");
   const logoInputRef = useRef<HTMLInputElement>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -768,9 +772,9 @@ const SecretariaPasses = () => {
     doc.setTextColor(25, 65, 120);
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
-    doc.text("SGE - SISTEMA DE GESTÃO ESCOLAR", 50, 5.5, { align: "center" });
+    doc.text(institutionName, 50, 5.5, { align: "center" });
     doc.setFontSize(6);
-    doc.text("PASSE DE IDENTIFICAÇÃO", 50, 10, { align: "center" });
+    doc.text(institutionSubtitle, 50, 10, { align: "center" });
 
     // Photo - add real photo if available, otherwise placeholder (25% larger: 27.5x35)
     if (photoBase64) {
@@ -916,7 +920,7 @@ const SecretariaPasses = () => {
     doc.roundedRect(5, 44, 50, 7, 1, 1, "F");
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(4);
-    doc.text("Secretaria: +244 923 456 789 | secretaria@sge.ao", 30, 48, { align: "center" });
+    doc.text(`Secretaria: ${contactPhone} | ${contactEmail}`, 30, 48, { align: "center" });
 
     // Barcode placeholder
     doc.setFillColor(255, 255, 255);
@@ -1027,11 +1031,11 @@ const SecretariaPasses = () => {
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={() => setLogoSettingsOpen(true)}
+              onClick={() => setBrandingSettingsOpen(true)}
               className="flex-1 sm:flex-none"
             >
               <Settings className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Logotipo</span>
+              <span className="hidden sm:inline">Personalizar</span>
             </Button>
             <Link to="/dashboard/secretaria/verificacoes" className="w-full sm:w-auto">
               <Button variant="outline" size="sm" className="w-full sm:w-auto">
@@ -1324,8 +1328,8 @@ const SecretariaPasses = () => {
                         className="h-11 w-11 object-contain drop-shadow-sm" 
                       />
                       <div className="flex flex-col items-center flex-1">
-                        <span className="text-primary font-bold text-sm">SGE - SISTEMA DE GESTÃO ESCOLAR</span>
-                        <span className="text-primary text-xs">PASSE DE IDENTIFICAÇÃO</span>
+                        <span className="text-primary font-bold text-sm">{institutionName}</span>
+                        <span className="text-primary text-xs">{institutionSubtitle}</span>
                       </div>
                     </div>
 
@@ -1408,7 +1412,7 @@ const SecretariaPasses = () => {
                       {/* Contact info */}
                       <div className="absolute bottom-8 left-3 right-3 flex justify-between items-end">
                         <div className="bg-primary text-white text-[8px] px-2 py-1 rounded">
-                          Secretaria: +244 923 456 789 | secretaria@sge.ao
+                          Secretaria: {contactPhone} | {contactEmail}
                         </div>
                         {/* Barcode simulation */}
                         <div className="flex gap-[1px]">
@@ -1767,16 +1771,16 @@ const SecretariaPasses = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Logo Settings Modal */}
-      <Dialog open={logoSettingsOpen} onOpenChange={setLogoSettingsOpen}>
-        <DialogContent className="max-w-md">
+      {/* Branding Settings Modal */}
+      <Dialog open={brandingSettingsOpen} onOpenChange={setBrandingSettingsOpen}>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <ImageIcon className="h-5 w-5" />
-              Configurar Logotipo do Passe
+              <Settings className="h-5 w-5" />
+              Personalizar Passe
             </DialogTitle>
             <DialogDescription>
-              Carregue um logotipo personalizado para usar nos passes de identificação
+              Configure o logotipo, nome da instituição e contactos que aparecem nos passes
             </DialogDescription>
           </DialogHeader>
 
@@ -1789,63 +1793,150 @@ const SecretariaPasses = () => {
             onChange={handleLogoUpload}
           />
 
-          <div className="space-y-4">
-            {/* Current Logo Preview */}
-            <div className="flex flex-col items-center gap-4 p-6 bg-muted/50 rounded-lg">
-              <div className="relative">
-                <div className="w-24 h-24 bg-accent rounded-lg flex items-center justify-center overflow-hidden shadow-md">
-                  <img 
-                    src={customLogo || logoSGE} 
-                    alt="Logotipo actual" 
-                    className="w-20 h-20 object-contain"
-                  />
+          <div className="space-y-6 max-h-[60vh] overflow-y-auto">
+            {/* Logo Section */}
+            <div className="space-y-3">
+              <h4 className="font-medium text-sm flex items-center gap-2">
+                <ImageIcon className="h-4 w-4" />
+                Logotipo
+              </h4>
+              <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
+                <div className="relative">
+                  <div className="w-16 h-16 bg-accent rounded-lg flex items-center justify-center overflow-hidden shadow-md">
+                    <img 
+                      src={customLogo || logoSGE} 
+                      alt="Logotipo actual" 
+                      className="w-14 h-14 object-contain"
+                    />
+                  </div>
+                  {customLogo && (
+                    <Badge className="absolute -top-2 -right-2 bg-green-600 text-[10px] px-1.5">
+                      Custom
+                    </Badge>
+                  )}
                 </div>
-                {customLogo && (
-                  <Badge className="absolute -top-2 -right-2 bg-green-600">
-                    Personalizado
-                  </Badge>
-                )}
+                <div className="flex-1 space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    {customLogo ? "Logotipo personalizado" : "Logotipo padrão do sistema"}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={triggerLogoUpload}
+                    >
+                      <Upload className="h-3 w-3 mr-1" />
+                      Carregar
+                    </Button>
+                    {customLogo && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={removeCustomLogo}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Remover
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground text-center">
-                {customLogo ? "Logotipo personalizado em uso" : "Logotipo padrão do sistema em uso"}
+              <p className="text-xs text-muted-foreground">
+                Formatos: JPG, PNG, WEBP | Máximo: 2MB | Recomendado: imagem quadrada
               </p>
             </div>
 
-            {/* Upload Instructions */}
-            <div className="text-sm text-muted-foreground space-y-1">
-              <p className="font-medium">Requisitos da imagem:</p>
-              <ul className="list-disc list-inside space-y-0.5 text-xs">
-                <li>Formatos aceites: JPG, PNG ou WEBP</li>
-                <li>Tamanho máximo: 2MB</li>
-                <li>Recomendado: imagem quadrada (ex: 200x200px)</li>
-                <li>Fundo transparente recomendado (PNG)</li>
-              </ul>
+            {/* Institution Name Section */}
+            <div className="space-y-3">
+              <h4 className="font-medium text-sm flex items-center gap-2">
+                <GraduationCap className="h-4 w-4" />
+                Identificação da Instituição
+              </h4>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Nome da Instituição
+                  </label>
+                  <Input
+                    value={institutionName}
+                    onChange={(e) => setInstitutionName(e.target.value)}
+                    placeholder="Nome da instituição"
+                    maxLength={50}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Subtítulo (tipo de documento)
+                  </label>
+                  <Input
+                    value={institutionSubtitle}
+                    onChange={(e) => setInstitutionSubtitle(e.target.value)}
+                    placeholder="Ex: PASSE DE IDENTIFICAÇÃO"
+                    maxLength={40}
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                onClick={triggerLogoUpload}
-                className="flex-1"
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                Carregar Novo Logotipo
-              </Button>
-              {customLogo && (
-                <Button 
-                  variant="destructive" 
-                  onClick={removeCustomLogo}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Remover
-                </Button>
-              )}
+            {/* Contact Info Section */}
+            <div className="space-y-3">
+              <h4 className="font-medium text-sm flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Informações de Contacto
+              </h4>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Telefone da Secretaria
+                  </label>
+                  <Input
+                    value={contactPhone}
+                    onChange={(e) => setContactPhone(e.target.value)}
+                    placeholder="+244 923 456 789"
+                    maxLength={20}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Email de Contacto
+                  </label>
+                  <Input
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    placeholder="secretaria@escola.ao"
+                    maxLength={50}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Preview Section */}
+            <div className="space-y-3">
+              <h4 className="font-medium text-sm">Pré-visualização</h4>
+              <div className="p-3 bg-accent rounded-lg">
+                <div className="flex items-center gap-2">
+                  <img 
+                    src={customLogo || logoSGE} 
+                    alt="Logo" 
+                    className="h-8 w-8 object-contain"
+                  />
+                  <div className="flex flex-col">
+                    <span className="text-primary font-bold text-xs">{institutionName || "Nome da Instituição"}</span>
+                    <span className="text-primary text-[10px]">{institutionSubtitle || "Subtítulo"}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="p-2 bg-primary text-primary-foreground rounded text-center">
+                <span className="text-[10px]">
+                  Secretaria: {contactPhone} | {contactEmail}
+                </span>
+              </div>
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setLogoSettingsOpen(false)}>
+            <Button variant="outline" onClick={() => setBrandingSettingsOpen(false)}>
               Fechar
             </Button>
           </DialogFooter>

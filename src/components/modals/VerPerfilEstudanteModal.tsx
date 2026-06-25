@@ -25,6 +25,9 @@ import {
   CheckCircle2,
   AlertCircle,
   Download,
+  ChevronDown,
+  ChevronUp,
+  ClipboardList,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import { toast } from "sonner";

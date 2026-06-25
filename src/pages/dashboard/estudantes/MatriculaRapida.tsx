@@ -255,7 +255,28 @@ const MatriculaRapida = () => {
           </div>
         </div>
 
+        {/* Período de Matrículas */}
+        <Card className={dentroDoPeriodo() ? "border-primary/40 bg-primary/5" : "border-destructive/40 bg-destructive/5"}>
+          <CardContent className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-4">
+            <div className="flex items-center gap-3">
+              <Calendar className={`h-5 w-5 ${dentroDoPeriodo() ? "text-primary" : "text-destructive"}`} />
+              <div>
+                <p className="text-sm font-semibold">
+                  Período Oficial de Matrículas — Ano Lectivo {PERIODO_MATRICULAS.anoLectivo}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {PERIODO_MATRICULAS.inicio.toLocaleDateString("pt-PT")} até {PERIODO_MATRICULAS.fim.toLocaleDateString("pt-PT")}
+                </p>
+              </div>
+            </div>
+            <Badge variant={dentroDoPeriodo() ? "default" : "destructive"}>
+              {dentroDoPeriodo() ? "Matrículas Abertas" : "Matrículas Encerradas"}
+            </Badge>
+          </CardContent>
+        </Card>
+
         {/* Etapa 1: Dados Pessoais */}
+
         {etapa === 1 && (
           <Card>
             <CardHeader>

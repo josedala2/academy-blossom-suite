@@ -23,7 +23,10 @@ import {
   TrendingUp,
   CheckCircle2,
   AlertCircle,
+  Download,
 } from "lucide-react";
+import jsPDF from "jspdf";
+import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -172,6 +175,158 @@ const VerPerfilEstudanteModal = ({
   const propinas = getHistoricoPropinas();
   const ocorrencias = getOcorrencias();
 
+  // ===== Geração de PDFs =====
+  const pdfHeader = (doc: jsPDF, titulo: string) => {
+    doc.setFillColor(6, 95, 70);
+    doc.rect(0, 0, 210, 28, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text("REPÚBLICA DE ANGOLA", 105, 10, { align: "center" });
+    doc.setFontSize(10);
+    doc.text("MINISTÉRIO DA EDUCAÇÃO", 105, 16, { align: "center" });
+    doc.setFontSize(12);
+    doc.text(titulo.toUpperCase(), 105, 23, { align: "center" });
+    doc.setTextColor(0, 0, 0);
+  };
+
+  const pdfFooter = (doc: jsPDF) => {
+    const hoje = new Date().toLocaleDateString("pt-PT");
+    doc.setFontSize(9);
+    doc.setTextColor(120, 120, 120);
+    doc.text(`Emitido em ${hoje}`, 20, 285);
+    doc.text("Documento gerado electronicamente — válido sem assinatura", 105, 285, {
+      align: "center",
+    });
+    doc.text(`Ref: ${matricula.numeroProcesso}`, 190, 285, { align: "right" });
+  };
+
+  const downloadComprovativoMatricula = () => {
+    const doc = new jsPDF();
+    pdfHeader(doc, "Comprovativo de Matrícula");
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    let y = 50;
+    doc.text(
+      `Certifica-se que o(a) estudante abaixo identificado(a) encontra-se devidamente matriculado(a) nesta instituição de ensino:`,
+      20,
+      y,
+      { maxWidth: 170 }
+    );
+    y += 18;
+    const linhas: [string, string][] = [
+      ["Nome:", student.name],
+      ["Nº de Estudante:", student.number],
+      ["Nº de Processo:", matricula.numeroProcesso],
+      ["Data de Matrícula:", matricula.dataMatricula],
+      ["Ano de Ingresso:", matricula.anoIngresso],
+      ["Classe de Ingresso:", matricula.classeIngresso],
+      ["Modalidade:", matricula.modalidade],
+      ["Ano Lectivo Actual:", "2024/2025"],
+      ["Classe Actual:", student.class],
+      ["Encarregado de Educação:", student.guardian],
+    ];
+    doc.setFont("helvetica", "bold");
+    linhas.forEach(([k, v]) => {
+      doc.setFont("helvetica", "bold");
+      doc.text(k, 25, y);
+      doc.setFont("helvetica", "normal");
+      doc.text(v, 80, y);
+      y += 8;
+    });
+    y += 15;
+    doc.text(
+      "Por ser verdade e a pedido da parte interessada, se passa o presente comprovativo.",
+      20,
+      y,
+      { maxWidth: 170 }
+    );
+    y += 30;
+    doc.line(60, y, 150, y);
+    doc.text("Direcção / Secretaria", 105, y + 6, { align: "center" });
+    pdfFooter(doc);
+    doc.save(`comprovativo_matricula_${student.number}.pdf`);
+    toast.success("Comprovativo de matrícula descarregado");
+  };
+
+  const downloadDocumentoMatricula = (nome: string) => {
+    const doc = new jsPDF();
+    pdfHeader(doc, "Documento de Matrícula");
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text(nome, 105, 55, { align: "center" });
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(
+      `Cópia arquivada no processo de matrícula do(a) estudante ${student.name} (Nº ${student.number}).`,
+      20,
+      75,
+      { maxWidth: 170 }
+    );
+    doc.setDrawColor(200);
+    doc.rect(30, 90, 150, 170);
+    doc.setTextColor(150);
+    doc.text("[ Pré-visualização do documento digitalizado ]", 105, 175, {
+      align: "center",
+    });
+    doc.setTextColor(0);
+    pdfFooter(doc);
+    doc.save(`${nome.toLowerCase().replace(/\s+/g, "_")}_${student.number}.pdf`);
+    toast.success(`${nome} descarregado`);
+  };
+
+  const downloadComprovativoAno = (ano: typeof anosLectivos[number]) => {
+    const doc = new jsPDF();
+    pdfHeader(
+      doc,
+      ano.status === "actual"
+        ? "Comprovativo de Frequência"
+        : "Comprovativo de Conclusão de Ano Lectivo"
+    );
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    let y = 50;
+    doc.text(
+      ano.status === "actual"
+        ? `Certifica-se que o(a) estudante encontra-se a frequentar o ano lectivo ${ano.ano}:`
+        : `Certifica-se que o(a) estudante concluiu o ano lectivo ${ano.ano} com os seguintes resultados:`,
+      20,
+      y,
+      { maxWidth: 170 }
+    );
+    y += 18;
+    const linhas: [string, string][] = [
+      ["Nome:", student.name],
+      ["Nº de Estudante:", student.number],
+      ["Ano Lectivo:", ano.ano],
+      ["Classe:", ano.classe],
+      ["Turma:", ano.turma],
+      ["Director de Turma:", ano.diretor],
+      ["Frequência:", `${ano.frequencia}%`],
+      ["Disciplinas:", String(ano.disciplinas)],
+    ];
+    if (ano.mediaFinal !== null) {
+      linhas.push(["Média Final:", String(ano.mediaFinal)]);
+      linhas.push(["Resultado:", ano.aprovado ? "APROVADO" : "REPROVADO"]);
+    } else {
+      linhas.push(["Estado:", "EM CURSO"]);
+    }
+    linhas.forEach(([k, v]) => {
+      doc.setFont("helvetica", "bold");
+      doc.text(k, 25, y);
+      doc.setFont("helvetica", "normal");
+      doc.text(v, 80, y);
+      y += 8;
+    });
+    y += 20;
+    doc.line(60, y, 150, y);
+    doc.text("Director Pedagógico", 105, y + 6, { align: "center" });
+    pdfFooter(doc);
+    doc.save(`comprovativo_${ano.ano.replace("/", "-")}_${student.number}.pdf`);
+    toast.success(`Comprovativo de ${ano.ano} descarregado`);
+  };
+
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-hidden flex flex-col">
@@ -296,9 +451,15 @@ const VerPerfilEstudanteModal = ({
             {/* Matrícula */}
             <TabsContent value="matricula" className="space-y-4 mt-0">
               <Card className="p-4">
-                <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-primary" /> Dados da Matrícula
-                </h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-medium flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-primary" /> Dados da Matrícula
+                  </h3>
+                  <Button size="sm" onClick={downloadComprovativoMatricula}>
+                    <Download className="h-4 w-4 mr-1.5" />
+                    Comprovativo
+                  </Button>
+                </div>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <p className="text-xs text-muted-foreground">Nº Processo</p>
@@ -335,18 +496,30 @@ const VerPerfilEstudanteModal = ({
                   {matricula.documentosEntregues.map((doc, i) => (
                     <div
                       key={i}
-                      className="flex items-center justify-between text-sm p-2 rounded-md bg-muted/40"
+                      className="flex items-center justify-between gap-2 text-sm p-2 rounded-md bg-muted/40"
                     >
-                      <span>{doc.nome}</span>
-                      {doc.entregue ? (
-                        <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-                          <CheckCircle2 className="h-3 w-3 mr-1" /> Entregue
-                        </Badge>
-                      ) : (
-                        <Badge variant="destructive">
-                          <AlertCircle className="h-3 w-3 mr-1" /> Pendente
-                        </Badge>
-                      )}
+                      <span className="flex-1 min-w-0 truncate">{doc.nome}</span>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {doc.entregue ? (
+                          <>
+                            <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                              <CheckCircle2 className="h-3 w-3 mr-1" /> Entregue
+                            </Badge>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2"
+                              onClick={() => downloadDocumentoMatricula(doc.nome)}
+                            >
+                              <Download className="h-3.5 w-3.5" />
+                            </Button>
+                          </>
+                        ) : (
+                          <Badge variant="destructive">
+                            <AlertCircle className="h-3 w-3 mr-1" /> Pendente
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -407,6 +580,18 @@ const VerPerfilEstudanteModal = ({
                         <p className="font-medium truncate">{ano.diretor}</p>
                       </div>
                     </div>
+                  </div>
+                  <div className="flex justify-end mt-3 pt-3 border-t">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => downloadComprovativoAno(ano)}
+                    >
+                      <Download className="h-4 w-4 mr-1.5" />
+                      {ano.status === "actual"
+                        ? "Comprovativo de Frequência"
+                        : "Comprovativo do Ano"}
+                    </Button>
                   </div>
                 </Card>
               ))}

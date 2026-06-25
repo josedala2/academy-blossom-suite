@@ -622,7 +622,28 @@ const VerPerfilEstudanteModal = ({
                       </div>
                     </div>
                   </div>
-                  <div className="flex justify-end mt-3 pt-3 border-t">
+                  <div className="flex justify-between items-center mt-3 pt-3 border-t gap-2 flex-wrap">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() =>
+                        setAnoExpandido(anoExpandido === ano.ano ? null : ano.ano)
+                      }
+                      disabled={ano.status === "actual"}
+                      title={
+                        ano.status === "actual"
+                          ? "Consulte a aba 'Ano Actual' para ver as avaliações em curso"
+                          : "Ver avaliações"
+                      }
+                    >
+                      <ClipboardList className="h-4 w-4 mr-1.5" />
+                      Ver Avaliações
+                      {anoExpandido === ano.ano ? (
+                        <ChevronUp className="h-4 w-4 ml-1.5" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 ml-1.5" />
+                      )}
+                    </Button>
                     <Button
                       size="sm"
                       variant="outline"
@@ -634,6 +655,53 @@ const VerPerfilEstudanteModal = ({
                         : "Comprovativo do Ano"}
                     </Button>
                   </div>
+
+                  {anoExpandido === ano.ano && avaliacoesPorAno[ano.ano] && (
+                    <div className="mt-3 pt-3 border-t animate-in fade-in slide-in-from-top-2">
+                      <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                        <ClipboardList className="h-4 w-4 text-primary" />
+                        Avaliações — {ano.ano}
+                      </h4>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Disciplina</TableHead>
+                            <TableHead className="text-center">T1</TableHead>
+                            <TableHead className="text-center">T2</TableHead>
+                            <TableHead className="text-center">T3</TableHead>
+                            <TableHead className="text-center">Média</TableHead>
+                            <TableHead className="text-center">Estado</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {avaliacoesPorAno[ano.ano].map((av, idx) => (
+                            <TableRow key={idx}>
+                              <TableCell className="font-medium">
+                                {av.disciplina}
+                              </TableCell>
+                              <TableCell className="text-center">{av.t1}</TableCell>
+                              <TableCell className="text-center">{av.t2}</TableCell>
+                              <TableCell className="text-center">{av.t3}</TableCell>
+                              <TableCell className="text-center font-semibold">
+                                {av.mediaAnual.toFixed(1)}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Badge
+                                  className={
+                                    av.estado === "Aprovado"
+                                      ? "bg-green-100 text-green-700 hover:bg-green-100"
+                                      : "bg-red-100 text-red-700 hover:bg-red-100"
+                                  }
+                                >
+                                  {av.estado}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
                 </Card>
               ))}
             </TabsContent>

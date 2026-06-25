@@ -746,6 +746,116 @@ const TransicaoTurmas = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Dialog de reabertura (Excepção administrativa) */}
+        <Dialog open={openReabrir} onOpenChange={setOpenReabrir}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Unlock className="h-5 w-5 text-destructive" /> Reabrir Transição (Excepção)
+              </DialogTitle>
+              <DialogDescription>
+                Acção administrativa restrita. A reabertura fica registada no histórico com data, responsável e motivo.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              {fechada && (
+                <div className="rounded-lg border bg-muted/40 p-3 text-xs space-y-1">
+                  <p><strong>Fecho actual:</strong> {formatarData(fechada.data)}</p>
+                  <p><strong>Confirmado por:</strong> {fechada.responsavel}</p>
+                </div>
+              )}
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs">
+                <p className="font-semibold text-destructive flex items-center gap-1">
+                  <AlertTriangle className="h-3.5 w-3.5" /> Atenção
+                </p>
+                <p className="text-muted-foreground mt-1">
+                  Apenas use esta opção para correcções legítimas (erros de alocação, decisão pedagógica revertida, ordem superior). Toda reabertura é auditável.
+                </p>
+              </div>
+              <div>
+                <Label>
+                  Motivo da reabertura <span className="text-muted-foreground">({motivoReabertura.trim().length}/500)</span>
+                </Label>
+                <Textarea
+                  placeholder="Descreva detalhadamente a justificação (mínimo 20 caracteres)..."
+                  value={motivoReabertura}
+                  onChange={(e) => setMotivoReabertura(e.target.value.slice(0, 500))}
+                  rows={4}
+                />
+              </div>
+              <div>
+                <Label>Escreva <span className="font-mono text-destructive">REABRIR</span> para confirmar</Label>
+                <Input
+                  placeholder="REABRIR"
+                  value={confirmReabrirTexto}
+                  onChange={(e) => setConfirmReabrirTexto(e.target.value)}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Responsável: <strong>{user?.name}</strong> ({user?.role})
+              </p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setOpenReabrir(false)}>Cancelar</Button>
+              <Button
+                variant="destructive"
+                onClick={reabrirTransicao}
+                disabled={
+                  motivoReabertura.trim().length < 20 ||
+                  confirmReabrirTexto.trim().toUpperCase() !== "REABRIR"
+                }
+                className="gap-2"
+              >
+                <Unlock className="h-4 w-4" /> Confirmar Reabertura
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog de histórico de reaberturas */}
+        <Dialog open={openHistorico} onOpenChange={setOpenHistorico}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <History className="h-5 w-5 text-primary" /> Histórico de Reaberturas
+              </DialogTitle>
+              <DialogDescription>
+                Registo de todas as excepções administrativas aplicadas a este processo de transição.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+              {historicoReaberturas.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">Sem registos.</p>
+              ) : (
+                historicoReaberturas.map((r, i) => (
+                  <Card key={i} className="border-l-4 border-l-destructive">
+                    <CardContent className="p-3 space-y-1 text-sm">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline" className="gap-1">
+                          <Unlock className="h-3 w-3" /> Reabertura #{historicoReaberturas.length - i}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">{formatarData(r.data)}</span>
+                      </div>
+                      <p><strong>Responsável:</strong> {r.responsavel} <span className="text-xs text-muted-foreground">({r.cargo})</span></p>
+                      <p className="text-xs">
+                        <strong>Fecho revertido:</strong> {formatarData(r.fechoAnterior.data)} por {r.fechoAnterior.responsavel}
+                      </p>
+                      <div className="bg-muted/40 rounded p-2 mt-2">
+                        <p className="text-xs font-semibold text-muted-foreground mb-1">Motivo:</p>
+                        <p className="text-sm whitespace-pre-wrap">{r.motivo}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setOpenHistorico(false)}>Fechar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
       </div>
     </DashboardLayout>
 

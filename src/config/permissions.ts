@@ -15,6 +15,7 @@ import {
   IdCard,
   UserPlus,
   History,
+  ArrowRightLeft,
 } from "lucide-react";
 
 export interface NavSubItem {

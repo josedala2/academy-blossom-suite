@@ -496,18 +496,30 @@ const VerPerfilEstudanteModal = ({
                   {matricula.documentosEntregues.map((doc, i) => (
                     <div
                       key={i}
-                      className="flex items-center justify-between text-sm p-2 rounded-md bg-muted/40"
+                      className="flex items-center justify-between gap-2 text-sm p-2 rounded-md bg-muted/40"
                     >
-                      <span>{doc.nome}</span>
-                      {doc.entregue ? (
-                        <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-                          <CheckCircle2 className="h-3 w-3 mr-1" /> Entregue
-                        </Badge>
-                      ) : (
-                        <Badge variant="destructive">
-                          <AlertCircle className="h-3 w-3 mr-1" /> Pendente
-                        </Badge>
-                      )}
+                      <span className="flex-1 min-w-0 truncate">{doc.nome}</span>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {doc.entregue ? (
+                          <>
+                            <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                              <CheckCircle2 className="h-3 w-3 mr-1" /> Entregue
+                            </Badge>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2"
+                              onClick={() => downloadDocumentoMatricula(doc.nome)}
+                            >
+                              <Download className="h-3.5 w-3.5" />
+                            </Button>
+                          </>
+                        ) : (
+                          <Badge variant="destructive">
+                            <AlertCircle className="h-3 w-3 mr-1" /> Pendente
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

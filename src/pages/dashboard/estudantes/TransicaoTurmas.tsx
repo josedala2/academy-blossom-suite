@@ -61,6 +61,21 @@ const ANO_LECTIVO_ANTERIOR = "2024/2025";
 const ANO_LECTIVO_NOVO = "2025/2026";
 const DATA_LIMITE = new Date("2026-08-31T23:59:59");
 const STORAGE_KEY = "transicao-turmas-fechada";
+const HISTORICO_KEY = "transicao-turmas-historico";
+
+interface RegistoFecho {
+  data: string;
+  responsavel: string;
+}
+
+interface RegistoReabertura {
+  data: string;
+  responsavel: string;
+  cargo: string;
+  motivo: string;
+  fechoAnterior: RegistoFecho;
+}
+
 
 
 const ESTUDANTES_INICIAIS: EstudanteExame[] = [

@@ -62,6 +62,9 @@ const ANO_LECTIVO_NOVO = "2025/2026";
 const DATA_LIMITE = new Date("2026-08-31T23:59:59");
 const STORAGE_KEY = "transicao-turmas-fechada";
 const HISTORICO_KEY = "transicao-turmas-historico";
+const PRAZO_EXTENSAO_KEY = "transicao-turmas-prazo-extensao";
+// Reabertura concede um prazo adicional limitado (em dias) antes de re-bloquear
+const DIAS_EXTENSAO_REABERTURA = 7;
 
 interface RegistoFecho {
   data: string;

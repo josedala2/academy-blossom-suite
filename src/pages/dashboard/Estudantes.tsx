@@ -138,6 +138,7 @@ const Estudantes = () => {
   const [isEditarModalOpen, setIsEditarModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [isEliminarModalOpen, setIsEliminarModalOpen] = useState(false);
+  const [isTransferirModalOpen, setIsTransferirModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [studentsList, setStudentsList] = useState<Student[]>(students);
 

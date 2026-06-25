@@ -581,6 +581,18 @@ const VerPerfilEstudanteModal = ({
                       </div>
                     </div>
                   </div>
+                  <div className="flex justify-end mt-3 pt-3 border-t">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => downloadComprovativoAno(ano)}
+                    >
+                      <Download className="h-4 w-4 mr-1.5" />
+                      {ano.status === "actual"
+                        ? "Comprovativo de Frequência"
+                        : "Comprovativo do Ano"}
+                    </Button>
+                  </div>
                 </Card>
               ))}
             </TabsContent>

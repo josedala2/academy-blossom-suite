@@ -247,9 +247,16 @@ const TransicaoTurmas = () => {
               </p>
             </div>
           </div>
-          <Button onClick={confirmarTransicao} className="gap-2">
-            <Save className="h-4 w-4" /> Confirmar Transição
-          </Button>
+          {bloqueado ? (
+            <Badge variant="secondary" className="gap-2 px-3 py-2 text-sm">
+              <Lock className="h-4 w-4" /> Transição Fechada
+            </Badge>
+          ) : (
+            <Button onClick={abrirConfirmacao} className="gap-2">
+              <Save className="h-4 w-4" /> Confirmar Transição
+            </Button>
+          )}
+
         </div>
 
         {/* Resumo */}

@@ -131,7 +131,31 @@ const TransicaoTurmas = () => {
   const [motivoReabertura, setMotivoReabertura] = useState("");
   const [confirmReabrirTexto, setConfirmReabrirTexto] = useState("");
 
-  const prazoExpirado = new Date() > DATA_LIMITE;
+  const [prazoExtensao, setPrazoExtensao] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(PRAZO_EXTENSAO_KEY);
+    } catch {
+      return null;
+    }
+  });
+
+  // Tick para recalcular expiração do prazo sem refresh manual
+  const [, setAgora] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setAgora(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  const dataLimiteEfectiva = useMemo(() => {
+    if (prazoExtensao) {
+      const ext = new Date(prazoExtensao);
+      // Usa a maior data entre o prazo original e a extensão
+      return ext > DATA_LIMITE ? ext : DATA_LIMITE;
+    }
+    return DATA_LIMITE;
+  }, [prazoExtensao]);
+
+  const prazoExpirado = new Date() > dataLimiteEfectiva;
   const bloqueado = !!fechada || prazoExpirado;
   // Apenas Admin pode reabrir transições fechadas (excepção administrativa)
   const podeReabrir = user?.role === "admin";

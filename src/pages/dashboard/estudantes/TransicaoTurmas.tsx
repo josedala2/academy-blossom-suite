@@ -284,7 +284,10 @@ const TransicaoTurmas = () => {
     const registo = { data: new Date().toISOString(), responsavel: responsavel.trim() };
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(registo));
+      // Ao fechar, qualquer extensão anterior é revogada
+      localStorage.removeItem(PRAZO_EXTENSAO_KEY);
     } catch {}
+    setPrazoExtensao(null);
     setFechada(registo);
     setOpenConfirmar(false);
     toast.success(`Transição fechada para ${ANO_LECTIVO_NOVO}. Alterações bloqueadas.`);

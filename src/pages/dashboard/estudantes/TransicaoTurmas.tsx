@@ -322,8 +322,11 @@ const TransicaoTurmas = () => {
       toast.error('Escreva "REABRIR" para validar.');
       return;
     }
+    const agora = new Date();
+    // Concede uma janela limitada (DIAS_EXTENSAO_REABERTURA) antes do bloqueio voltar
+    const novoPrazo = new Date(agora.getTime() + DIAS_EXTENSAO_REABERTURA * 24 * 60 * 60 * 1000);
     const registo: RegistoReabertura = {
-      data: new Date().toISOString(),
+      data: agora.toISOString(),
       responsavel: user?.name ?? "Administrador",
       cargo: user?.role ?? "admin",
       motivo,
@@ -333,11 +336,15 @@ const TransicaoTurmas = () => {
     try {
       localStorage.removeItem(STORAGE_KEY);
       localStorage.setItem(HISTORICO_KEY, JSON.stringify(novoHistorico));
+      localStorage.setItem(PRAZO_EXTENSAO_KEY, novoPrazo.toISOString());
     } catch {}
     setHistoricoReaberturas(novoHistorico);
+    setPrazoExtensao(novoPrazo.toISOString());
     setFechada(null);
     setOpenReabrir(false);
-    toast.success(`Transição reaberta por ${registo.responsavel}. Registo guardado no histórico.`);
+    toast.success(
+      `Transição reaberta por ${registo.responsavel}. Janela de ${DIAS_EXTENSAO_REABERTURA} dias até ${novoPrazo.toLocaleDateString("pt-PT")}.`
+    );
   };
 
 

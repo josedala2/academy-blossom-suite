@@ -23,7 +23,12 @@ import {
   Search,
   Trash2,
   Save,
+  Lock,
+  AlertTriangle,
+  CalendarClock,
+  ShieldCheck,
 } from "lucide-react";
+
 
 type Status = "aprovado" | "reprovado";
 

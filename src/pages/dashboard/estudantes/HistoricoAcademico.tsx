@@ -132,7 +132,11 @@ const HistoricoAcademico = () => {
     return <Minus className="h-4 w-4 text-muted-foreground" />;
   };
 
-  const anoActual = historico.find((h) => h.anoLectivo === anoSelecionado);
+  const anosExibidos = historico.filter((h) => anosSelecionados.includes(h.anoLectivo));
+  const toggleAno = (ano: string) =>
+    setAnosSelecionados((prev) =>
+      prev.includes(ano) ? prev.filter((a) => a !== ano) : [...prev, ano],
+    );
 
   return (
     <DashboardLayout>

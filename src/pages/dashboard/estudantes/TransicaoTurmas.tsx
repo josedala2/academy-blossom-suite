@@ -266,6 +266,51 @@ const TransicaoTurmas = () => {
   const formatarData = (iso: string) =>
     new Date(iso).toLocaleString("pt-PT", { dateStyle: "long", timeStyle: "short" });
 
+  const abrirReabertura = () => {
+    if (!podeReabrir) {
+      toast.error("Apenas a Administração pode reabrir uma transição fechada.");
+      return;
+    }
+    if (!fechada) return;
+    setMotivoReabertura("");
+    setConfirmReabrirTexto("");
+    setOpenReabrir(true);
+  };
+
+  const reabrirTransicao = () => {
+    if (!podeReabrir || !fechada) return;
+    const motivo = motivoReabertura.trim();
+    if (motivo.length < 20) {
+      toast.error("O motivo deve ter pelo menos 20 caracteres.");
+      return;
+    }
+    if (motivo.length > 500) {
+      toast.error("O motivo não pode exceder 500 caracteres.");
+      return;
+    }
+    if (confirmReabrirTexto.trim().toUpperCase() !== "REABRIR") {
+      toast.error('Escreva "REABRIR" para validar.');
+      return;
+    }
+    const registo: RegistoReabertura = {
+      data: new Date().toISOString(),
+      responsavel: user?.name ?? "Administrador",
+      cargo: user?.role ?? "admin",
+      motivo,
+      fechoAnterior: fechada,
+    };
+    const novoHistorico = [registo, ...historicoReaberturas];
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.setItem(HISTORICO_KEY, JSON.stringify(novoHistorico));
+    } catch {}
+    setHistoricoReaberturas(novoHistorico);
+    setFechada(null);
+    setOpenReabrir(false);
+    toast.success(`Transição reaberta por ${registo.responsavel}. Registo guardado no histórico.`);
+  };
+
+
 
   return (
     <DashboardLayout>

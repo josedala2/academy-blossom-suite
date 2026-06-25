@@ -67,6 +67,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import DetalhesTurmaModal from "@/components/modals/DetalhesTurmaModal";
 import { useToast } from "@/hooks/use-toast";
 import {
   BarChart,
@@ -486,7 +487,7 @@ const Turmas = () => {
             {/* Classes Grid */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredClasses.map((cls) => (
-            <Card key={cls.id} className="card-hover">
+            <Card key={cls.id} className="card-hover cursor-pointer" onClick={() => handleVerDetalhes(cls)}>
               <CardHeader className="flex flex-row items-start justify-between pb-2">
                 <div>
                   <CardTitle className="text-lg">{cls.name}</CardTitle>
@@ -495,12 +496,12 @@ const Turmas = () => {
                   </p>
                 </div>
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
+                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                     <Button variant="ghost" size="icon">
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                     <DropdownMenuItem onClick={() => handleVerDetalhes(cls)}>
                       <Eye className="h-4 w-4 mr-2" />
                       Ver Detalhes
@@ -555,7 +556,7 @@ const Turmas = () => {
                   <p className="text-sm font-medium">{cls.director}</p>
                 </div>
 
-                <div className="flex flex-wrap gap-2 pt-2">
+                <div className="flex flex-wrap gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
                   <Button variant="outline" size="sm" className="flex-1 min-w-[80px] text-xs sm:text-sm" onClick={() => handleVerEstudantes(cls)}>
                     <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                     <span className="hidden xs:inline">Estudantes</span>
@@ -896,47 +897,13 @@ const Turmas = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal Ver Detalhes */}
-      <Dialog open={isVerDetalhesOpen} onOpenChange={setIsVerDetalhesOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{selectedClass?.name}</DialogTitle>
-            <DialogDescription>Detalhes completos da turma</DialogDescription>
-          </DialogHeader>
-          {selectedClass && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 bg-muted/50 rounded-lg">
-                  <p className="text-xs text-muted-foreground">Sala</p>
-                  <p className="font-medium">{selectedClass.room}</p>
-                </div>
-                <div className="p-3 bg-muted/50 rounded-lg">
-                  <p className="text-xs text-muted-foreground">Turno</p>
-                  <p className="font-medium">{selectedClass.shift}</p>
-                </div>
-                <div className="p-3 bg-muted/50 rounded-lg">
-                  <p className="text-xs text-muted-foreground">Estudantes</p>
-                  <p className="font-medium">{selectedClass.students}/{selectedClass.capacity}</p>
-                </div>
-                <div className="p-3 bg-muted/50 rounded-lg">
-                  <p className="text-xs text-muted-foreground">Disciplinas</p>
-                  <p className="font-medium">{selectedClass.subjects}</p>
-                </div>
-              </div>
-              <Separator />
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Director de Turma</p>
-                <p className="font-medium">{selectedClass.director}</p>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Taxa de Ocupação</p>
-                <Progress value={(selectedClass.students / selectedClass.capacity) * 100} className="h-3" />
-                <p className="text-sm font-medium text-right">{Math.round((selectedClass.students / selectedClass.capacity) * 100)}%</p>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Modal Ver Detalhes Completos */}
+      <DetalhesTurmaModal
+        open={isVerDetalhesOpen}
+        onOpenChange={setIsVerDetalhesOpen}
+        turma={selectedClass}
+      />
+
 
       {/* Modal Editar */}
       <Dialog open={isEditarOpen} onOpenChange={setIsEditarOpen}>

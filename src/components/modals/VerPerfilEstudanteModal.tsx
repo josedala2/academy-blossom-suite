@@ -175,6 +175,158 @@ const VerPerfilEstudanteModal = ({
   const propinas = getHistoricoPropinas();
   const ocorrencias = getOcorrencias();
 
+  // ===== Geração de PDFs =====
+  const pdfHeader = (doc: jsPDF, titulo: string) => {
+    doc.setFillColor(6, 95, 70);
+    doc.rect(0, 0, 210, 28, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text("REPÚBLICA DE ANGOLA", 105, 10, { align: "center" });
+    doc.setFontSize(10);
+    doc.text("MINISTÉRIO DA EDUCAÇÃO", 105, 16, { align: "center" });
+    doc.setFontSize(12);
+    doc.text(titulo.toUpperCase(), 105, 23, { align: "center" });
+    doc.setTextColor(0, 0, 0);
+  };
+
+  const pdfFooter = (doc: jsPDF) => {
+    const hoje = new Date().toLocaleDateString("pt-PT");
+    doc.setFontSize(9);
+    doc.setTextColor(120, 120, 120);
+    doc.text(`Emitido em ${hoje}`, 20, 285);
+    doc.text("Documento gerado electronicamente — válido sem assinatura", 105, 285, {
+      align: "center",
+    });
+    doc.text(`Ref: ${matricula.numeroProcesso}`, 190, 285, { align: "right" });
+  };
+
+  const downloadComprovativoMatricula = () => {
+    const doc = new jsPDF();
+    pdfHeader(doc, "Comprovativo de Matrícula");
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    let y = 50;
+    doc.text(
+      `Certifica-se que o(a) estudante abaixo identificado(a) encontra-se devidamente matriculado(a) nesta instituição de ensino:`,
+      20,
+      y,
+      { maxWidth: 170 }
+    );
+    y += 18;
+    const linhas: [string, string][] = [
+      ["Nome:", student.name],
+      ["Nº de Estudante:", student.number],
+      ["Nº de Processo:", matricula.numeroProcesso],
+      ["Data de Matrícula:", matricula.dataMatricula],
+      ["Ano de Ingresso:", matricula.anoIngresso],
+      ["Classe de Ingresso:", matricula.classeIngresso],
+      ["Modalidade:", matricula.modalidade],
+      ["Ano Lectivo Actual:", "2024/2025"],
+      ["Classe Actual:", student.class],
+      ["Encarregado de Educação:", student.guardian],
+    ];
+    doc.setFont("helvetica", "bold");
+    linhas.forEach(([k, v]) => {
+      doc.setFont("helvetica", "bold");
+      doc.text(k, 25, y);
+      doc.setFont("helvetica", "normal");
+      doc.text(v, 80, y);
+      y += 8;
+    });
+    y += 15;
+    doc.text(
+      "Por ser verdade e a pedido da parte interessada, se passa o presente comprovativo.",
+      20,
+      y,
+      { maxWidth: 170 }
+    );
+    y += 30;
+    doc.line(60, y, 150, y);
+    doc.text("Direcção / Secretaria", 105, y + 6, { align: "center" });
+    pdfFooter(doc);
+    doc.save(`comprovativo_matricula_${student.number}.pdf`);
+    toast.success("Comprovativo de matrícula descarregado");
+  };
+
+  const downloadDocumentoMatricula = (nome: string) => {
+    const doc = new jsPDF();
+    pdfHeader(doc, "Documento de Matrícula");
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text(nome, 105, 55, { align: "center" });
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(
+      `Cópia arquivada no processo de matrícula do(a) estudante ${student.name} (Nº ${student.number}).`,
+      20,
+      75,
+      { maxWidth: 170 }
+    );
+    doc.setDrawColor(200);
+    doc.rect(30, 90, 150, 170);
+    doc.setTextColor(150);
+    doc.text("[ Pré-visualização do documento digitalizado ]", 105, 175, {
+      align: "center",
+    });
+    doc.setTextColor(0);
+    pdfFooter(doc);
+    doc.save(`${nome.toLowerCase().replace(/\s+/g, "_")}_${student.number}.pdf`);
+    toast.success(`${nome} descarregado`);
+  };
+
+  const downloadComprovativoAno = (ano: typeof anosLectivos[number]) => {
+    const doc = new jsPDF();
+    pdfHeader(
+      doc,
+      ano.status === "actual"
+        ? "Comprovativo de Frequência"
+        : "Comprovativo de Conclusão de Ano Lectivo"
+    );
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    let y = 50;
+    doc.text(
+      ano.status === "actual"
+        ? `Certifica-se que o(a) estudante encontra-se a frequentar o ano lectivo ${ano.ano}:`
+        : `Certifica-se que o(a) estudante concluiu o ano lectivo ${ano.ano} com os seguintes resultados:`,
+      20,
+      y,
+      { maxWidth: 170 }
+    );
+    y += 18;
+    const linhas: [string, string][] = [
+      ["Nome:", student.name],
+      ["Nº de Estudante:", student.number],
+      ["Ano Lectivo:", ano.ano],
+      ["Classe:", ano.classe],
+      ["Turma:", ano.turma],
+      ["Director de Turma:", ano.diretor],
+      ["Frequência:", `${ano.frequencia}%`],
+      ["Disciplinas:", String(ano.disciplinas)],
+    ];
+    if (ano.mediaFinal !== null) {
+      linhas.push(["Média Final:", String(ano.mediaFinal)]);
+      linhas.push(["Resultado:", ano.aprovado ? "APROVADO" : "REPROVADO"]);
+    } else {
+      linhas.push(["Estado:", "EM CURSO"]);
+    }
+    linhas.forEach(([k, v]) => {
+      doc.setFont("helvetica", "bold");
+      doc.text(k, 25, y);
+      doc.setFont("helvetica", "normal");
+      doc.text(v, 80, y);
+      y += 8;
+    });
+    y += 20;
+    doc.line(60, y, 150, y);
+    doc.text("Director Pedagógico", 105, y + 6, { align: "center" });
+    pdfFooter(doc);
+    doc.save(`comprovativo_${ano.ano.replace("/", "-")}_${student.number}.pdf`);
+    toast.success(`Comprovativo de ${ano.ano} descarregado`);
+  };
+
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-hidden flex flex-col">

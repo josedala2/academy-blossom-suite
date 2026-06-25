@@ -93,6 +93,7 @@ const ESTUDANTES_INICIAIS: EstudanteExame[] = [
 
 const TransicaoTurmas = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [estudantes, setEstudantes] = useState<EstudanteExame[]>(ESTUDANTES_INICIAIS);
   const [novasTurmas, setNovasTurmas] = useState<NovaTurma[]>([]);
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
@@ -101,7 +102,7 @@ const TransicaoTurmas = () => {
   const [turmaDestino, setTurmaDestino] = useState<string>("");
 
   // Confirmação final / bloqueio
-  const [fechada, setFechada] = useState<{ data: string; responsavel: string } | null>(() => {
+  const [fechada, setFechada] = useState<RegistoFecho | null>(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       return raw ? JSON.parse(raw) : null;
@@ -109,12 +110,29 @@ const TransicaoTurmas = () => {
       return null;
     }
   });
+  const [historicoReaberturas, setHistoricoReaberturas] = useState<RegistoReabertura[]>(() => {
+    try {
+      const raw = localStorage.getItem(HISTORICO_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
   const [openConfirmar, setOpenConfirmar] = useState(false);
   const [confirmacaoTexto, setConfirmacaoTexto] = useState("");
   const [responsavel, setResponsavel] = useState("");
 
+  // Reabertura
+  const [openReabrir, setOpenReabrir] = useState(false);
+  const [openHistorico, setOpenHistorico] = useState(false);
+  const [motivoReabertura, setMotivoReabertura] = useState("");
+  const [confirmReabrirTexto, setConfirmReabrirTexto] = useState("");
+
   const prazoExpirado = new Date() > DATA_LIMITE;
   const bloqueado = !!fechada || prazoExpirado;
+  // Apenas Admin pode reabrir transições fechadas (excepção administrativa)
+  const podeReabrir = user?.role === "admin";
+
 
   // Nova turma dialog
 

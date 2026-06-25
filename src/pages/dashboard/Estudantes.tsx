@@ -13,6 +13,7 @@ import {
   UserPlus,
   FileSpreadsheet,
   FileText,
+  ArrowRightLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +48,7 @@ import VerPerfilEstudanteModal from "@/components/modals/VerPerfilEstudanteModal
 import EditarEstudanteModal from "@/components/modals/EditarEstudanteModal";
 import EnviarEmailEstudanteModal from "@/components/modals/EnviarEmailEstudanteModal";
 import ConfirmarEliminarEstudanteModal from "@/components/modals/ConfirmarEliminarEstudanteModal";
+import TransferirTurmaModal from "@/components/modals/TransferirTurmaModal";
 import { useToast } from "@/hooks/use-toast";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -136,6 +138,7 @@ const Estudantes = () => {
   const [isEditarModalOpen, setIsEditarModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [isEliminarModalOpen, setIsEliminarModalOpen] = useState(false);
+  const [isTransferirModalOpen, setIsTransferirModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [studentsList, setStudentsList] = useState<Student[]>(students);
 
@@ -167,6 +170,26 @@ const Estudantes = () => {
     setSelectedStudent(student);
     setIsEliminarModalOpen(true);
   };
+
+  const handleTransferir = (student: Student) => {
+    setSelectedStudent(student);
+    setIsTransferirModalOpen(true);
+  };
+
+  const handleConfirmTransferencia = (
+    studentId: number,
+    novaTurma: string,
+    _motivo: string
+  ) => {
+    setStudentsList((prev) =>
+      prev.map((s) => (s.id === studentId ? { ...s, class: novaTurma } : s))
+    );
+  };
+
+  // Lista de turmas existentes derivada dos estudantes (para o selector do modal)
+  const turmasDisponiveis = Array.from(
+    new Set(studentsList.map((s) => s.class))
+  );
 
   const handleSaveStudent = (updatedStudent: Student) => {
     setStudentsList((prev) =>
@@ -334,6 +357,15 @@ const Estudantes = () => {
           onClose={() => setIsEliminarModalOpen(false)}
           student={selectedStudent}
           onConfirm={handleConfirmDelete}
+        />
+
+        {/* Modal Transferir Turma */}
+        <TransferirTurmaModal
+          isOpen={isTransferirModalOpen}
+          onClose={() => setIsTransferirModalOpen(false)}
+          student={selectedStudent}
+          turmasDisponiveis={turmasDisponiveis}
+          onConfirm={handleConfirmTransferencia}
         />
 
         {/* Stats Cards */}
@@ -527,6 +559,10 @@ const Estudantes = () => {
                           <DropdownMenuItem onClick={() => handleEnviarEmail(student)}>
                             <Mail className="h-4 w-4 mr-2" />
                             Enviar Email
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleTransferir(student)}>
+                            <ArrowRightLeft className="h-4 w-4 mr-2" />
+                            Transferir de Turma
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem 

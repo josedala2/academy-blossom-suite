@@ -23,7 +23,12 @@ import {
   Search,
   Trash2,
   Save,
+  Lock,
+  AlertTriangle,
+  CalendarClock,
+  ShieldCheck,
 } from "lucide-react";
+
 
 type Status = "aprovado" | "reprovado";
 
@@ -48,6 +53,9 @@ interface NovaTurma {
 
 const ANO_LECTIVO_ANTERIOR = "2024/2025";
 const ANO_LECTIVO_NOVO = "2025/2026";
+const DATA_LIMITE = new Date("2026-08-31T23:59:59");
+const STORAGE_KEY = "transicao-turmas-fechada";
+
 
 const ESTUDANTES_INICIAIS: EstudanteExame[] = [
   { id: "e1", nome: "Ana Maria Silva", numeroProcesso: "2024-001", turmaActual: "7ª A", classeActual: 7, mediaFinal: 14.5, status: "aprovado" },
@@ -71,7 +79,24 @@ const TransicaoTurmas = () => {
   const [busca, setBusca] = useState("");
   const [turmaDestino, setTurmaDestino] = useState<string>("");
 
+  // Confirmação final / bloqueio
+  const [fechada, setFechada] = useState<{ data: string; responsavel: string } | null>(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [openConfirmar, setOpenConfirmar] = useState(false);
+  const [confirmacaoTexto, setConfirmacaoTexto] = useState("");
+  const [responsavel, setResponsavel] = useState("");
+
+  const prazoExpirado = new Date() > DATA_LIMITE;
+  const bloqueado = !!fechada || prazoExpirado;
+
   // Nova turma dialog
+
   const [openNovaTurma, setOpenNovaTurma] = useState(false);
   const [novaTurma, setNovaTurma] = useState<Omit<NovaTurma, "id">>({
     nome: "",
@@ -111,6 +136,7 @@ const TransicaoTurmas = () => {
   };
 
   const criarNovaTurma = () => {
+    if (bloqueado) return;
     if (!novaTurma.nome.trim()) {
       toast.error("Indique o nome da nova turma.");
       return;
@@ -124,6 +150,7 @@ const TransicaoTurmas = () => {
   };
 
   const alocarSelecionados = () => {
+    if (bloqueado) return;
     if (!turmaDestino) {
       toast.error("Seleccione a turma de destino.");
       return;
@@ -149,10 +176,19 @@ const TransicaoTurmas = () => {
   };
 
   const removerAlocacao = (estudanteId: string) => {
+    if (bloqueado) return;
     setEstudantes((prev) => prev.map((e) => (e.id === estudanteId ? { ...e, alocadoEm: undefined } : e)));
   };
 
-  const confirmarTransicao = () => {
+  const abrirConfirmacao = () => {
+    if (bloqueado) {
+      toast.error("A transição já está fechada.");
+      return;
+    }
+    if (prazoExpirado) {
+      toast.error("Prazo de transição expirado.");
+      return;
+    }
     if (novasTurmas.length === 0) {
       toast.error("Crie pelo menos uma nova turma.");
       return;
@@ -161,8 +197,36 @@ const TransicaoTurmas = () => {
       toast.error("Aloque estudantes antes de confirmar.");
       return;
     }
-    toast.success(`Transição confirmada: ${alocados} estudante(s) em ${novasTurmas.length} nova(s) turma(s) para ${ANO_LECTIVO_NOVO}.`);
+    const naoAlocados = totalAprovados - alocados;
+    if (naoAlocados > 0) {
+      toast.warning(`Atenção: ${naoAlocados} aprovado(s) ainda sem turma.`);
+    }
+    setConfirmacaoTexto("");
+    setResponsavel("");
+    setOpenConfirmar(true);
   };
+
+  const finalizarTransicao = () => {
+    if (confirmacaoTexto.trim().toUpperCase() !== "CONFIRMAR") {
+      toast.error('Escreva "CONFIRMAR" para validar.');
+      return;
+    }
+    if (!responsavel.trim()) {
+      toast.error("Identifique o responsável pela transição.");
+      return;
+    }
+    const registo = { data: new Date().toISOString(), responsavel: responsavel.trim() };
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(registo));
+    } catch {}
+    setFechada(registo);
+    setOpenConfirmar(false);
+    toast.success(`Transição fechada para ${ANO_LECTIVO_NOVO}. Alterações bloqueadas.`);
+  };
+
+  const formatarData = (iso: string) =>
+    new Date(iso).toLocaleString("pt-PT", { dateStyle: "long", timeStyle: "short" });
+
 
   return (
     <DashboardLayout>
@@ -183,10 +247,57 @@ const TransicaoTurmas = () => {
               </p>
             </div>
           </div>
-          <Button onClick={confirmarTransicao} className="gap-2">
-            <Save className="h-4 w-4" /> Confirmar Transição
-          </Button>
+          {bloqueado ? (
+            <Badge variant="secondary" className="gap-2 px-3 py-2 text-sm">
+              <Lock className="h-4 w-4" /> Transição Fechada
+            </Badge>
+          ) : (
+            <Button onClick={abrirConfirmacao} className="gap-2">
+              <Save className="h-4 w-4" /> Confirmar Transição
+            </Button>
+          )}
+
         </div>
+
+        {/* Banner de estado / prazo */}
+        {fechada ? (
+          <Card className="border-primary/40 bg-primary/5">
+            <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+              <ShieldCheck className="h-6 w-6 text-primary shrink-0" />
+              <div className="flex-1">
+                <p className="font-semibold text-sm">Transição encerrada para {ANO_LECTIVO_NOVO}</p>
+                <p className="text-xs text-muted-foreground">
+                  Fechada em {formatarData(fechada.data)} por <strong>{fechada.responsavel}</strong>. Não é possível efectuar alterações.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : prazoExpirado ? (
+          <Card className="border-destructive/40 bg-destructive/5">
+            <CardContent className="p-4 flex items-center gap-3">
+              <AlertTriangle className="h-6 w-6 text-destructive shrink-0" />
+              <div>
+                <p className="font-semibold text-sm">Prazo de transição expirado</p>
+                <p className="text-xs text-muted-foreground">
+                  Data limite: {DATA_LIMITE.toLocaleDateString("pt-PT")}. Contacte a administração para reabrir o processo.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="border-amber-500/30 bg-amber-500/5">
+            <CardContent className="p-4 flex items-center gap-3">
+              <CalendarClock className="h-6 w-6 text-amber-600 shrink-0" />
+              <div>
+                <p className="font-semibold text-sm">Processo aberto — data limite {DATA_LIMITE.toLocaleDateString("pt-PT")}</p>
+                <p className="text-xs text-muted-foreground">
+                  Após a confirmação final, todas as alocações ficam bloqueadas.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
 
         {/* Resumo */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -284,9 +395,10 @@ const TransicaoTurmas = () => {
                   <div className="flex gap-2">
                     <Dialog open={openNovaTurma} onOpenChange={setOpenNovaTurma}>
                       <DialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="gap-2">
+                        <Button variant="outline" size="sm" className="gap-2" disabled={bloqueado}>
                           <Plus className="h-4 w-4" /> Nova Turma
                         </Button>
+
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
@@ -342,9 +454,10 @@ const TransicaoTurmas = () => {
                         </DialogFooter>
                       </DialogContent>
                     </Dialog>
-                    <Button size="sm" onClick={alocarSelecionados} disabled={selecionados.size === 0 || !turmaDestino}>
+                    <Button size="sm" onClick={alocarSelecionados} disabled={bloqueado || selecionados.size === 0 || !turmaDestino}>
                       Alocar à Turma
                     </Button>
+
                   </div>
                 </div>
 
@@ -373,7 +486,7 @@ const TransicaoTurmas = () => {
                         </TableRow>
                       ) : (
                         aprovadosDisponiveis.map((e) => (
-                          <TableRow key={e.id} className="cursor-pointer" onClick={() => toggleSelecionado(e.id)}>
+                          <TableRow key={e.id} className={bloqueado ? "opacity-60" : "cursor-pointer"} onClick={() => !bloqueado && toggleSelecionado(e.id)}>
                             <TableCell>
                               <Checkbox checked={selecionados.has(e.id)} />
                             </TableCell>
@@ -427,7 +540,7 @@ const TransicaoTurmas = () => {
                             {membros.map((m) => (
                               <li key={m.id} className="flex items-center justify-between text-sm border-b last:border-0 py-1.5">
                                 <span>{m.nome}</span>
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removerAlocacao(m.id)}>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" disabled={bloqueado} onClick={() => removerAlocacao(m.id)}>
                                   <Trash2 className="h-3.5 w-3.5 text-destructive" />
                                 </Button>
                               </li>
@@ -476,8 +589,63 @@ const TransicaoTurmas = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Dialog de confirmação final */}
+        <Dialog open={openConfirmar} onOpenChange={setOpenConfirmar}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5 text-primary" /> Confirmar e Fechar Transição
+              </DialogTitle>
+              <DialogDescription>
+                Esta acção é <strong>irreversível</strong>. Após confirmar, as turmas e alocações ficam bloqueadas para {ANO_LECTIVO_NOVO}.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="rounded-lg border bg-muted/40 p-3 text-sm space-y-1">
+                <p><strong>Ano lectivo:</strong> {ANO_LECTIVO_ANTERIOR} → {ANO_LECTIVO_NOVO}</p>
+                <p><strong>Novas turmas:</strong> {novasTurmas.length}</p>
+                <p><strong>Estudantes alocados:</strong> {alocados} de {totalAprovados} aprovados</p>
+                {totalAprovados - alocados > 0 && (
+                  <p className="text-amber-600 flex items-center gap-1">
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                    {totalAprovados - alocados} aprovado(s) ficarão sem turma.
+                  </p>
+                )}
+                <p><strong>Data limite:</strong> {DATA_LIMITE.toLocaleDateString("pt-PT")}</p>
+              </div>
+              <div>
+                <Label>Responsável (nome completo)</Label>
+                <Input
+                  placeholder="Ex: Director Pedagógico — Nome"
+                  value={responsavel}
+                  onChange={(e) => setResponsavel(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Escreva <span className="font-mono text-primary">CONFIRMAR</span> para validar</Label>
+                <Input
+                  placeholder="CONFIRMAR"
+                  value={confirmacaoTexto}
+                  onChange={(e) => setConfirmacaoTexto(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setOpenConfirmar(false)}>Cancelar</Button>
+              <Button
+                onClick={finalizarTransicao}
+                disabled={confirmacaoTexto.trim().toUpperCase() !== "CONFIRMAR" || !responsavel.trim()}
+                className="gap-2"
+              >
+                <Lock className="h-4 w-4" /> Fechar Transição
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
+
   );
 };
 

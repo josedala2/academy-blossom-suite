@@ -451,9 +451,15 @@ const VerPerfilEstudanteModal = ({
             {/* Matrícula */}
             <TabsContent value="matricula" className="space-y-4 mt-0">
               <Card className="p-4">
-                <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-primary" /> Dados da Matrícula
-                </h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-medium flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-primary" /> Dados da Matrícula
+                  </h3>
+                  <Button size="sm" onClick={downloadComprovativoMatricula}>
+                    <Download className="h-4 w-4 mr-1.5" />
+                    Comprovativo
+                  </Button>
+                </div>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <p className="text-xs text-muted-foreground">Nº Processo</p>

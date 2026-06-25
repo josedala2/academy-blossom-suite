@@ -5,9 +5,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuCheckboxItem,
+} from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ChevronDown } from "lucide-react";
 import { 
   ArrowLeft, 
   Search, 
@@ -94,7 +103,7 @@ const HistoricoAcademico = () => {
   const navigate = useNavigate();
   const [pesquisa, setPesquisa] = useState("");
   const [estudanteSelecionado, setEstudanteSelecionado] = useState<Estudante | null>(null);
-  const [anoSelecionado, setAnoSelecionado] = useState<string>("");
+  const [anosSelecionados, setAnosSelecionados] = useState<string[]>([]);
 
   const estudantesFiltrados = estudantesMock.filter(
     (e) =>
@@ -123,7 +132,11 @@ const HistoricoAcademico = () => {
     return <Minus className="h-4 w-4 text-muted-foreground" />;
   };
 
-  const anoActual = historico.find((h) => h.anoLectivo === anoSelecionado);
+  const anosExibidos = historico.filter((h) => anosSelecionados.includes(h.anoLectivo));
+  const toggleAno = (ano: string) =>
+    setAnosSelecionados((prev) =>
+      prev.includes(ano) ? prev.filter((a) => a !== ano) : [...prev, ano],
+    );
 
   return (
     <DashboardLayout>
@@ -182,7 +195,7 @@ const HistoricoAcademico = () => {
                       setEstudanteSelecionado(estudante);
                       const hist = historicoMock[estudante.id];
                       if (hist && hist.length > 0) {
-                        setAnoSelecionado(hist[0].anoLectivo);
+                        setAnosSelecionados([hist[0].anoLectivo]);
                       }
                     }}
                   >
@@ -237,28 +250,91 @@ const HistoricoAcademico = () => {
                 <CardContent className="space-y-6">
                   {historico.length > 0 ? (
                     <>
-                      {/* Selector de Ano */}
-                      <div className="flex items-center gap-4">
+                      {/* Selector de Anos (múltiplos) */}
+                      <div className="flex flex-wrap items-center gap-3">
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium">Ano Lectivo:</span>
+                          <span className="text-sm font-medium">Anos Lectivos:</span>
                         </div>
-                        <Select value={anoSelecionado} onValueChange={setAnoSelecionado}>
-                          <SelectTrigger className="w-[180px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="min-w-[200px] justify-between">
+                              <span className="truncate">
+                                {anosSelecionados.length === 0
+                                  ? "Seleccionar anos..."
+                                  : anosSelecionados.length === 1
+                                  ? anosSelecionados[0]
+                                  : `${anosSelecionados.length} anos seleccionados`}
+                              </span>
+                              <ChevronDown className="h-4 w-4 ml-2 opacity-50" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="w-[220px] bg-popover" align="start">
+                            <DropdownMenuLabel>Escolher 1 ou vários anos</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
                             {historico.map((h) => (
-                              <SelectItem key={h.anoLectivo} value={h.anoLectivo}>
-                                {h.anoLectivo}
-                              </SelectItem>
+                              <DropdownMenuCheckboxItem
+                                key={h.anoLectivo}
+                                checked={anosSelecionados.includes(h.anoLectivo)}
+                                onCheckedChange={() => toggleAno(h.anoLectivo)}
+                                onSelect={(e) => e.preventDefault()}
+                              >
+                                {h.anoLectivo} — {h.turma}
+                              </DropdownMenuCheckboxItem>
                             ))}
-                          </SelectContent>
-                        </Select>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setAnosSelecionados(historico.map((h) => h.anoLectivo))}
+                          >
+                            Todos
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setAnosSelecionados([])}
+                            disabled={anosSelecionados.length === 0}
+                          >
+                            Limpar
+                          </Button>
+                        </div>
                       </div>
 
-                      {anoActual && (
-                        <>
+                      {anosSelecionados.length > 0 && anosExibidos.length > 1 && (
+                        <Card className="bg-primary/5 border-primary/20">
+                          <CardContent className="pt-4">
+                            <p className="text-sm font-medium mb-2">
+                              Comparativo de {anosExibidos.length} anos lectivos
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {anosExibidos.map((a) => (
+                                <Badge key={a.anoLectivo} variant="outline" className="gap-1">
+                                  {a.anoLectivo}: <strong>{a.mediaGeral.toFixed(1)}</strong>
+                                </Badge>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {anosExibidos.length === 0 && (
+                        <div className="text-center py-8 text-muted-foreground text-sm">
+                          Seleccione pelo menos um ano lectivo para visualizar as notas.
+                        </div>
+                      )}
+
+                      {anosExibidos.map((anoActual) => (
+                        <div key={anoActual.anoLectivo} className="space-y-4">
+                          <div className="flex items-center gap-2 pt-2">
+                            <Badge variant="secondary" className="text-sm">
+                              {anoActual.anoLectivo}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">— {anoActual.turma}</span>
+                          </div>
+
                           {/* Resumo do Ano */}
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <Card className="bg-muted/50">
@@ -274,7 +350,7 @@ const HistoricoAcademico = () => {
                                 </div>
                               </CardContent>
                             </Card>
-                            
+
                             <Card className="bg-muted/50">
                               <CardContent className="pt-4">
                                 <div className="flex items-center gap-3">
@@ -288,7 +364,7 @@ const HistoricoAcademico = () => {
                                 </div>
                               </CardContent>
                             </Card>
-                            
+
                             <Card className="bg-muted/50">
                               <CardContent className="pt-4">
                                 <div className="flex items-center gap-3">
@@ -337,8 +413,8 @@ const HistoricoAcademico = () => {
                               </TableBody>
                             </Table>
                           </div>
-                        </>
-                      )}
+                        </div>
+                      ))}
                     </>
                   ) : (
                     <div className="text-center py-12 text-muted-foreground">

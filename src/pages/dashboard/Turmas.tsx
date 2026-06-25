@@ -897,47 +897,13 @@ const Turmas = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal Ver Detalhes */}
-      <Dialog open={isVerDetalhesOpen} onOpenChange={setIsVerDetalhesOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{selectedClass?.name}</DialogTitle>
-            <DialogDescription>Detalhes completos da turma</DialogDescription>
-          </DialogHeader>
-          {selectedClass && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 bg-muted/50 rounded-lg">
-                  <p className="text-xs text-muted-foreground">Sala</p>
-                  <p className="font-medium">{selectedClass.room}</p>
-                </div>
-                <div className="p-3 bg-muted/50 rounded-lg">
-                  <p className="text-xs text-muted-foreground">Turno</p>
-                  <p className="font-medium">{selectedClass.shift}</p>
-                </div>
-                <div className="p-3 bg-muted/50 rounded-lg">
-                  <p className="text-xs text-muted-foreground">Estudantes</p>
-                  <p className="font-medium">{selectedClass.students}/{selectedClass.capacity}</p>
-                </div>
-                <div className="p-3 bg-muted/50 rounded-lg">
-                  <p className="text-xs text-muted-foreground">Disciplinas</p>
-                  <p className="font-medium">{selectedClass.subjects}</p>
-                </div>
-              </div>
-              <Separator />
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Director de Turma</p>
-                <p className="font-medium">{selectedClass.director}</p>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Taxa de Ocupação</p>
-                <Progress value={(selectedClass.students / selectedClass.capacity) * 100} className="h-3" />
-                <p className="text-sm font-medium text-right">{Math.round((selectedClass.students / selectedClass.capacity) * 100)}%</p>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Modal Ver Detalhes Completos */}
+      <DetalhesTurmaModal
+        open={isVerDetalhesOpen}
+        onOpenChange={setIsVerDetalhesOpen}
+        turma={selectedClass}
+      />
+
 
       {/* Modal Editar */}
       <Dialog open={isEditarOpen} onOpenChange={setIsEditarOpen}>

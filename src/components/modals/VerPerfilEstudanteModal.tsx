@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +25,9 @@ import {
   CheckCircle2,
   AlertCircle,
   Download,
+  ChevronDown,
+  ChevronUp,
+  ClipboardList,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import { toast } from "sonner";
@@ -121,6 +125,41 @@ const getAnosLectivos = (student: Student) => [
   },
 ];
 
+// Avaliações detalhadas por ano lectivo (mock)
+const getAvaliacoesPorAno = (): Record<string, { disciplina: string; t1: number; t2: number; t3: number; mediaAnual: number; estado: "Aprovado" | "Reprovado" }[]> => ({
+  "2023/2024": [
+    { disciplina: "Matemática", t1: 15, t2: 16, t3: 17, mediaAnual: 16.0, estado: "Aprovado" },
+    { disciplina: "Português", t1: 16, t2: 16, t3: 17, mediaAnual: 16.3, estado: "Aprovado" },
+    { disciplina: "Inglês", t1: 14, t2: 15, t3: 16, mediaAnual: 15.0, estado: "Aprovado" },
+    { disciplina: "Física", t1: 14, t2: 15, t3: 15, mediaAnual: 14.7, estado: "Aprovado" },
+    { disciplina: "Química", t1: 15, t2: 16, t3: 16, mediaAnual: 15.7, estado: "Aprovado" },
+    { disciplina: "Biologia", t1: 17, t2: 17, t3: 18, mediaAnual: 17.3, estado: "Aprovado" },
+    { disciplina: "História", t1: 15, t2: 16, t3: 16, mediaAnual: 15.7, estado: "Aprovado" },
+    { disciplina: "Geografia", t1: 14, t2: 15, t3: 16, mediaAnual: 15.0, estado: "Aprovado" },
+    { disciplina: "Educação Física", t1: 17, t2: 18, t3: 18, mediaAnual: 17.7, estado: "Aprovado" },
+  ],
+  "2022/2023": [
+    { disciplina: "Matemática", t1: 13, t2: 14, t3: 15, mediaAnual: 14.0, estado: "Aprovado" },
+    { disciplina: "Português", t1: 15, t2: 15, t3: 16, mediaAnual: 15.3, estado: "Aprovado" },
+    { disciplina: "Inglês", t1: 13, t2: 14, t3: 14, mediaAnual: 13.7, estado: "Aprovado" },
+    { disciplina: "Ciências Naturais", t1: 14, t2: 14, t3: 15, mediaAnual: 14.3, estado: "Aprovado" },
+    { disciplina: "História", t1: 14, t2: 15, t3: 15, mediaAnual: 14.7, estado: "Aprovado" },
+    { disciplina: "Geografia", t1: 13, t2: 14, t3: 14, mediaAnual: 13.7, estado: "Aprovado" },
+    { disciplina: "Educação Moral", t1: 15, t2: 16, t3: 16, mediaAnual: 15.7, estado: "Aprovado" },
+    { disciplina: "Educação Física", t1: 16, t2: 17, t3: 17, mediaAnual: 16.7, estado: "Aprovado" },
+  ],
+  "2021/2022": [
+    { disciplina: "Matemática", t1: 12, t2: 13, t3: 14, mediaAnual: 13.0, estado: "Aprovado" },
+    { disciplina: "Português", t1: 14, t2: 14, t3: 15, mediaAnual: 14.3, estado: "Aprovado" },
+    { disciplina: "Inglês", t1: 13, t2: 13, t3: 14, mediaAnual: 13.3, estado: "Aprovado" },
+    { disciplina: "Ciências Naturais", t1: 13, t2: 14, t3: 14, mediaAnual: 13.7, estado: "Aprovado" },
+    { disciplina: "História", t1: 13, t2: 14, t3: 14, mediaAnual: 13.7, estado: "Aprovado" },
+    { disciplina: "Geografia", t1: 12, t2: 13, t3: 14, mediaAnual: 13.0, estado: "Aprovado" },
+    { disciplina: "Educação Moral", t1: 14, t2: 15, t3: 15, mediaAnual: 14.7, estado: "Aprovado" },
+    { disciplina: "Educação Física", t1: 15, t2: 16, t3: 16, mediaAnual: 15.7, estado: "Aprovado" },
+  ],
+});
+
 const getNotasAnoActual = () => [
   { disciplina: "Matemática", t1: 14, t2: 15, t3: null, media: 14.5 },
   { disciplina: "Português", t1: 16, t2: 17, t3: null, media: 16.5 },
@@ -174,6 +213,8 @@ const VerPerfilEstudanteModal = ({
   const notas = getNotasAnoActual();
   const propinas = getHistoricoPropinas();
   const ocorrencias = getOcorrencias();
+  const avaliacoesPorAno = getAvaliacoesPorAno();
+  const [anoExpandido, setAnoExpandido] = useState<string | null>(null);
 
   // ===== Geração de PDFs =====
   const pdfHeader = (doc: jsPDF, titulo: string) => {
@@ -581,7 +622,28 @@ const VerPerfilEstudanteModal = ({
                       </div>
                     </div>
                   </div>
-                  <div className="flex justify-end mt-3 pt-3 border-t">
+                  <div className="flex justify-between items-center mt-3 pt-3 border-t gap-2 flex-wrap">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() =>
+                        setAnoExpandido(anoExpandido === ano.ano ? null : ano.ano)
+                      }
+                      disabled={ano.status === "actual"}
+                      title={
+                        ano.status === "actual"
+                          ? "Consulte a aba 'Ano Actual' para ver as avaliações em curso"
+                          : "Ver avaliações"
+                      }
+                    >
+                      <ClipboardList className="h-4 w-4 mr-1.5" />
+                      Ver Avaliações
+                      {anoExpandido === ano.ano ? (
+                        <ChevronUp className="h-4 w-4 ml-1.5" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 ml-1.5" />
+                      )}
+                    </Button>
                     <Button
                       size="sm"
                       variant="outline"
@@ -593,6 +655,53 @@ const VerPerfilEstudanteModal = ({
                         : "Comprovativo do Ano"}
                     </Button>
                   </div>
+
+                  {anoExpandido === ano.ano && avaliacoesPorAno[ano.ano] && (
+                    <div className="mt-3 pt-3 border-t animate-in fade-in slide-in-from-top-2">
+                      <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                        <ClipboardList className="h-4 w-4 text-primary" />
+                        Avaliações — {ano.ano}
+                      </h4>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Disciplina</TableHead>
+                            <TableHead className="text-center">T1</TableHead>
+                            <TableHead className="text-center">T2</TableHead>
+                            <TableHead className="text-center">T3</TableHead>
+                            <TableHead className="text-center">Média</TableHead>
+                            <TableHead className="text-center">Estado</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {avaliacoesPorAno[ano.ano].map((av, idx) => (
+                            <TableRow key={idx}>
+                              <TableCell className="font-medium">
+                                {av.disciplina}
+                              </TableCell>
+                              <TableCell className="text-center">{av.t1}</TableCell>
+                              <TableCell className="text-center">{av.t2}</TableCell>
+                              <TableCell className="text-center">{av.t3}</TableCell>
+                              <TableCell className="text-center font-semibold">
+                                {av.mediaAnual.toFixed(1)}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Badge
+                                  className={
+                                    av.estado === "Aprovado"
+                                      ? "bg-green-100 text-green-700 hover:bg-green-100"
+                                      : "bg-red-100 text-red-700 hover:bg-red-100"
+                                  }
+                                >
+                                  {av.estado}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
                 </Card>
               ))}
             </TabsContent>

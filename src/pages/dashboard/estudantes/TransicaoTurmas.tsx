@@ -259,6 +259,46 @@ const TransicaoTurmas = () => {
 
         </div>
 
+        {/* Banner de estado / prazo */}
+        {fechada ? (
+          <Card className="border-primary/40 bg-primary/5">
+            <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+              <ShieldCheck className="h-6 w-6 text-primary shrink-0" />
+              <div className="flex-1">
+                <p className="font-semibold text-sm">Transição encerrada para {ANO_LECTIVO_NOVO}</p>
+                <p className="text-xs text-muted-foreground">
+                  Fechada em {formatarData(fechada.data)} por <strong>{fechada.responsavel}</strong>. Não é possível efectuar alterações.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : prazoExpirado ? (
+          <Card className="border-destructive/40 bg-destructive/5">
+            <CardContent className="p-4 flex items-center gap-3">
+              <AlertTriangle className="h-6 w-6 text-destructive shrink-0" />
+              <div>
+                <p className="font-semibold text-sm">Prazo de transição expirado</p>
+                <p className="text-xs text-muted-foreground">
+                  Data limite: {DATA_LIMITE.toLocaleDateString("pt-PT")}. Contacte a administração para reabrir o processo.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="border-amber-500/30 bg-amber-500/5">
+            <CardContent className="p-4 flex items-center gap-3">
+              <CalendarClock className="h-6 w-6 text-amber-600 shrink-0" />
+              <div>
+                <p className="font-semibold text-sm">Processo aberto — data limite {DATA_LIMITE.toLocaleDateString("pt-PT")}</p>
+                <p className="text-xs text-muted-foreground">
+                  Após a confirmação final, todas as alocações ficam bloqueadas.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+
         {/* Resumo */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card>

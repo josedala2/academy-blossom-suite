@@ -103,7 +103,7 @@ const HistoricoAcademico = () => {
   const navigate = useNavigate();
   const [pesquisa, setPesquisa] = useState("");
   const [estudanteSelecionado, setEstudanteSelecionado] = useState<Estudante | null>(null);
-  const [anoSelecionado, setAnoSelecionado] = useState<string>("");
+  const [anosSelecionados, setAnosSelecionados] = useState<string[]>([]);
 
   const estudantesFiltrados = estudantesMock.filter(
     (e) =>

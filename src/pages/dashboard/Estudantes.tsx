@@ -171,6 +171,26 @@ const Estudantes = () => {
     setIsEliminarModalOpen(true);
   };
 
+  const handleTransferir = (student: Student) => {
+    setSelectedStudent(student);
+    setIsTransferirModalOpen(true);
+  };
+
+  const handleConfirmTransferencia = (
+    studentId: number,
+    novaTurma: string,
+    _motivo: string
+  ) => {
+    setStudentsList((prev) =>
+      prev.map((s) => (s.id === studentId ? { ...s, class: novaTurma } : s))
+    );
+  };
+
+  // Lista de turmas existentes derivada dos estudantes (para o selector do modal)
+  const turmasDisponiveis = Array.from(
+    new Set(studentsList.map((s) => s.class))
+  );
+
   const handleSaveStudent = (updatedStudent: Student) => {
     setStudentsList((prev) =>
       prev.map((s) => (s.id === updatedStudent.id ? updatedStudent : s))

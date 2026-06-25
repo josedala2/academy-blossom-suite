@@ -589,8 +589,63 @@ const TransicaoTurmas = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Dialog de confirmação final */}
+        <Dialog open={openConfirmar} onOpenChange={setOpenConfirmar}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5 text-primary" /> Confirmar e Fechar Transição
+              </DialogTitle>
+              <DialogDescription>
+                Esta acção é <strong>irreversível</strong>. Após confirmar, as turmas e alocações ficam bloqueadas para {ANO_LECTIVO_NOVO}.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="rounded-lg border bg-muted/40 p-3 text-sm space-y-1">
+                <p><strong>Ano lectivo:</strong> {ANO_LECTIVO_ANTERIOR} → {ANO_LECTIVO_NOVO}</p>
+                <p><strong>Novas turmas:</strong> {novasTurmas.length}</p>
+                <p><strong>Estudantes alocados:</strong> {alocados} de {totalAprovados} aprovados</p>
+                {totalAprovados - alocados > 0 && (
+                  <p className="text-amber-600 flex items-center gap-1">
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                    {totalAprovados - alocados} aprovado(s) ficarão sem turma.
+                  </p>
+                )}
+                <p><strong>Data limite:</strong> {DATA_LIMITE.toLocaleDateString("pt-PT")}</p>
+              </div>
+              <div>
+                <Label>Responsável (nome completo)</Label>
+                <Input
+                  placeholder="Ex: Director Pedagógico — Nome"
+                  value={responsavel}
+                  onChange={(e) => setResponsavel(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Escreva <span className="font-mono text-primary">CONFIRMAR</span> para validar</Label>
+                <Input
+                  placeholder="CONFIRMAR"
+                  value={confirmacaoTexto}
+                  onChange={(e) => setConfirmacaoTexto(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setOpenConfirmar(false)}>Cancelar</Button>
+              <Button
+                onClick={finalizarTransicao}
+                disabled={confirmacaoTexto.trim().toUpperCase() !== "CONFIRMAR" || !responsavel.trim()}
+                className="gap-2"
+              >
+                <Lock className="h-4 w-4" /> Fechar Transição
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
+
   );
 };
 

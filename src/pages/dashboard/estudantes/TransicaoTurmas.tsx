@@ -385,13 +385,18 @@ const TransicaoTurmas = () => {
           <Card className="border-amber-500/30 bg-amber-500/5">
             <CardContent className="p-4 flex items-center gap-3">
               <CalendarClock className="h-6 w-6 text-amber-600 shrink-0" />
-              <div>
+              <div className="flex-1">
                 <p className="font-semibold text-sm">Processo aberto — data limite {DATA_LIMITE.toLocaleDateString("pt-PT")}</p>
                 <p className="text-xs text-muted-foreground">
                   Após a confirmação final, todas as alocações ficam bloqueadas.
                 </p>
               </div>
-            </CardContent>
+              {historicoReaberturas.length > 0 && (
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => setOpenHistorico(true)}>
+                  <History className="h-4 w-4" /> Histórico ({historicoReaberturas.length})
+                </Button>
+              )}
+
           </Card>
         )}
 

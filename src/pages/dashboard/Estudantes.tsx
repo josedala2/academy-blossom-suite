@@ -363,6 +363,9 @@ const Estudantes = () => {
         <TransferirTurmaModal
           isOpen={isTransferirModalOpen}
           onClose={() => setIsTransferirModalOpen(false)}
+          todosEstudantes={studentsList}
+          periodoLetivo="2025/2026"
+          capacidadeMaxima={35}
           student={selectedStudent}
           turmasDisponiveis={turmasDisponiveis}
           onConfirm={handleConfirmTransferencia}

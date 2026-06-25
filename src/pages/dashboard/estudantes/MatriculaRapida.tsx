@@ -83,35 +83,122 @@ const MatriculaRapida = () => {
     setDados(prev => ({ ...prev, [field]: value }));
   };
 
+  const dentroDoPeriodo = () => {
+    const hoje = new Date();
+    return hoje >= PERIODO_MATRICULAS.inicio && hoje <= PERIODO_MATRICULAS.fim;
+  };
+
+  const gerarComprovativoPDF = (numeroMatricula: string) => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    // Cabeçalho
+    try {
+      doc.addImage(logoSGE, "PNG", 15, 12, 20, 20);
+    } catch (e) { /* ignore */ }
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("COMPROVATIVO DE MATRÍCULA", pageWidth / 2, 20, { align: "center" });
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text("Sistema de Gestão Escolar", pageWidth / 2, 27, { align: "center" });
+    doc.text(`Ano Lectivo ${dados.anoLectivo}`, pageWidth / 2, 33, { align: "center" });
+
+    doc.setDrawColor(0, 102, 204);
+    doc.setLineWidth(0.8);
+    doc.line(15, 40, pageWidth - 15, 40);
+
+    // Nº matrícula
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text(`Nº Matrícula: ${numeroMatricula}`, 15, 50);
+    doc.text(`Data: ${new Date().toLocaleString("pt-PT")}`, pageWidth - 15, 50, { align: "right" });
+
+    // Dados do Estudante
+    let y = 62;
+    const linha = (label: string, valor: string) => {
+      doc.setFont("helvetica", "bold");
+      doc.text(`${label}:`, 15, y);
+      doc.setFont("helvetica", "normal");
+      doc.text(valor || "—", 70, y);
+      y += 7;
+    };
+
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("DADOS DO ESTUDANTE", 15, y); y += 7;
+    doc.setFontSize(10);
+    linha("Nome Completo", dados.nomeCompleto);
+    linha("Data de Nascimento", dados.dataNascimento);
+    linha("Género", dados.genero === "M" ? "Masculino" : dados.genero === "F" ? "Feminino" : "");
+    linha("Nacionalidade", dados.nacionalidade);
+    linha("Documento", dados.documentoIdentidade);
+    linha("Telefone", dados.telefone);
+    linha("Email", dados.email);
+    linha("Endereço", dados.endereco);
+
+    y += 4;
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("DADOS ACADÉMICOS", 15, y); y += 7;
+    doc.setFontSize(10);
+    linha("Ano Lectivo", dados.anoLectivo);
+    linha("Turma", dados.turma);
+    linha("Turno", dados.turno);
+
+    y += 4;
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("ENCARREGADO DE EDUCAÇÃO", 15, y); y += 7;
+    doc.setFontSize(10);
+    linha("Nome", dados.nomeEncarregado);
+    linha("Parentesco", dados.parentesco);
+    linha("Telefone", dados.telefoneEncarregado);
+    linha("Email", dados.emailEncarregado);
+
+    // Rodapé
+    const pageHeight = doc.internal.pageSize.getHeight();
+    doc.setDrawColor(150);
+    doc.setLineWidth(0.3);
+    doc.line(15, pageHeight - 35, pageWidth - 15, pageHeight - 35);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "italic");
+    doc.text(
+      "Este documento é válido como comprovativo provisório de matrícula.",
+      pageWidth / 2, pageHeight - 28, { align: "center" }
+    );
+    doc.text("________________________________", pageWidth - 15, pageHeight - 18, { align: "right" });
+    doc.text("Secretaria", pageWidth - 35, pageHeight - 13, { align: "right" });
+
+    doc.save(`Comprovativo-Matricula-${numeroMatricula}.pdf`);
+  };
+
   const handleSubmit = () => {
-    // Validação básica
     if (!dados.nomeCompleto || !dados.dataNascimento || !dados.turma) {
       toast.error("Por favor, preencha todos os campos obrigatórios.");
       return;
     }
 
-    // Simular matrícula
+    if (!dentroDoPeriodo()) {
+      toast.error("Fora do período de matrículas", {
+        description: `As matrículas decorrem de ${PERIODO_MATRICULAS.inicio.toLocaleDateString("pt-PT")} a ${PERIODO_MATRICULAS.fim.toLocaleDateString("pt-PT")}.`,
+      });
+      return;
+    }
+
+    const numeroMatricula = `MAT-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 99999)).padStart(5, "0")}`;
+
+    gerarComprovativoPDF(numeroMatricula);
+
     toast.success("Matrícula realizada com sucesso!", {
-      description: `${dados.nomeCompleto} foi matriculado na turma ${dados.turma}.`,
+      description: `${dados.nomeCompleto} matriculado(a) na turma ${dados.turma}. Comprovativo ${numeroMatricula} descarregado.`,
     });
 
-    // Resetar formulário
     setDados({
-      nomeCompleto: "",
-      dataNascimento: "",
-      genero: "",
-      nacionalidade: "Angolana",
-      documentoIdentidade: "",
-      telefone: "",
-      email: "",
-      endereco: "",
-      turma: "",
-      anoLectivo: "2024/2025",
-      turno: "",
-      nomeEncarregado: "",
-      parentesco: "",
-      telefoneEncarregado: "",
-      emailEncarregado: "",
+      nomeCompleto: "", dataNascimento: "", genero: "", nacionalidade: "Angolana",
+      documentoIdentidade: "", telefone: "", email: "", endereco: "",
+      turma: "", anoLectivo: PERIODO_MATRICULAS.anoLectivo, turno: "",
+      nomeEncarregado: "", parentesco: "", telefoneEncarregado: "", emailEncarregado: "",
     });
     setEtapa(1);
   };

@@ -48,6 +48,7 @@ import VerPerfilEstudanteModal from "@/components/modals/VerPerfilEstudanteModal
 import EditarEstudanteModal from "@/components/modals/EditarEstudanteModal";
 import EnviarEmailEstudanteModal from "@/components/modals/EnviarEmailEstudanteModal";
 import ConfirmarEliminarEstudanteModal from "@/components/modals/ConfirmarEliminarEstudanteModal";
+import TransferirTurmaModal from "@/components/modals/TransferirTurmaModal";
 import { useToast } from "@/hooks/use-toast";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";

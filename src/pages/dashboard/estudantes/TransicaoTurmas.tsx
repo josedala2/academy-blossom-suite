@@ -408,14 +408,42 @@ const TransicaoTurmas = () => {
 
         ) : prazoExpirado ? (
           <Card className="border-destructive/40 bg-destructive/5">
-            <CardContent className="p-4 flex items-center gap-3">
+            <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
               <AlertTriangle className="h-6 w-6 text-destructive shrink-0" />
-              <div>
-                <p className="font-semibold text-sm">Prazo de transição expirado</p>
+              <div className="flex-1">
+                <p className="font-semibold text-sm">
+                  {prazoExtensao
+                    ? "Janela de reabertura expirada — alterações bloqueadas"
+                    : "Prazo de transição expirado"}
+                </p>
                 <p className="text-xs text-muted-foreground">
-                  Data limite: {DATA_LIMITE.toLocaleDateString("pt-PT")}. Contacte a administração para reabrir o processo.
+                  Data limite: {dataLimiteEfectiva.toLocaleDateString("pt-PT")} {prazoExtensao && "(extensão pós-reabertura)"}. Contacte a administração para nova excepção.
                 </p>
               </div>
+              {historicoReaberturas.length > 0 && (
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => setOpenHistorico(true)}>
+                  <History className="h-4 w-4" /> Histórico ({historicoReaberturas.length})
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        ) : prazoExtensao ? (
+          <Card className="border-amber-500/40 bg-amber-500/10">
+            <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+              <Unlock className="h-6 w-6 text-amber-600 shrink-0" />
+              <div className="flex-1">
+                <p className="font-semibold text-sm">
+                  Transição reaberta — janela activa até {dataLimiteEfectiva.toLocaleDateString("pt-PT")}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Após este prazo, as alterações ficam novamente bloqueadas automaticamente. Conclua e confirme antes do fim da janela.
+                </p>
+              </div>
+              {historicoReaberturas.length > 0 && (
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => setOpenHistorico(true)}>
+                  <History className="h-4 w-4" /> Histórico ({historicoReaberturas.length})
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (
@@ -423,7 +451,7 @@ const TransicaoTurmas = () => {
             <CardContent className="p-4 flex items-center gap-3">
               <CalendarClock className="h-6 w-6 text-amber-600 shrink-0" />
               <div className="flex-1">
-                <p className="font-semibold text-sm">Processo aberto — data limite {DATA_LIMITE.toLocaleDateString("pt-PT")}</p>
+                <p className="font-semibold text-sm">Processo aberto — data limite {dataLimiteEfectiva.toLocaleDateString("pt-PT")}</p>
                 <p className="text-xs text-muted-foreground">
                   Após a confirmação final, todas as alocações ficam bloqueadas.
                 </p>

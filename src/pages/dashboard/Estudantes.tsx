@@ -359,6 +359,15 @@ const Estudantes = () => {
           onConfirm={handleConfirmDelete}
         />
 
+        {/* Modal Transferir Turma */}
+        <TransferirTurmaModal
+          isOpen={isTransferirModalOpen}
+          onClose={() => setIsTransferirModalOpen(false)}
+          student={selectedStudent}
+          turmasDisponiveis={turmasDisponiveis}
+          onConfirm={handleConfirmTransferencia}
+        />
+
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-4">
           <Card>

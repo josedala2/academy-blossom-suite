@@ -79,7 +79,24 @@ const TransicaoTurmas = () => {
   const [busca, setBusca] = useState("");
   const [turmaDestino, setTurmaDestino] = useState<string>("");
 
+  // Confirmação final / bloqueio
+  const [fechada, setFechada] = useState<{ data: string; responsavel: string } | null>(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [openConfirmar, setOpenConfirmar] = useState(false);
+  const [confirmacaoTexto, setConfirmacaoTexto] = useState("");
+  const [responsavel, setResponsavel] = useState("");
+
+  const prazoExpirado = new Date() > DATA_LIMITE;
+  const bloqueado = !!fechada || prazoExpirado;
+
   // Nova turma dialog
+
   const [openNovaTurma, setOpenNovaTurma] = useState(false);
   const [novaTurma, setNovaTurma] = useState<Omit<NovaTurma, "id">>({
     nome: "",

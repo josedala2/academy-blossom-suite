@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,6 +62,9 @@ const ANO_LECTIVO_NOVO = "2025/2026";
 const DATA_LIMITE = new Date("2026-08-31T23:59:59");
 const STORAGE_KEY = "transicao-turmas-fechada";
 const HISTORICO_KEY = "transicao-turmas-historico";
+const PRAZO_EXTENSAO_KEY = "transicao-turmas-prazo-extensao";
+// Reabertura concede um prazo adicional limitado (em dias) antes de re-bloquear
+const DIAS_EXTENSAO_REABERTURA = 7;
 
 interface RegistoFecho {
   data: string;
@@ -128,7 +131,31 @@ const TransicaoTurmas = () => {
   const [motivoReabertura, setMotivoReabertura] = useState("");
   const [confirmReabrirTexto, setConfirmReabrirTexto] = useState("");
 
-  const prazoExpirado = new Date() > DATA_LIMITE;
+  const [prazoExtensao, setPrazoExtensao] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(PRAZO_EXTENSAO_KEY);
+    } catch {
+      return null;
+    }
+  });
+
+  // Tick para recalcular expiração do prazo sem refresh manual
+  const [, setAgora] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setAgora(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  const dataLimiteEfectiva = useMemo(() => {
+    if (prazoExtensao) {
+      const ext = new Date(prazoExtensao);
+      // Usa a maior data entre o prazo original e a extensão
+      return ext > DATA_LIMITE ? ext : DATA_LIMITE;
+    }
+    return DATA_LIMITE;
+  }, [prazoExtensao]);
+
+  const prazoExpirado = new Date() > dataLimiteEfectiva;
   const bloqueado = !!fechada || prazoExpirado;
   // Apenas Admin pode reabrir transições fechadas (excepção administrativa)
   const podeReabrir = user?.role === "admin";
@@ -257,7 +284,10 @@ const TransicaoTurmas = () => {
     const registo = { data: new Date().toISOString(), responsavel: responsavel.trim() };
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(registo));
+      // Ao fechar, qualquer extensão anterior é revogada
+      localStorage.removeItem(PRAZO_EXTENSAO_KEY);
     } catch {}
+    setPrazoExtensao(null);
     setFechada(registo);
     setOpenConfirmar(false);
     toast.success(`Transição fechada para ${ANO_LECTIVO_NOVO}. Alterações bloqueadas.`);
@@ -292,8 +322,11 @@ const TransicaoTurmas = () => {
       toast.error('Escreva "REABRIR" para validar.');
       return;
     }
+    const agora = new Date();
+    // Concede uma janela limitada (DIAS_EXTENSAO_REABERTURA) antes do bloqueio voltar
+    const novoPrazo = new Date(agora.getTime() + DIAS_EXTENSAO_REABERTURA * 24 * 60 * 60 * 1000);
     const registo: RegistoReabertura = {
-      data: new Date().toISOString(),
+      data: agora.toISOString(),
       responsavel: user?.name ?? "Administrador",
       cargo: user?.role ?? "admin",
       motivo,
@@ -303,11 +336,15 @@ const TransicaoTurmas = () => {
     try {
       localStorage.removeItem(STORAGE_KEY);
       localStorage.setItem(HISTORICO_KEY, JSON.stringify(novoHistorico));
+      localStorage.setItem(PRAZO_EXTENSAO_KEY, novoPrazo.toISOString());
     } catch {}
     setHistoricoReaberturas(novoHistorico);
+    setPrazoExtensao(novoPrazo.toISOString());
     setFechada(null);
     setOpenReabrir(false);
-    toast.success(`Transição reaberta por ${registo.responsavel}. Registo guardado no histórico.`);
+    toast.success(
+      `Transição reaberta por ${registo.responsavel}. Janela de ${DIAS_EXTENSAO_REABERTURA} dias até ${novoPrazo.toLocaleDateString("pt-PT")}.`
+    );
   };
 
 
@@ -371,14 +408,42 @@ const TransicaoTurmas = () => {
 
         ) : prazoExpirado ? (
           <Card className="border-destructive/40 bg-destructive/5">
-            <CardContent className="p-4 flex items-center gap-3">
+            <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
               <AlertTriangle className="h-6 w-6 text-destructive shrink-0" />
-              <div>
-                <p className="font-semibold text-sm">Prazo de transição expirado</p>
+              <div className="flex-1">
+                <p className="font-semibold text-sm">
+                  {prazoExtensao
+                    ? "Janela de reabertura expirada — alterações bloqueadas"
+                    : "Prazo de transição expirado"}
+                </p>
                 <p className="text-xs text-muted-foreground">
-                  Data limite: {DATA_LIMITE.toLocaleDateString("pt-PT")}. Contacte a administração para reabrir o processo.
+                  Data limite: {dataLimiteEfectiva.toLocaleDateString("pt-PT")} {prazoExtensao && "(extensão pós-reabertura)"}. Contacte a administração para nova excepção.
                 </p>
               </div>
+              {historicoReaberturas.length > 0 && (
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => setOpenHistorico(true)}>
+                  <History className="h-4 w-4" /> Histórico ({historicoReaberturas.length})
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        ) : prazoExtensao ? (
+          <Card className="border-amber-500/40 bg-amber-500/10">
+            <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+              <Unlock className="h-6 w-6 text-amber-600 shrink-0" />
+              <div className="flex-1">
+                <p className="font-semibold text-sm">
+                  Transição reaberta — janela activa até {dataLimiteEfectiva.toLocaleDateString("pt-PT")}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Após este prazo, as alterações ficam novamente bloqueadas automaticamente. Conclua e confirme antes do fim da janela.
+                </p>
+              </div>
+              {historicoReaberturas.length > 0 && (
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => setOpenHistorico(true)}>
+                  <History className="h-4 w-4" /> Histórico ({historicoReaberturas.length})
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (
@@ -386,7 +451,7 @@ const TransicaoTurmas = () => {
             <CardContent className="p-4 flex items-center gap-3">
               <CalendarClock className="h-6 w-6 text-amber-600 shrink-0" />
               <div className="flex-1">
-                <p className="font-semibold text-sm">Processo aberto — data limite {DATA_LIMITE.toLocaleDateString("pt-PT")}</p>
+                <p className="font-semibold text-sm">Processo aberto — data limite {dataLimiteEfectiva.toLocaleDateString("pt-PT")}</p>
                 <p className="text-xs text-muted-foreground">
                   Após a confirmação final, todas as alocações ficam bloqueadas.
                 </p>

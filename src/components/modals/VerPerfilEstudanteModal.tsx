@@ -213,6 +213,8 @@ const VerPerfilEstudanteModal = ({
   const notas = getNotasAnoActual();
   const propinas = getHistoricoPropinas();
   const ocorrencias = getOcorrencias();
+  const avaliacoesPorAno = getAvaliacoesPorAno();
+  const [anoExpandido, setAnoExpandido] = useState<string | null>(null);
 
   // ===== Geração de PDFs =====
   const pdfHeader = (doc: jsPDF, titulo: string) => {

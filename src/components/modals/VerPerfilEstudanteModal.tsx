@@ -569,141 +569,157 @@ const VerPerfilEstudanteModal = ({
 
             {/* Histórico — Anos Lectivos */}
             <TabsContent value="historico" className="space-y-3 mt-0">
-              {anosLectivos.map((ano, i) => (
-                <Card key={i} className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">{ano.ano}</h3>
-                        {ano.status === "actual" ? (
-                          <Badge className="bg-primary/10 text-primary hover:bg-primary/20">
-                            Em Curso
-                          </Badge>
-                        ) : ano.aprovado ? (
-                          <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-                            Aprovado
-                          </Badge>
-                        ) : (
-                          <Badge variant="destructive">Reprovado</Badge>
-                        )}
+              {anosLectivos.map((ano, i) => {
+                const avaliacoesAno =
+                  ano.status === "actual"
+                    ? notas.map((n) => ({
+                        disciplina: n.disciplina,
+                        t1: n.t1,
+                        t2: n.t2,
+                        t3: n.t3,
+                        mediaAnual: n.media,
+                        estado:
+                          n.t3 === null
+                            ? "Em Curso"
+                            : n.media >= 10
+                            ? "Aprovado"
+                            : "Reprovado",
+                      }))
+                    : avaliacoesPorAno[ano.ano];
+                return (
+                  <Card key={i} className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold">{ano.ano}</h3>
+                          {ano.status === "actual" ? (
+                            <Badge className="bg-primary/10 text-primary hover:bg-primary/20">
+                              Em Curso
+                            </Badge>
+                          ) : ano.aprovado ? (
+                            <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                              Aprovado
+                            </Badge>
+                          ) : (
+                            <Badge variant="destructive">Reprovado</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {ano.classe} • Turma {ano.turma}
+                        </p>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {ano.classe} • Turma {ano.turma}
-                      </p>
+                      {ano.mediaFinal !== null && (
+                        <div className="text-right">
+                          <p className="text-xs text-muted-foreground">Média Final</p>
+                          <p className="text-2xl font-bold text-primary">{ano.mediaFinal}</p>
+                        </div>
+                      )}
                     </div>
-                    {ano.mediaFinal !== null && (
-                      <div className="text-right">
-                        <p className="text-xs text-muted-foreground">Média Final</p>
-                        <p className="text-2xl font-bold text-primary">{ano.mediaFinal}</p>
+                    <Separator className="my-2" />
+                    <div className="grid grid-cols-3 gap-3 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Frequência</p>
+                          <p className="font-medium">{ano.frequencia}%</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <BookOpen className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Disciplinas</p>
+                          <p className="font-medium">{ano.disciplinas}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Director</p>
+                          <p className="font-medium truncate">{ano.diretor}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center mt-3 pt-3 border-t gap-2 flex-wrap">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() =>
+                          setAnoExpandido(anoExpandido === ano.ano ? null : ano.ano)
+                        }
+                      >
+                        <ClipboardList className="h-4 w-4 mr-1.5" />
+                        Ver Avaliações
+                        {anoExpandido === ano.ano ? (
+                          <ChevronUp className="h-4 w-4 ml-1.5" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4 ml-1.5" />
+                        )}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => downloadComprovativoAno(ano)}
+                      >
+                        <Download className="h-4 w-4 mr-1.5" />
+                        {ano.status === "actual"
+                          ? "Comprovativo de Frequência"
+                          : "Comprovativo do Ano"}
+                      </Button>
+                    </div>
+
+                    {anoExpandido === ano.ano && avaliacoesAno && (
+                      <div className="mt-3 pt-3 border-t animate-in fade-in slide-in-from-top-2">
+                        <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                          <ClipboardList className="h-4 w-4 text-primary" />
+                          Avaliações — {ano.ano}
+                        </h4>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Disciplina</TableHead>
+                              <TableHead className="text-center">T1</TableHead>
+                              <TableHead className="text-center">T2</TableHead>
+                              <TableHead className="text-center">T3</TableHead>
+                              <TableHead className="text-center">Média</TableHead>
+                              <TableHead className="text-center">Estado</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {avaliacoesAno.map((av, idx) => (
+                              <TableRow key={idx}>
+                                <TableCell className="font-medium">
+                                  {av.disciplina}
+                                </TableCell>
+                                <TableCell className="text-center">{av.t1}</TableCell>
+                                <TableCell className="text-center">{av.t2}</TableCell>
+                                <TableCell className="text-center">
+                                  {av.t3 === null ? "—" : av.t3}
+                                </TableCell>
+                                <TableCell className="text-center font-semibold">
+                                  {av.mediaAnual.toFixed(1)}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Badge
+                                    className={
+                                      av.estado === "Aprovado"
+                                        ? "bg-green-100 text-green-700 hover:bg-green-100"
+                                        : av.estado === "Em Curso"
+                                        ? "bg-primary/10 text-primary hover:bg-primary/20"
+                                        : "bg-red-100 text-red-700 hover:bg-red-100"
+                                    }
+                                  >
+                                    {av.estado}
+                                  </Badge>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
                       </div>
                     )}
-                  </div>
-                  <Separator className="my-2" />
-                  <div className="grid grid-cols-3 gap-3 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Frequência</p>
-                        <p className="font-medium">{ano.frequencia}%</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <BookOpen className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Disciplinas</p>
-                        <p className="font-medium">{ano.disciplinas}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Director</p>
-                        <p className="font-medium truncate">{ano.diretor}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center mt-3 pt-3 border-t gap-2 flex-wrap">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() =>
-                        setAnoExpandido(anoExpandido === ano.ano ? null : ano.ano)
-                      }
-                      disabled={ano.status === "actual"}
-                      title={
-                        ano.status === "actual"
-                          ? "Consulte a aba 'Ano Actual' para ver as avaliações em curso"
-                          : "Ver avaliações"
-                      }
-                    >
-                      <ClipboardList className="h-4 w-4 mr-1.5" />
-                      Ver Avaliações
-                      {anoExpandido === ano.ano ? (
-                        <ChevronUp className="h-4 w-4 ml-1.5" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4 ml-1.5" />
-                      )}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => downloadComprovativoAno(ano)}
-                    >
-                      <Download className="h-4 w-4 mr-1.5" />
-                      {ano.status === "actual"
-                        ? "Comprovativo de Frequência"
-                        : "Comprovativo do Ano"}
-                    </Button>
-                  </div>
-
-                  {anoExpandido === ano.ano && avaliacoesPorAno[ano.ano] && (
-                    <div className="mt-3 pt-3 border-t animate-in fade-in slide-in-from-top-2">
-                      <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-                        <ClipboardList className="h-4 w-4 text-primary" />
-                        Avaliações — {ano.ano}
-                      </h4>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Disciplina</TableHead>
-                            <TableHead className="text-center">T1</TableHead>
-                            <TableHead className="text-center">T2</TableHead>
-                            <TableHead className="text-center">T3</TableHead>
-                            <TableHead className="text-center">Média</TableHead>
-                            <TableHead className="text-center">Estado</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {avaliacoesPorAno[ano.ano].map((av, idx) => (
-                            <TableRow key={idx}>
-                              <TableCell className="font-medium">
-                                {av.disciplina}
-                              </TableCell>
-                              <TableCell className="text-center">{av.t1}</TableCell>
-                              <TableCell className="text-center">{av.t2}</TableCell>
-                              <TableCell className="text-center">{av.t3}</TableCell>
-                              <TableCell className="text-center font-semibold">
-                                {av.mediaAnual.toFixed(1)}
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <Badge
-                                  className={
-                                    av.estado === "Aprovado"
-                                      ? "bg-green-100 text-green-700 hover:bg-green-100"
-                                      : "bg-red-100 text-red-700 hover:bg-red-100"
-                                  }
-                                >
-                                  {av.estado}
-                                </Badge>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  )}
-                </Card>
-              ))}
+                  </Card>
+                );
+              })}
             </TabsContent>
 
             {/* Notas Ano Actual */}

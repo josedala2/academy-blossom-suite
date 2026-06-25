@@ -560,6 +560,10 @@ const Estudantes = () => {
                             <Mail className="h-4 w-4 mr-2" />
                             Enviar Email
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleTransferir(student)}>
+                            <ArrowRightLeft className="h-4 w-4 mr-2" />
+                            Transferir de Turma
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem 
                             className="text-destructive"

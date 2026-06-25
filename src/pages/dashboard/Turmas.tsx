@@ -556,7 +556,7 @@ const Turmas = () => {
                   <p className="text-sm font-medium">{cls.director}</p>
                 </div>
 
-                <div className="flex flex-wrap gap-2 pt-2">
+                <div className="flex flex-wrap gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
                   <Button variant="outline" size="sm" className="flex-1 min-w-[80px] text-xs sm:text-sm" onClick={() => handleVerEstudantes(cls)}>
                     <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                     <span className="hidden xs:inline">Estudantes</span>

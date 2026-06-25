@@ -184,6 +184,7 @@ export const routePermissions: Record<string, UserRole[]> = {
   "/dashboard/estudantes": ["admin", "director_pedagogico", "secretario", "professor"],
   "/dashboard/estudantes/matricula-rapida": ["admin", "secretario"],
   "/dashboard/estudantes/historico-academico": ["admin", "director_pedagogico", "secretario"],
+  "/dashboard/estudantes/transicao-turmas": ["admin", "director_pedagogico"],
   "/dashboard/professores": ["admin", "director_pedagogico", "secretario"],
   "/dashboard/turmas": ["admin", "director_pedagogico", "secretario", "professor"],
   "/dashboard/avaliacoes": ["admin", "director_pedagogico", "secretario", "professor", "estudante"],

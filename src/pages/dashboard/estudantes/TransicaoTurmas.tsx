@@ -136,6 +136,7 @@ const TransicaoTurmas = () => {
   };
 
   const criarNovaTurma = () => {
+    if (bloqueado) return;
     if (!novaTurma.nome.trim()) {
       toast.error("Indique o nome da nova turma.");
       return;
@@ -149,6 +150,7 @@ const TransicaoTurmas = () => {
   };
 
   const alocarSelecionados = () => {
+    if (bloqueado) return;
     if (!turmaDestino) {
       toast.error("Seleccione a turma de destino.");
       return;
@@ -174,10 +176,19 @@ const TransicaoTurmas = () => {
   };
 
   const removerAlocacao = (estudanteId: string) => {
+    if (bloqueado) return;
     setEstudantes((prev) => prev.map((e) => (e.id === estudanteId ? { ...e, alocadoEm: undefined } : e)));
   };
 
-  const confirmarTransicao = () => {
+  const abrirConfirmacao = () => {
+    if (bloqueado) {
+      toast.error("A transição já está fechada.");
+      return;
+    }
+    if (prazoExpirado) {
+      toast.error("Prazo de transição expirado.");
+      return;
+    }
     if (novasTurmas.length === 0) {
       toast.error("Crie pelo menos uma nova turma.");
       return;
@@ -186,8 +197,36 @@ const TransicaoTurmas = () => {
       toast.error("Aloque estudantes antes de confirmar.");
       return;
     }
-    toast.success(`Transição confirmada: ${alocados} estudante(s) em ${novasTurmas.length} nova(s) turma(s) para ${ANO_LECTIVO_NOVO}.`);
+    const naoAlocados = totalAprovados - alocados;
+    if (naoAlocados > 0) {
+      toast.warning(`Atenção: ${naoAlocados} aprovado(s) ainda sem turma.`);
+    }
+    setConfirmacaoTexto("");
+    setResponsavel("");
+    setOpenConfirmar(true);
   };
+
+  const finalizarTransicao = () => {
+    if (confirmacaoTexto.trim().toUpperCase() !== "CONFIRMAR") {
+      toast.error('Escreva "CONFIRMAR" para validar.');
+      return;
+    }
+    if (!responsavel.trim()) {
+      toast.error("Identifique o responsável pela transição.");
+      return;
+    }
+    const registo = { data: new Date().toISOString(), responsavel: responsavel.trim() };
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(registo));
+    } catch {}
+    setFechada(registo);
+    setOpenConfirmar(false);
+    toast.success(`Transição fechada para ${ANO_LECTIVO_NOVO}. Alterações bloqueadas.`);
+  };
+
+  const formatarData = (iso: string) =>
+    new Date(iso).toLocaleString("pt-PT", { dateStyle: "long", timeStyle: "short" });
+
 
   return (
     <DashboardLayout>

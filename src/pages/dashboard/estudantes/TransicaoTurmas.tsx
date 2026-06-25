@@ -354,8 +354,21 @@ const TransicaoTurmas = () => {
                   Fechada em {formatarData(fechada.data)} por <strong>{fechada.responsavel}</strong>. Não é possível efectuar alterações.
                 </p>
               </div>
+              <div className="flex gap-2">
+                {historicoReaberturas.length > 0 && (
+                  <Button variant="outline" size="sm" className="gap-2" onClick={() => setOpenHistorico(true)}>
+                    <History className="h-4 w-4" /> Histórico ({historicoReaberturas.length})
+                  </Button>
+                )}
+                {podeReabrir && (
+                  <Button variant="destructive" size="sm" className="gap-2" onClick={abrirReabertura}>
+                    <Unlock className="h-4 w-4" /> Reabrir (Excepção)
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
+
         ) : prazoExpirado ? (
           <Card className="border-destructive/40 bg-destructive/5">
             <CardContent className="p-4 flex items-center gap-3">

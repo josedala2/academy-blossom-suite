@@ -540,7 +540,7 @@ const TransicaoTurmas = () => {
                             {membros.map((m) => (
                               <li key={m.id} className="flex items-center justify-between text-sm border-b last:border-0 py-1.5">
                                 <span>{m.nome}</span>
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removerAlocacao(m.id)}>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" disabled={bloqueado} onClick={() => removerAlocacao(m.id)}>
                                   <Trash2 className="h-3.5 w-3.5 text-destructive" />
                                 </Button>
                               </li>

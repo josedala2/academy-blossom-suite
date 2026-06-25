@@ -30,7 +30,10 @@ import {
   AlertTriangle,
   CalendarClock,
   ShieldCheck,
+  Unlock,
+  History,
 } from "lucide-react";
+
 
 
 type Status = "aprovado" | "reprovado";

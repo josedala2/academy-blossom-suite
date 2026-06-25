@@ -53,6 +53,9 @@ interface NovaTurma {
 
 const ANO_LECTIVO_ANTERIOR = "2024/2025";
 const ANO_LECTIVO_NOVO = "2025/2026";
+const DATA_LIMITE = new Date("2026-08-31T23:59:59");
+const STORAGE_KEY = "transicao-turmas-fechada";
+
 
 const ESTUDANTES_INICIAIS: EstudanteExame[] = [
   { id: "e1", nome: "Ana Maria Silva", numeroProcesso: "2024-001", turmaActual: "7ª A", classeActual: 7, mediaFinal: 14.5, status: "aprovado" },

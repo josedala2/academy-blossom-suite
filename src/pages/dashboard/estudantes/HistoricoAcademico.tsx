@@ -195,7 +195,7 @@ const HistoricoAcademico = () => {
                       setEstudanteSelecionado(estudante);
                       const hist = historicoMock[estudante.id];
                       if (hist && hist.length > 0) {
-                        setAnoSelecionado(hist[0].anoLectivo);
+                        setAnosSelecionados([hist[0].anoLectivo]);
                       }
                     }}
                   >

@@ -23,7 +23,10 @@ import {
   TrendingUp,
   CheckCircle2,
   AlertCircle,
+  Download,
 } from "lucide-react";
+import jsPDF from "jspdf";
+import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {

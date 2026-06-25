@@ -23,6 +23,15 @@ import {
   Users,
   FileText
 } from "lucide-react";
+import { jsPDF } from "jspdf";
+import logoSGE from "@/assets/logo-sge.png";
+
+// Período oficial de matrículas (configurável)
+const PERIODO_MATRICULAS = {
+  inicio: new Date("2025-08-01T00:00:00"),
+  fim: new Date("2025-10-31T23:59:59"),
+  anoLectivo: "2025/2026",
+};
 
 interface DadosMatricula {
   // Dados do Estudante

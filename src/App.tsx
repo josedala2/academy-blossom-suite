@@ -16,6 +16,7 @@ import PortalEstudante from "./pages/dashboard/PortalEstudante";
 import Estudantes from "./pages/dashboard/Estudantes";
 import MatriculaRapida from "./pages/dashboard/estudantes/MatriculaRapida";
 import HistoricoAcademico from "./pages/dashboard/estudantes/HistoricoAcademico";
+import TransicaoTurmas from "./pages/dashboard/estudantes/TransicaoTurmas";
 import Professores from "./pages/dashboard/Professores";
 import Turmas from "./pages/dashboard/Turmas";
 import Avaliacoes from "./pages/dashboard/Avaliacoes";

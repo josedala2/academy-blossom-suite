@@ -78,6 +78,12 @@ export const navigationConfig: NavSection[] = [
             allowedRoles: ["admin", "director_pedagogico", "secretario"],
           },
           {
+            label: "Transição de Turmas",
+            href: "/dashboard/estudantes/transicao-turmas",
+            icon: ArrowRightLeft,
+            allowedRoles: ["admin", "director_pedagogico"],
+          },
+          {
             label: "Emissão de Passes",
             href: "/dashboard/secretaria/passes",
             icon: IdCard,

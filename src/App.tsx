@@ -90,6 +90,11 @@ const App = () => (
                 <HistoricoAcademico />
               </ProtectedRoute>
             } />
+            <Route path="/dashboard/estudantes/transicao-turmas" element={
+              <ProtectedRoute allowedRoles={routePermissions["/dashboard/estudantes/transicao-turmas"]}>
+                <TransicaoTurmas />
+              </ProtectedRoute>
+            } />
             <Route path="/dashboard/professores" element={
               <ProtectedRoute allowedRoles={routePermissions["/dashboard/professores"]}>
                 <Professores />

@@ -67,6 +67,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import DetalhesTurmaModal from "@/components/modals/DetalhesTurmaModal";
 import { useToast } from "@/hooks/use-toast";
 import {
   BarChart,

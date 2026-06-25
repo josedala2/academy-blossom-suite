@@ -486,7 +486,7 @@ const TransicaoTurmas = () => {
                         </TableRow>
                       ) : (
                         aprovadosDisponiveis.map((e) => (
-                          <TableRow key={e.id} className="cursor-pointer" onClick={() => toggleSelecionado(e.id)}>
+                          <TableRow key={e.id} className={bloqueado ? "opacity-60" : "cursor-pointer"} onClick={() => !bloqueado && toggleSelecionado(e.id)}>
                             <TableCell>
                               <Checkbox checked={selecionados.has(e.id)} />
                             </TableCell>

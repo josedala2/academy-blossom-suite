@@ -395,9 +395,10 @@ const TransicaoTurmas = () => {
                   <div className="flex gap-2">
                     <Dialog open={openNovaTurma} onOpenChange={setOpenNovaTurma}>
                       <DialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="gap-2">
+                        <Button variant="outline" size="sm" className="gap-2" disabled={bloqueado}>
                           <Plus className="h-4 w-4" /> Nova Turma
                         </Button>
+
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>

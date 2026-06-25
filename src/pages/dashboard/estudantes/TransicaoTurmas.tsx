@@ -454,9 +454,10 @@ const TransicaoTurmas = () => {
                         </DialogFooter>
                       </DialogContent>
                     </Dialog>
-                    <Button size="sm" onClick={alocarSelecionados} disabled={selecionados.size === 0 || !turmaDestino}>
+                    <Button size="sm" onClick={alocarSelecionados} disabled={bloqueado || selecionados.size === 0 || !turmaDestino}>
                       Alocar à Turma
                     </Button>
+
                   </div>
                 </div>
 

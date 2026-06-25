@@ -396,8 +396,9 @@ const TransicaoTurmas = () => {
                   <History className="h-4 w-4" /> Histórico ({historicoReaberturas.length})
                 </Button>
               )}
-
+            </CardContent>
           </Card>
+
         )}
 
 

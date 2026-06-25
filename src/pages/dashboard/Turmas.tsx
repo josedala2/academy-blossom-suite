@@ -487,7 +487,7 @@ const Turmas = () => {
             {/* Classes Grid */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredClasses.map((cls) => (
-            <Card key={cls.id} className="card-hover">
+            <Card key={cls.id} className="card-hover cursor-pointer" onClick={() => handleVerDetalhes(cls)}>
               <CardHeader className="flex flex-row items-start justify-between pb-2">
                 <div>
                   <CardTitle className="text-lg">{cls.name}</CardTitle>

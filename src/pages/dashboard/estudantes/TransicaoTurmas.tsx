@@ -11,7 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+
 import {
   ArrowLeft,
   ArrowRightLeft,
@@ -27,7 +30,10 @@ import {
   AlertTriangle,
   CalendarClock,
   ShieldCheck,
+  Unlock,
+  History,
 } from "lucide-react";
+
 
 
 type Status = "aprovado" | "reprovado";
@@ -55,6 +61,21 @@ const ANO_LECTIVO_ANTERIOR = "2024/2025";
 const ANO_LECTIVO_NOVO = "2025/2026";
 const DATA_LIMITE = new Date("2026-08-31T23:59:59");
 const STORAGE_KEY = "transicao-turmas-fechada";
+const HISTORICO_KEY = "transicao-turmas-historico";
+
+interface RegistoFecho {
+  data: string;
+  responsavel: string;
+}
+
+interface RegistoReabertura {
+  data: string;
+  responsavel: string;
+  cargo: string;
+  motivo: string;
+  fechoAnterior: RegistoFecho;
+}
+
 
 
 const ESTUDANTES_INICIAIS: EstudanteExame[] = [
@@ -72,6 +93,7 @@ const ESTUDANTES_INICIAIS: EstudanteExame[] = [
 
 const TransicaoTurmas = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [estudantes, setEstudantes] = useState<EstudanteExame[]>(ESTUDANTES_INICIAIS);
   const [novasTurmas, setNovasTurmas] = useState<NovaTurma[]>([]);
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
@@ -80,7 +102,7 @@ const TransicaoTurmas = () => {
   const [turmaDestino, setTurmaDestino] = useState<string>("");
 
   // Confirmação final / bloqueio
-  const [fechada, setFechada] = useState<{ data: string; responsavel: string } | null>(() => {
+  const [fechada, setFechada] = useState<RegistoFecho | null>(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       return raw ? JSON.parse(raw) : null;
@@ -88,12 +110,29 @@ const TransicaoTurmas = () => {
       return null;
     }
   });
+  const [historicoReaberturas, setHistoricoReaberturas] = useState<RegistoReabertura[]>(() => {
+    try {
+      const raw = localStorage.getItem(HISTORICO_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
   const [openConfirmar, setOpenConfirmar] = useState(false);
   const [confirmacaoTexto, setConfirmacaoTexto] = useState("");
   const [responsavel, setResponsavel] = useState("");
 
+  // Reabertura
+  const [openReabrir, setOpenReabrir] = useState(false);
+  const [openHistorico, setOpenHistorico] = useState(false);
+  const [motivoReabertura, setMotivoReabertura] = useState("");
+  const [confirmReabrirTexto, setConfirmReabrirTexto] = useState("");
+
   const prazoExpirado = new Date() > DATA_LIMITE;
   const bloqueado = !!fechada || prazoExpirado;
+  // Apenas Admin pode reabrir transições fechadas (excepção administrativa)
+  const podeReabrir = user?.role === "admin";
+
 
   // Nova turma dialog
 
@@ -227,6 +266,51 @@ const TransicaoTurmas = () => {
   const formatarData = (iso: string) =>
     new Date(iso).toLocaleString("pt-PT", { dateStyle: "long", timeStyle: "short" });
 
+  const abrirReabertura = () => {
+    if (!podeReabrir) {
+      toast.error("Apenas a Administração pode reabrir uma transição fechada.");
+      return;
+    }
+    if (!fechada) return;
+    setMotivoReabertura("");
+    setConfirmReabrirTexto("");
+    setOpenReabrir(true);
+  };
+
+  const reabrirTransicao = () => {
+    if (!podeReabrir || !fechada) return;
+    const motivo = motivoReabertura.trim();
+    if (motivo.length < 20) {
+      toast.error("O motivo deve ter pelo menos 20 caracteres.");
+      return;
+    }
+    if (motivo.length > 500) {
+      toast.error("O motivo não pode exceder 500 caracteres.");
+      return;
+    }
+    if (confirmReabrirTexto.trim().toUpperCase() !== "REABRIR") {
+      toast.error('Escreva "REABRIR" para validar.');
+      return;
+    }
+    const registo: RegistoReabertura = {
+      data: new Date().toISOString(),
+      responsavel: user?.name ?? "Administrador",
+      cargo: user?.role ?? "admin",
+      motivo,
+      fechoAnterior: fechada,
+    };
+    const novoHistorico = [registo, ...historicoReaberturas];
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.setItem(HISTORICO_KEY, JSON.stringify(novoHistorico));
+    } catch {}
+    setHistoricoReaberturas(novoHistorico);
+    setFechada(null);
+    setOpenReabrir(false);
+    toast.success(`Transição reaberta por ${registo.responsavel}. Registo guardado no histórico.`);
+  };
+
+
 
   return (
     <DashboardLayout>
@@ -270,8 +354,21 @@ const TransicaoTurmas = () => {
                   Fechada em {formatarData(fechada.data)} por <strong>{fechada.responsavel}</strong>. Não é possível efectuar alterações.
                 </p>
               </div>
+              <div className="flex gap-2">
+                {historicoReaberturas.length > 0 && (
+                  <Button variant="outline" size="sm" className="gap-2" onClick={() => setOpenHistorico(true)}>
+                    <History className="h-4 w-4" /> Histórico ({historicoReaberturas.length})
+                  </Button>
+                )}
+                {podeReabrir && (
+                  <Button variant="destructive" size="sm" className="gap-2" onClick={abrirReabertura}>
+                    <Unlock className="h-4 w-4" /> Reabrir (Excepção)
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
+
         ) : prazoExpirado ? (
           <Card className="border-destructive/40 bg-destructive/5">
             <CardContent className="p-4 flex items-center gap-3">
@@ -288,14 +385,20 @@ const TransicaoTurmas = () => {
           <Card className="border-amber-500/30 bg-amber-500/5">
             <CardContent className="p-4 flex items-center gap-3">
               <CalendarClock className="h-6 w-6 text-amber-600 shrink-0" />
-              <div>
+              <div className="flex-1">
                 <p className="font-semibold text-sm">Processo aberto — data limite {DATA_LIMITE.toLocaleDateString("pt-PT")}</p>
                 <p className="text-xs text-muted-foreground">
                   Após a confirmação final, todas as alocações ficam bloqueadas.
                 </p>
               </div>
+              {historicoReaberturas.length > 0 && (
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => setOpenHistorico(true)}>
+                  <History className="h-4 w-4" /> Histórico ({historicoReaberturas.length})
+                </Button>
+              )}
             </CardContent>
           </Card>
+
         )}
 
 
@@ -643,6 +746,116 @@ const TransicaoTurmas = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Dialog de reabertura (Excepção administrativa) */}
+        <Dialog open={openReabrir} onOpenChange={setOpenReabrir}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Unlock className="h-5 w-5 text-destructive" /> Reabrir Transição (Excepção)
+              </DialogTitle>
+              <DialogDescription>
+                Acção administrativa restrita. A reabertura fica registada no histórico com data, responsável e motivo.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              {fechada && (
+                <div className="rounded-lg border bg-muted/40 p-3 text-xs space-y-1">
+                  <p><strong>Fecho actual:</strong> {formatarData(fechada.data)}</p>
+                  <p><strong>Confirmado por:</strong> {fechada.responsavel}</p>
+                </div>
+              )}
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs">
+                <p className="font-semibold text-destructive flex items-center gap-1">
+                  <AlertTriangle className="h-3.5 w-3.5" /> Atenção
+                </p>
+                <p className="text-muted-foreground mt-1">
+                  Apenas use esta opção para correcções legítimas (erros de alocação, decisão pedagógica revertida, ordem superior). Toda reabertura é auditável.
+                </p>
+              </div>
+              <div>
+                <Label>
+                  Motivo da reabertura <span className="text-muted-foreground">({motivoReabertura.trim().length}/500)</span>
+                </Label>
+                <Textarea
+                  placeholder="Descreva detalhadamente a justificação (mínimo 20 caracteres)..."
+                  value={motivoReabertura}
+                  onChange={(e) => setMotivoReabertura(e.target.value.slice(0, 500))}
+                  rows={4}
+                />
+              </div>
+              <div>
+                <Label>Escreva <span className="font-mono text-destructive">REABRIR</span> para confirmar</Label>
+                <Input
+                  placeholder="REABRIR"
+                  value={confirmReabrirTexto}
+                  onChange={(e) => setConfirmReabrirTexto(e.target.value)}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Responsável: <strong>{user?.name}</strong> ({user?.role})
+              </p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setOpenReabrir(false)}>Cancelar</Button>
+              <Button
+                variant="destructive"
+                onClick={reabrirTransicao}
+                disabled={
+                  motivoReabertura.trim().length < 20 ||
+                  confirmReabrirTexto.trim().toUpperCase() !== "REABRIR"
+                }
+                className="gap-2"
+              >
+                <Unlock className="h-4 w-4" /> Confirmar Reabertura
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog de histórico de reaberturas */}
+        <Dialog open={openHistorico} onOpenChange={setOpenHistorico}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <History className="h-5 w-5 text-primary" /> Histórico de Reaberturas
+              </DialogTitle>
+              <DialogDescription>
+                Registo de todas as excepções administrativas aplicadas a este processo de transição.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+              {historicoReaberturas.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">Sem registos.</p>
+              ) : (
+                historicoReaberturas.map((r, i) => (
+                  <Card key={i} className="border-l-4 border-l-destructive">
+                    <CardContent className="p-3 space-y-1 text-sm">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline" className="gap-1">
+                          <Unlock className="h-3 w-3" /> Reabertura #{historicoReaberturas.length - i}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">{formatarData(r.data)}</span>
+                      </div>
+                      <p><strong>Responsável:</strong> {r.responsavel} <span className="text-xs text-muted-foreground">({r.cargo})</span></p>
+                      <p className="text-xs">
+                        <strong>Fecho revertido:</strong> {formatarData(r.fechoAnterior.data)} por {r.fechoAnterior.responsavel}
+                      </p>
+                      <div className="bg-muted/40 rounded p-2 mt-2">
+                        <p className="text-xs font-semibold text-muted-foreground mb-1">Motivo:</p>
+                        <p className="text-sm whitespace-pre-wrap">{r.motivo}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setOpenHistorico(false)}>Fechar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
       </div>
     </DashboardLayout>
 
